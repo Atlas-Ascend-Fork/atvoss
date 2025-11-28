@@ -13,7 +13,7 @@
 
 #include "tile_evaluator.h"
 
-namespace ATVOSS::Tile {
+namespace Atvoss::Tile {
 
 /*!
 * \brief Perform calculation based on the expression.
@@ -38,5 +38,5 @@ static constexpr __aicore__  inline int32_t GetTotal(uint32_t eleCntInTensor = 1
    return Tile::Eval::GetTotal < N, shape > (eleCntInTensor, defaultSize);
 }
 
-} // namespace ATVOSS::Tile
+} // namespace Atvoss::Tile
 #endif

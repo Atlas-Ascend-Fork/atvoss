@@ -18,39 +18,37 @@ static constexpr int32_t HEIGHT = 1;
 static constexpr int32_t WIDTH = 32;
 
 // 描述计算逻辑
-template<typename T>
-struct RmsNormOp : ATVOSS::ExprTmpl::Maker {
-    using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-    using layout = AscendC::Std::tuple<shape>;
-    using maxSizeType = T;
-    template <template <typename> class VectorType>
-    __host_aicore__ constexpr auto Get() const
+using DtypeV1 = T1;
+using DtypeV2 = T2;
+using DtypeV3 = T3;
+using TileShape = Atvoss::Shape<HEIGHT, WIDTH>;
+
+struct RmsNormCompute {
+    template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
     {
+        auto in1 = Atvoss::PlaceHolder<1, Tensor<DtypeV1>, Atvoss::ParamUsage::in>();
+        auto in2 = Atvoss::PlaceHolder<2, Tensor<DtypeV2>, Atvoss::ParamUsage::in>();
+        auto out = Atvoss::PlaceHolder<3, Tensor<DtypeV3>, Atvoss::ParamUsage::out>();
+        auto temp = Atvoss::PlaceHolderTmpLike<1>(in1);
 
-        using namespace ATVOSS::ExprTmpl;
-        auto _1 = PlaceHolder<1, VectorType<T>, layout>();
-        auto _2 = PlaceHolder<2, VectorType<T>, layout>();
-        auto _3 = PlaceHolderTmpLike<1>(_1);
-        auto _4 = PlaceHolder<3, VectorType<T>, layout, ParamUsage::out>();
-
-        return (_3 = _1 *_1,
-                _4 = ReduceSum<ATVOSS::Patterns::Pattern::AR>(_3),
-                _4 = Broadcast<ATVOSS::Patterns::Pattern::AB>(_4),
-                _3 = Divs<width>(_4),
-                _4 = Sqrt(_3),
-                _3 = _1 / _4,
-                _4 = _2 * _3);
+        return (temp = in1 * in1,
+                out = ReduceSum<Atvoss::Patterns::Pattern::AR>(temp),
+                out = Broadcast<Atvoss::Patterns::Pattern::AB>(out),
+                temp = Divs<WIDTH>(out),
+                out = Sqrt(temp),
+                temp = in1 / out,
+                out = in2 * temp);
     }
 };
 ```
 
-以上代码为例，定义一个`RmsNormOp`的Expr模板类，主要是用于描述算子计算流、输入输出参数信息、Tile块的切分设置等。`RmsNormOp`扩展自`ATVOSS::ExprTmpl::Make`，包含`__host_aicore__ constexpr auto Get() const`接口完成相关配置。
+以上代码为例，定义一个`RmsNormCompute`的Expr模板类，主要是用于描述算子计算流、输入输出参数信息、Tile块的切分设置等。`RmsNormOp`包含`__host_aicore__ constexpr auto Compute() const`接口完成相关配置。
 - Tile块的切分设置，使用如下示例的固定写法：
 ```cpp
-using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-using layout = AscendC::Std::tuple<shape>;
+using TileShape = Atvoss::Shape<HEIGHT, WIDTH>;
 ```
-- `Get()`接口内的设置说明如下：
+- `Compute()`接口内的设置说明如下：
 
 | 表达式元素| 功能描述|
 | ------------ | ------------ |
@@ -61,12 +59,27 @@ using layout = AscendC::Std::tuple<shape>;
 
 - 各层模板组装
 ```cpp
+static constexpr Atvoss::EleWise::BlockPolicy<TileShape> blockPolicy {
+    190 * 1024,
+    TileShape{}
+};
+static constexpr Atvoss::EleWise::KernelPolicy kernelPolicy {
+    48, 
+    Atvoss::EleWise::PolicySegment::UniformSegment
+};
 // 选择Block模板类，使用RmsNormOp Expr模板封装BlockOp层模板
-using BlockOp = ATVOSS::Block::BlockBuilder<RmsNormOp<float>, blockPolicyWidthAssign>;
+using BlockOp = Atvoss::EleWise::BlockBuilder<
+    RmsNormCompute,
+    blockPolicy,
+    Atvoss::EleWise::Config>;
+    
 // 选择Kernel模板类，使用BlockOp层模板封装Kernel层模板
-using KernelOp = ATVOSS::Kernel::KernelBuilder<BlockOp, kernelPolicyWidthAssign>;
+using KernelOp = Atvoss::EleWise::KernelBuilder<
+    BlockOp,
+    kernelPolicy,
+    Atvoss::EleWise::Config>;
 // 使用DeviceAdapter模板，使用KernelOp封装Device适配器
-using DeviceOp = ATVOSS::Device::DeviceAdapter<KernelOp>;
+using DeviceOp = Atvoss::DeviceAdapter<KernelOp>;
 ```
 更多模板使用指导，参见[开发指南](./02_developer_guide.md)
 

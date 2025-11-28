@@ -20,7 +20,7 @@
 #include "utils/layout/layout.h"
 #include "utils/layout/shape.h"
 
-namespace ATVOSS::Block {
+namespace Atvoss::Block {
 
 template <typename Compute, const auto& Policy, typename ScheduleCfg>
 class BaseBlockSchedule {
@@ -30,13 +30,13 @@ public:
     using BlockPolicy = typename std::remove_reference<decltype(Policy)>::type;
     using TileShape = typename BlockPolicy::TileShape;
     template <typename T>
-    using blockTensorFake = ATVOSS::Block::Tensor<T, ATVOSS::Layout::Layout<ATVOSS::Layout::FixedRankExtents<1, 1, 1>>>;
+    using blockTensorFake = Atvoss::Block::Tensor<T, Atvoss::Layout::Layout<Atvoss::Layout::FixedRankExtents<1, 1, 1>>>;
     static constexpr auto EXPRESSION_FAKE = Compute{}.template Compute<blockTensorFake>();
     using ExprFake = typename decltype(EXPRESSION_FAKE)::Type;
-    using Params = ATVOSS::ExprTmpl::Params_t<ExprFake>;
-    using InParams = ATVOSS::ExprTmpl::InParams_t<ExprFake>;
-    using OutParams = ATVOSS::ExprTmpl::OutParams_t<ExprFake>;
-    using LocalVars = ATVOSS::ExprTmpl::LocalVars_t<ExprFake>;
+    using Params = Atvoss::ExprTmpl::Params_t<ExprFake>;
+    using InParams = Atvoss::ExprTmpl::InParams_t<ExprFake>;
+    using OutParams = Atvoss::ExprTmpl::OutParams_t<ExprFake>;
+    using LocalVars = Atvoss::ExprTmpl::LocalVars_t<ExprFake>;
     static constexpr uint32_t IN_PARAMS_COUNT = Util::TMP::Size_v<InParams> + 1;
     static constexpr uint32_t OUT_PARAMS_COUNT = Util::TMP::Size_v<OutParams> + 1;
     static constexpr uint32_t LOCAL_VAR_COUNT = Util::TMP::Size_v<LocalVars>;
@@ -90,7 +90,7 @@ public:
 
     // number of elements in Tile calculation
     static constexpr uint32_t BASIC_BLOCK =
-        ATVOSS::Tile::GetTotal<0, typename std::remove_reference<decltype(Policy)>::type>(1, 1);
+        Atvoss::Tile::GetTotal<0, typename std::remove_reference<decltype(Policy)>::type>(1, 1);
 
     /*!
      * \brief Default constructor
@@ -110,7 +110,7 @@ public:
     static bool MakeBlockParam(ScheduleCfg& blockParam)
     {
         if (ELEMENT_COUNT_IN_TENSOR == 0) {
-            printf("[ERROR]: [ATVOSS][Block] Element count can not be zero\n");
+            printf("[ERROR]: [Atvoss][Block] Element count can not be zero\n");
             return false;
         }
         blockParam.wholeLoop = ELEMENT_COUNT_IN_TENSOR / BASIC_BLOCK;
@@ -138,45 +138,45 @@ public:
         }
     }
 
-    using ShapeT = ATVOSS::Tile::Eval::Shape_t<typename std::remove_reference<decltype(Policy)>::type>;
-    using ShapeSize = ATVOSS::Tile::Eval::ShapeSize<ShapeT>;
+    using ShapeT = Atvoss::Tile::Eval::Shape_t<typename std::remove_reference<decltype(Policy)>::type>;
+    using ShapeSize = Atvoss::Tile::Eval::ShapeSize<ShapeT>;
 
     static constexpr uint32_t GetLayoutAxis0()
     {
-        static_assert(ShapeSize::value <= 2, "[ERROR]: [ATVOSS][Block] Tile shape can not be greater than 2!");
+        static_assert(ShapeSize::value <= 2, "[ERROR]: [Atvoss][Block] Tile shape can not be greater than 2!");
         if constexpr (ShapeSize::value == 2) {
             using DstShape0Type = typename ShapeT::template get_type<0>;
-            static_assert((DstShape0Type::value > 0), "[ERROR]: [ATVOSS][Block] Shape axis0 must not be zero");
+            static_assert((DstShape0Type::value > 0), "[ERROR]: [Atvoss][Block] Shape axis0 must not be zero");
             return DstShape0Type::value;
         }
         return BASIC_BLOCK;
     }
     static constexpr uint32_t GetLayoutAxis1()
     {
-        static_assert(ShapeSize::value <= 2, "[ERROR]: [ATVOSS][Block] Tile shape can not be greater than 2!");
+        static_assert(ShapeSize::value <= 2, "[ERROR]: [Atvoss][Block] Tile shape can not be greater than 2!");
         if constexpr (ShapeSize::value == 2) {
             using DstShape1Type = typename ShapeT::template get_type<1>;
-            static_assert((DstShape1Type::value > 0), "[ERROR]: [ATVOSS][Block] Shape axis1 must not be zero");
+            static_assert((DstShape1Type::value > 0), "[ERROR]: [Atvoss][Block] Shape axis1 must not be zero");
             return DstShape1Type::value;
         }
         return 1;
     }
 
     template <typename T> // Tile Tensor
-    using BlockTensorTile = ATVOSS::Block::Tensor<
-        T, ATVOSS::Layout::Layout<ATVOSS::Layout::FixedRankExtents<BASIC_BLOCK, GetLayoutAxis0(), GetLayoutAxis1()>>>;
+    using BlockTensorTile = Atvoss::Block::Tensor<
+        T, Atvoss::Layout::Layout<Atvoss::Layout::FixedRankExtents<BASIC_BLOCK, GetLayoutAxis0(), GetLayoutAxis1()>>>;
     static constexpr auto EXPRESSION_TILE = Compute{}.template Compute<BlockTensorTile>();
     using ExprTile = typename decltype(EXPRESSION_TILE)::Type;
-    using ParamsTile = ATVOSS::ExprTmpl::Params_t<ExprTile>;
-    using LocalVarsTile = ATVOSS::ExprTmpl::LocalVars_t<ExprTile>;
+    using ParamsTile = Atvoss::ExprTmpl::Params_t<ExprTile>;
+    using LocalVarsTile = Atvoss::ExprTmpl::LocalVars_t<ExprTile>;
 
     template <typename T> // Tail Tensor
     using BlockTensorTail =
-        ATVOSS::Block::TailTensor<T, ATVOSS::Layout::TailLayout<ATVOSS::Layout::VariableRankExtents<1>>>;
+        Atvoss::Block::TailTensor<T, Atvoss::Layout::TailLayout<Atvoss::Layout::VariableRankExtents<1>>>;
     static constexpr auto EXPRESSION_TAIL = Compute{}.template Compute<BlockTensorTail>();
     using ExprTail = typename decltype(EXPRESSION_TAIL)::Type;
-    using ParamsTail = ATVOSS::ExprTmpl::Params_t<ExprTail>;
-    using LocalVarsTail = ATVOSS::ExprTmpl::LocalVars_t<ExprTail>;
+    using ParamsTail = Atvoss::ExprTmpl::Params_t<ExprTail>;
+    using LocalVarsTail = Atvoss::ExprTmpl::LocalVars_t<ExprTail>;
 
 private:
     template <typename ArgTup>
@@ -248,7 +248,7 @@ private:
         using DType = typename ParamType::Type::PrimType;
         AscendC::LocalTensor<DType> tensor;
         bufPoolCalc_.AllocTensor(tensor);
-        if constexpr (std::is_same_v<ParamType, ATVOSS::Layout::VariableRankExtents<1>>) {
+        if constexpr (std::is_same_v<ParamType, Atvoss::Layout::VariableRankExtents<1>>) {
             Tensor<DType> blockTensorTail{ParamType::number - 1};
             blockTensorTail.SetUbTensor(tensor);
             return blockTensorTail;
@@ -274,7 +274,7 @@ private:
     template <typename Params, size_t Index, typename ParamTup, typename ArgTup>
     __aicore__ inline constexpr auto ConvertOneArg(ParamTup& params, ArgTup& args)
     {
-        constexpr auto pos = Util::TMP::Find_v<ATVOSS::ExprTmpl::CheckVarNum<Index + 1>::template Checker, Params>;
+        constexpr auto pos = Util::TMP::Find_v<Atvoss::ExprTmpl::CheckVarNum<Index + 1>::template Checker, Params>;
         if constexpr (pos < Util::TMP::Size_v<Params>) {
             return AscendC::Std::get<pos>(params);
         } else {
@@ -298,10 +298,10 @@ private:
 
     __aicore__ uint32_t GetDynamicTailLayoutAxis0(uint32_t tailCnt)
     {
-        static_assert(ShapeSize::value <= 2, "[ERROR]: [ATVOSS][Block] Tile shape can not be greater than 2!");
+        static_assert(ShapeSize::value <= 2, "[ERROR]: [Atvoss][Block] Tile shape can not be greater than 2!");
         if constexpr (ShapeSize::value == 2) {
             using DstShape1Type = typename ShapeT::template get_type<1>;
-            static_assert((DstShape1Type::value > 0), "[ERROR]: [ATVOSS][Block] Shape axis1 must not be zero");
+            static_assert((DstShape1Type::value > 0), "[ERROR]: [Atvoss][Block] Shape axis1 must not be zero");
             return tailCnt / DstShape1Type::value;
         }
         return tailCnt;
@@ -311,7 +311,7 @@ private:
     {
         if constexpr (ShapeSize::value == 2) {
             using DstShape1Type = typename ShapeT::template get_type<1>;
-            static_assert((DstShape1Type::value > 0), "[ERROR]: [ATVOSS][Block] Shape axis1 must not be zero");
+            static_assert((DstShape1Type::value > 0), "[ERROR]: [Atvoss][Block] Shape axis1 must not be zero");
             return DstShape1Type::value;
         }
         return 1;
@@ -322,9 +322,9 @@ private:
     {
         using DType = typename ParamType::Type::PrimType;
         auto gm = AscendC::Std::get<ParamType::number - 1>(args);
-        if constexpr (std::is_same_v<ParamType, ATVOSS::Layout::VariableRankExtents<1>>) {
+        if constexpr (std::is_same_v<ParamType, Atvoss::Layout::VariableRankExtents<1>>) {
             return BlockTensorTail<DType>{gm,
-                                          ATVOSS::Layout::TailLayout{tileCnt, GetDynamicTailLayoutAxis0(tileCnt),
+                                          Atvoss::Layout::TailLayout{tileCnt, GetDynamicTailLayoutAxis0(tileCnt),
                                                                      GetDynamicTailLayoutAxis1(tileCnt)},
                                           ParamType::usage, ParamType::number - 1};
         } else {
@@ -351,14 +351,14 @@ private:
     {
         using DType = typename ParamType::Type::PrimType;
         auto blockTensor = AscendC::Std::get<ParamType::number - 1>(args);
-        if (isCopyInput && (blockTensor.GetParamUsage() == ATVOSS::ParamUsage::in ||
-                            blockTensor.GetParamUsage() == ATVOSS::ParamUsage::in_out)) {
+        if (isCopyInput && (blockTensor.GetParamUsage() == Atvoss::ParamUsage::in ||
+                            blockTensor.GetParamUsage() == Atvoss::ParamUsage::in_out)) {
             AscendC::LocalTensor<DType> tensor;
             bufPoolIn_.AllocTensor(tensor);
             blockTensor.SetUbTensor(tensor);
             blockTensor.CopyIn(pos, copyLen);
 
-        } else if (!isCopyInput && (blockTensor.GetParamUsage() == ATVOSS::ParamUsage::out)) {
+        } else if (!isCopyInput && (blockTensor.GetParamUsage() == Atvoss::ParamUsage::out)) {
             AscendC::LocalTensor<DType> tensor;
             bufPoolOut_.AllocTensor(tensor);
             blockTensor.SetUbTensor(tensor);
@@ -373,7 +373,7 @@ private:
     {
         return AscendC::Std::make_tuple(
             ConstructCopyBlockIn<
-                Util::TMP::FindUnique_t<ATVOSS::ExprTmpl::CheckVarNum<Ints + 1>::template Checker, Params>,
+                Util::TMP::FindUnique_t<Atvoss::ExprTmpl::CheckVarNum<Ints + 1>::template Checker, Params>,
                 isCopyInput>(args, pos, copyLen)...);
     }
 
@@ -388,8 +388,8 @@ private:
     __aicore__ inline constexpr auto ConstructCopyBlockOut(ArgTup& args, int pos, int copyLen)
     {
         auto blockTensor = AscendC::Std::get<ParamType::number - 1>(args);
-        if ((blockTensor.GetParamUsage() == ATVOSS::ParamUsage::out ||
-             blockTensor.GetParamUsage() == ATVOSS::ParamUsage::in_out)) {
+        if ((blockTensor.GetParamUsage() == Atvoss::ParamUsage::out ||
+             blockTensor.GetParamUsage() == Atvoss::ParamUsage::in_out)) {
             blockTensor.CopyOut(pos, copyLen);
         }
         return blockTensor;
@@ -401,7 +401,7 @@ private:
     {
         return AscendC::Std::make_tuple(
             ConstructCopyBlockOut<
-                Util::TMP::FindUnique_t<ATVOSS::ExprTmpl::CheckVarNum<Ints + 1>::template Checker, Params>>(
+                Util::TMP::FindUnique_t<Atvoss::ExprTmpl::CheckVarNum<Ints + 1>::template Checker, Params>>(
                 args, pos, copyLen)...);
     }
 
@@ -425,7 +425,7 @@ private:
     {
         return AscendC::Std::make_tuple(
             ConstructMakeBlockTensor2LocalTensors<
-                Util::TMP::FindUnique_t<ATVOSS::ExprTmpl::CheckVarNum<Ints + 1>::template Checker, Params>>(args)...);
+                Util::TMP::FindUnique_t<Atvoss::ExprTmpl::CheckVarNum<Ints + 1>::template Checker, Params>>(args)...);
     }
 
     template <typename Params, typename ArgTup>
@@ -443,10 +443,10 @@ private:
         auto blockTensor = AscendC::Std::get<ParamType::number - 1>(args);
         auto localTensor = blockTensor.GetUbTensor();
 
-        if (isInput && (blockTensor.GetParamUsage() == ATVOSS::ParamUsage::in)) {
+        if (isInput && (blockTensor.GetParamUsage() == Atvoss::ParamUsage::in)) {
             bufPoolIn_.FreeTensor(localTensor);
-        } else if (!isInput && (blockTensor.GetParamUsage() == ATVOSS::ParamUsage::out ||
-                                blockTensor.GetParamUsage() == ATVOSS::ParamUsage::in_out)) {
+        } else if (!isInput && (blockTensor.GetParamUsage() == Atvoss::ParamUsage::out ||
+                                blockTensor.GetParamUsage() == Atvoss::ParamUsage::in_out)) {
             bufPoolOut_.FreeTensor(localTensor);
         }
         return localTensor;
@@ -493,11 +493,11 @@ private:
     }
 
 private:
-    ATVOSS::LoopBuffer<AscendC::TPosition::VECIN, IN_PARAMS_COUNT, UB_TILE_SIZE> bufPoolIn_;
-    ATVOSS::LoopBuffer<AscendC::TPosition::VECOUT, OUT_PARAMS_COUNT, UB_TILE_SIZE> bufPoolOut_;
-    ATVOSS::LoopBuffer<AscendC::TPosition::VECCALC, LOCAL_VAR_COUNT, UB_TILE_SIZE> bufPoolCalc_;
+    Atvoss::LoopBuffer<AscendC::TPosition::VECIN, IN_PARAMS_COUNT, UB_TILE_SIZE> bufPoolIn_;
+    Atvoss::LoopBuffer<AscendC::TPosition::VECOUT, OUT_PARAMS_COUNT, UB_TILE_SIZE> bufPoolOut_;
+    Atvoss::LoopBuffer<AscendC::TPosition::VECCALC, LOCAL_VAR_COUNT, UB_TILE_SIZE> bufPoolCalc_;
 };
 
-} // namespace ATVOSS::Block
+} // namespace Atvoss::Block
 
 #endif

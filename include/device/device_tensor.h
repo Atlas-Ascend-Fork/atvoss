@@ -12,13 +12,13 @@
 #include <numeric>
 #include "acl/acl.h"
 #include "utils/tensor.h"
-namespace ATVOSS::Device {
+namespace Atvoss::Device {
 
 template <typename T>
 class DeviceTensor {
 public:
     DeviceTensor() = default;
-    explicit DeviceTensor(ATVOSS::Tensor<T>& src)
+    explicit DeviceTensor(Atvoss::Tensor<T>& src)
     {
         std::vector<uint32_t> shapeVector = src.shape_vector();
         uint64_t totalElements = std::accumulate(
@@ -53,7 +53,7 @@ public:
     {
         if (ptr_ != nullptr) {
             throw std::logic_error(
-                "[ERROR]: [ATVOSS][Device] DeviceTensor::SetSize can only be called on an empty object");
+                "[ERROR]: [Atvoss][Device] DeviceTensor::SetSize can only be called on an empty object");
         }
         aclrtMalloc((void **)&ptr_, size * sizeof(T), ACL_MEM_MALLOC_HUGE_FIRST);
         len_ = size;

@@ -12,7 +12,7 @@
 #define BASE_SCHEDULE_H
 #include <functional>
 #include "common/compile_info.h"
-namespace ATVOSS::Kernel {
+namespace Atvoss::Kernel {
 
 /*!
  * KernelBuilder: Calculate the tiling information, then determine the GM data that the current core needs to process based on the block ID,
@@ -26,7 +26,7 @@ public:
     using BlockTemplate = BlockOp;
     static constexpr auto EXPRESSION = ExprMaker{}.template Compute<AscendC::GlobalTensor>();
     using Expr = typename decltype(EXPRESSION)::Type;
-    using Params = ATVOSS::ExprTmpl::Params_t<Expr>;
+    using Params = Atvoss::ExprTmpl::Params_t<Expr>;
     using TileShape = typename BlockTemplate::ScheduleClz::TileShape;
     static constexpr uint32_t TILE_SHAPE_SIZE = TileShape::size::value;
     static constexpr uint32_t BASIC_BLOCK = BlockOp::ScheduleClz::BASIC_BLOCK;
@@ -50,11 +50,11 @@ public:
             totalEleNum = totalEleNum * shapeInfo[i];
         }
         if(shapeInfo.size() == 0 || totalEleNum == 0){
-            printf("[ERROR]: [ATVOSS][Kernel] Shape info error \n");
+            printf("[ERROR]: [Atvoss][Kernel] Shape info error \n");
             return false;
         }
         if (TILE_SHAPE_SIZE != 1 && TILE_SHAPE_SIZE != 2) {
-            printf("[ERROR]: [ATVOSS][Kernel] Tile shape size only support 1 or 2\n");
+            printf("[ERROR]: [Atvoss][Kernel] Tile shape size only support 1 or 2\n");
             return false;
         }
         uint32_t actualNAssign = TILE_SHAPE_SIZE == 1 ? 32 : TileShape::template get_type<TILE_SHAPE_SIZE - 1>::value;
@@ -62,7 +62,7 @@ public:
         // Initial core tiling baseline
         uint32_t basicCoreEleNum = (BASIC_BLOCK + actualNAssign - 1) / actualNAssign * actualNAssign;
         if (basicCoreEleNum < BASIC_BLOCK) {
-            printf("[ERROR]: [ATVOSS][Kernel] basicCoreEleNum is too small \n");
+            printf("[ERROR]: [Atvoss][Kernel] basicCoreEleNum is too small \n");
             return false;
         }
         kernelParam.unitNum = actualNAssign;
@@ -149,7 +149,7 @@ private:
     __aicore__ inline constexpr auto ConvertOneArg(ParamTup& params, ArgTup& args)
     {
         constexpr auto pos =
-            Util::TMP::Find_v<ATVOSS::ExprTmpl::CheckVarNum<Index + 1>::template Checker, Params>;
+            Util::TMP::Find_v<Atvoss::ExprTmpl::CheckVarNum<Index + 1>::template Checker, Params>;
         if constexpr (pos < Util::TMP::Size_v<Params>) {
             return AscendC::Std::get<pos>(params);
         } else {
@@ -182,5 +182,5 @@ private:
     uint32_t totalEleNumCurCore_;
 };
 
-} // namespace ATVOSS::Kernel
+} // namespace Atvoss::Kernel
 #endif

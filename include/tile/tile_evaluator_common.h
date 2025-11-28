@@ -16,12 +16,12 @@
 #include "tile_ascendc_math.h"
 #include "tile_ascendc_transcendental.h"
 
-namespace ATVOSS::Tile::Eval {
+namespace Atvoss::Tile::Eval {
 
 using Util::TMP::FindUnique_t;
 using Util::TMP::Size_v;
 
-using namespace ATVOSS::ExprTmpl;
+using namespace Atvoss::ExprTmpl;
 
 template <typename T>
 struct Evaluator {
@@ -68,7 +68,7 @@ void MakeAlikeDatum(std::vector<T>& dst, const std::vector<T>& src)
 template <typename L, typename T, typename ArgTup>
 void MakeAlikeOneLocalVar(T& localVar, const ArgTup& args)
 {
-    static_assert(IsLocalVar_v<L>, "[ERROR]: [ATVOSS][Tile] A LocalVar is needed");
+    static_assert(IsLocalVar_v<L>, "[ERROR]: [Atvoss][Tile] A LocalVar is needed");
     if constexpr (!std::is_same_v<typename L::Like, void>) {
         MakeAlikeDatum(localVar, AscendC::Std::get<L::Like::number>(args));
     }
@@ -129,7 +129,7 @@ struct Evaluator<LocalVar<N, T, L>> {
     template <typename ArgTup, typename LocalVarTup>
     __aicore__ decltype(auto) operator()(LocalVar<N, T, L> /*unused*/, ArgTup& /*args*/, LocalVarTup& localVars) const
     {
-        static_assert(N > 0, "[ERROR]: [ATVOSS][Tile] LocalVar number starts from 1");
+        static_assert(N > 0, "[ERROR]: [Atvoss][Tile] LocalVar number starts from 1");
         return AscendC::Std::get<N - 1>(localVars);
     }
 };
@@ -143,14 +143,14 @@ struct Evaluator<Param<N, T, U, V>> {
     template <typename ArgTup, typename LocalVarTup>
     __aicore__ decltype(auto) operator()(Param<N, T, U, V> /*unused*/, ArgTup& args, LocalVarTup& /*localVars*/) const
     {
-        static_assert(N > 0, "[ERROR]: [ATVOSS][Tile] Param number starts from 1");
+        static_assert(N > 0, "[ERROR]: [Atvoss][Tile] Param number starts from 1");
         constexpr auto index = N - 1;
         using NthType = typename AscendC::Std::tuple_element<index, std::remove_reference_t<ArgTup>>::type;
         if constexpr (std::is_same_v<T, NthType> || std::is_same_v<T&, NthType> || std::is_same_v<T&&, NthType>) {
             return AscendC::Std::get<index>(args);
         } else {
             static_assert(V == ParamUsage::in,
-                          "[ERROR]: [ATVOSS][Tile] Only in-parameters allow implicit type conversions");
+                          "[ERROR]: [Atvoss][Tile] Only in-parameters allow implicit type conversions");
             return static_cast<T>(AscendC::Std::get<index>(args));
         }
     }
@@ -259,9 +259,9 @@ struct ShapeSize<AscendC::Shape<ShapeType...>> {
 template <typename T, Operation op = Operation::Unary, typename... Arguments>
 static constexpr __aicore__ auto getShape(Arguments&... args)
 {
-    using OperationShape = ATVOSS::Layout::OperationShape;
+    using OperationShape = Atvoss::Layout::OperationShape;
     if constexpr (ShapeSize<Shape_t<T>>::value == 0) {  // Tile size not specified by the user.
-        static_assert(sizeof...(args) > 0, "[ERROR]: [ATVOSS][Tile] Arguments pack must not be empty!");
+        static_assert(sizeof...(args) > 0, "[ERROR]: [Atvoss][Tile] Arguments pack must not be empty!");
         auto argsTuple = AscendC::Std::forward_as_tuple(args...);
         uint32_t totalCnt = AscendC::Std::get<0>(argsTuple);
         uint32_t shapeN = AscendC::Std::get<1>(argsTuple);
@@ -275,11 +275,11 @@ static constexpr __aicore__ auto getShape(Arguments&... args)
         using DstShape0Type = typename tuple_element<0, DstShape>::type;
         using DstShape1Type = typename tuple_element<1, DstShape>::type;
         static_assert((DstShape0Type::value > 0 && DstShape1Type::value > 0),
-                      "[ERROR]: [ATVOSS][Tile] Shape dim must not be zero");
+                      "[ERROR]: [Atvoss][Tile] Shape dim must not be zero");
         if constexpr (op == Operation::Unary) {
             return OperationShape{GetTotal<0, DstShape>()};
         } else if constexpr (op == Operation::Binary) {
-            static_assert(AscendC::Std::tuple_size<DstShape>::value == 2, "[ERROR]: [ATVOSS][Tile] DstShape must is 2!");
+            static_assert(AscendC::Std::tuple_size<DstShape>::value == 2, "[ERROR]: [Atvoss][Tile] DstShape must is 2!");
             return OperationShape{DstShape0Type::value, DstShape1Type::value};
         }
     }
@@ -290,7 +290,7 @@ static constexpr __aicore__ auto GetShape(ArgTup& args)
 {
     auto blockTensor = AscendC::Std::get<0>(args);
     using LayoutType = typename decltype(blockTensor)::LayoutType;
-    if constexpr (std::is_same_v<LayoutType, ATVOSS::Layout::VariableRankExtents<1>>) {
+    if constexpr (std::is_same_v<LayoutType, Atvoss::Layout::VariableRankExtents<1>>) {
         if constexpr(op == Operation::Unary){
             return blockTensor.GetLayout().GetUnaryShape();
         }
@@ -310,6 +310,6 @@ static constexpr __aicore__ auto GetShape(ArgTup& args)
 template <typename T>
 using Dtype_t = typename T::Type::PrimType;
 
-}  // namespace ATVOSS::Tile::Eval
+}  // namespace Atvoss::Tile::Eval
 
 #endif

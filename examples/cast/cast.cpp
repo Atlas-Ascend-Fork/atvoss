@@ -26,35 +26,35 @@ struct CastConfig {
     using DtypeV1 = T1;
     using DtypeV2 = T2;
 
-    using TileShape = ATVOSS::Shape<WIDTH>;
+    using TileShape = Atvoss::Shape<WIDTH>;
     struct CastCompute {
         template <template <typename> class Tensor>
         __host_aicore__ constexpr auto Compute() const
         {
-            auto in1 = ATVOSS::PlaceHolder<1, Tensor<DtypeV1>, ATVOSS::ParamUsage::in>();
-            auto out1 = ATVOSS::PlaceHolder<2, Tensor<DtypeV2>, ATVOSS::ParamUsage::out>();
-            return (out1 = Cast<ATVOSS::CastMode::CAST_NONE>(in1));
+            auto in1 = Atvoss::PlaceHolder<1, Tensor<DtypeV1>, Atvoss::ParamUsage::in>();
+            auto out1 = Atvoss::PlaceHolder<2, Tensor<DtypeV2>, Atvoss::ParamUsage::out>();
+            return (out1 = Cast<Atvoss::CastMode::CAST_NONE>(in1));
         };
     };
 
-    static constexpr ATVOSS::Block::BlockPolicy<TileShape> blockPolicy{
+    static constexpr Atvoss::EleWise::BlockPolicy<TileShape> blockPolicy{
         190 * 1024,
         TileShape{}
     };
 
-    static constexpr ATVOSS::Kernel::KernelPolicy kernelPolicy{
-        48, ATVOSS::Kernel::PolicySegment::UniformSegment};
+    static constexpr Atvoss::EleWise::KernelPolicy kernelPolicy{
+        48, Atvoss::EleWise::KernelPolicySegment::UniformSegment};
 
-    using BlockOp = ATVOSS::Block::BlockBuilder<
+    using BlockOp = Atvoss::EleWise::BlockBuilder<
         CastCompute,
         blockPolicy,
-        ATVOSS::Block::Config>;
+        Atvoss::EleWise::BlockConfig>;
 
-    using KernelOp = ATVOSS::Kernel::KernelBuilder<
+    using KernelOp = Atvoss::EleWise::KernelBuilder<
         BlockOp,
         kernelPolicy>;
 
-    using DeviceOp = ATVOSS::Device::DeviceAdapter<KernelOp>;
+    using DeviceOp = Atvoss::DeviceAdapter<KernelOp>;
 };
 
 int main()
@@ -65,11 +65,11 @@ int main()
     std::vector<float> golden(32*32, 1.5f);
     uint32_t shape[2] = {32, 32};
 
-    ATVOSS::Tensor<half> t1(v1.data(), shape);
-    ATVOSS::Tensor<float> t2(v2.data(), shape);
+    Atvoss::Tensor<half> t1(v1.data(), shape);
+    Atvoss::Tensor<float> t2(v2.data(), shape);
 
     // 生成入参信息
-    auto arguments = ATVOSS::ArgumentsBuilder{}
+    auto arguments = Atvoss::ArgumentsBuilder{}
                          .input(t1)
                          .output(t2)
                          .build();

@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_EXPR_UTILS_H
-#define ATVOSS_EXPR_UTILS_H
+#ifndef Atvoss_EXPR_UTILS_H
+#define Atvoss_EXPR_UTILS_H
 
 namespace Util {
 template <typename T>
@@ -144,7 +144,7 @@ struct Get<std::tuple<Head, Tail...>, 0> {
 
 template <int N>
 struct Get<std::tuple<>, N> {
-    static_assert(N < 0, "[ERROR]: [ATVOSS][Expression] Index out of bounds in Get");
+    static_assert(N < 0, "[ERROR]: [Atvoss][Expression] Index out of bounds in Get");
 };
 
 template <typename List, int N>
@@ -173,8 +173,8 @@ using Unique_t = typename Unique<List>::Type;
 template <template <typename> class Pred, typename List>
 struct FindUnique {
     using ResultList = Filter_t<Pred, List>;
-    static_assert(Size_v<ResultList> != 0, "[ERROR]: [ATVOSS][Expression] Cannot find the specified element");
-    static_assert(Size_v<ResultList> == 1, "[ERROR]: [ATVOSS][Expression] A unique result is expected");
+    static_assert(Size_v<ResultList> != 0, "[ERROR]: [Atvoss][Expression] Cannot find the specified element");
+    static_assert(Size_v<ResultList> == 1, "[ERROR]: [Atvoss][Expression] A unique result is expected");
     using Type = First_t<ResultList>;
 };
 

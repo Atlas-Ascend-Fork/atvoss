@@ -75,7 +75,7 @@ git clone https://gitcode.com/cann/atvoss-dev.git
 
 1. 编译
 
-   ATVOSS仓提供一键式编译安装能力，进入本开源仓代码根目录，执行如下命令：
+   Atvoss仓提供一键式编译安装能力，进入本开源仓代码根目录，执行如下命令：
 
    ```bash
    bash build.sh --pkg

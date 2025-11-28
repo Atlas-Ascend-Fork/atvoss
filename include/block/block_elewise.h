@@ -20,14 +20,14 @@
 #include "utils/layout/layout.h"
 #include "utils/layout/shape.h"
 #include "block_schedule.h"
-namespace ATVOSS::Block {
+namespace Atvoss::EleWise {
 struct UbAssign {
     uint32_t ubInCnt = 1;               // The expression requires the number of space to be input.
     uint32_t ubOutCnt = 1;              // The expression requires the number of space to be output.
     uint32_t ubTmpCnt = 0;              // The expression requires the number of temporary space.
     uint32_t eleNumSingleTensor = 1024; // The number of elements in a local tensor.
 };
-struct Config {
+struct BlockConfig {
     uint32_t wholeLoop = 0;    // The number of entire tiles in the current block(excluding the tail tile).
     uint32_t tileCnt = 0;      // The number of elements processed when the current tile is the last one. Zero when the
                                // current tile is entire.
@@ -43,15 +43,15 @@ struct BlockPolicy {
     Shape tileShape{};
 };
 
-using TileShape = ATVOSS::Shape<1, 32>;
-static constexpr ATVOSS::Block::BlockPolicy<TileShape> policyDefault{190 * 1024, TileShape{}};
+using TileShape = Atvoss::Shape<1, 32>;
+static constexpr Atvoss::EleWise::BlockPolicy<TileShape> blockPolicyDefault{190 * 1024, TileShape{}};
 
 /*!
  * BlockBuilder: The task for a single block is broken down into multiple tiles, completing each data transfer and
  * computation.
  */
-template <typename Compute, const auto& Policy = policyDefault, typename ScheduleCfg = ATVOSS::Block::Config,
-          class Schedule = DefaultSchedule<Compute, Policy, ScheduleCfg>>
+template <typename Compute, const auto& Policy = blockPolicyDefault, typename ScheduleCfg = BlockConfig,
+          class Schedule = Block::DefaultSchedule<Compute, Policy, ScheduleCfg>>
 class BlockBuilder {
 public:
     using ScheduleClz = Schedule;
@@ -63,6 +63,6 @@ public:
     }
 };
 
-} // namespace ATVOSS::Block
+} // namespace Atvoss::Block
 
 #endif

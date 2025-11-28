@@ -7,13 +7,13 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef ATVOSS_CAST_OPERATION_H
-#define ATVOSS_CAST_OPERATION_H
-namespace ATVOSS{
+#ifndef Atvoss_CAST_OPERATION_H
+#define Atvoss_CAST_OPERATION_H
+namespace Atvoss{
     enum class Operation {
         Unary = 1,  // Unary operation, return uint32_t
         Binary,     // Binary operation that returns an array of uint32_t
         Ternary,    // Ternary operation (reserve)
     };
 }
-#endif //ATVOSS_CAST_OPERATION_H
+#endif //Atvoss_CAST_OPERATION_H

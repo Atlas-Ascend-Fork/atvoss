@@ -8,9 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_INCLUDE_UTILS_SHAPE_H_
-#define ATVOSS_INCLUDE_UTILS_SHAPE_H_
-namespace ATVOSS {
+#ifndef Atvoss_INCLUDE_UTILS_SHAPE_H_
+#define Atvoss_INCLUDE_UTILS_SHAPE_H_
+namespace Atvoss {
 
 template <int... a>
 class Shape {
@@ -23,6 +23,6 @@ public:
     using size = Int<sizeof...(a)>;
 };
 
-} // namespace ATVOSS
+} // namespace Atvoss
 
-#endif // ATVOSS_INCLUDE_UTILS_SHAPE_H_
+#endif // Atvoss_INCLUDE_UTILS_SHAPE_H_

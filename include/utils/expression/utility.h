@@ -170,7 +170,7 @@ struct Get<TypeList<Head, Tail...>, 0> {
 
 template <std::size_t N>
 struct Get<TypeList<>, N> {
-    static_assert(N < 0, "[ERROR]: [ATVOSS][Expression] Index out of bounds in Get");
+    static_assert(N < 0, "[ERROR]: [Atvoss][Expression] Index out of bounds in Get");
 };
 
 template <typename List, std::size_t N>
@@ -199,8 +199,8 @@ using Unique_t = typename Unique<List>::Type;
 template <template <typename> class Pred, typename List>
 struct FindUnique {
     using ResultList = Filter_t<Pred, List>;
-    static_assert(Size_v<ResultList> != 0, "[ERROR]: [ATVOSS][Expression] Cannot find the specified element");
-    static_assert(Size_v<ResultList> == 1, "[ERROR]: [ATVOSS][Expression] A unique result is expected");
+    static_assert(Size_v<ResultList> != 0, "[ERROR]: [Atvoss][Expression] Cannot find the specified element");
+    static_assert(Size_v<ResultList> == 1, "[ERROR]: [Atvoss][Expression] A unique result is expected");
     using Type = First_t<ResultList>;
 };
 

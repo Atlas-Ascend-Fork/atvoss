@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_DEVICE_ADAPTER_H
-#define ATVOSS_DEVICE_ADAPTER_H
+#ifndef Atvoss_DEVICE_ADAPTER_H
+#define Atvoss_DEVICE_ADAPTER_H
 #include <functional>
 #include "acl/acl.h"
 #include "device_tensor.h"
@@ -89,7 +89,7 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_AD
     op.Run(cfg, x, y, z, a, b, c);
 }
 
-namespace ATVOSS::Device {
+namespace Atvoss {
 
 template<class KernelOp, typename OpParam, typename ArgTup>
 void LaunchKernelWithDataTuple(uint32_t blockNum, aclrtStream& stream, OpParam& cfg, ArgTup& argTuple)
@@ -161,11 +161,11 @@ public:
     template <typename Args>
     int64_t Run(const Args& arguments)
     {
-        auto expr = ExprMaker{}.template Compute<DeviceTensor>();
+        auto expr = ExprMaker{}.template Compute<Device::DeviceTensor>();
         using Expr = typename decltype(expr)::Type;
-        using Params = ATVOSS::ExprTmpl::Params_t<Expr>;
-        using InParams = ATVOSS::ExprTmpl::InParams_t<Expr>;
-        using OutParams = ATVOSS::ExprTmpl::OutParams_t<Expr>;
+        using Params = Atvoss::ExprTmpl::Params_t<Expr>;
+        using InParams = Atvoss::ExprTmpl::InParams_t<Expr>;
+        using OutParams = Atvoss::ExprTmpl::OutParams_t<Expr>;
 
         // 1. Init Resource
         InitializeACL(context_, stream_, deviceId_);
@@ -174,7 +174,7 @@ public:
         if constexpr (std::tuple_size_v<InputTuple> > 0) {
             shapeInfo_ = std::get<0>(std::get<0>(arguments)).shape_vector();
         } else {
-            printf("[ERROR]: [ATVOSS][Device] No input tensor, shape info obtaining failed!\n");
+            printf("[ERROR]: [Atvoss][Device] No input tensor, shape info obtaining failed!\n");
             return -1;
         }
         auto argTuple = std::tuple_cat(std::get<0>(arguments), std::get<1>(arguments));
@@ -186,12 +186,12 @@ public:
         // 3. calc dynamic param （tiling / worksapce）
         OpParam opParam;
         if (!CalcParam(opParam)) {
-            printf("[ERROR]: [ATVOSS][Device] CalcParam failed!\n");
+            printf("[ERROR]: [Atvoss][Device] CalcParam failed!\n");
             return -1;
         }
         // 4. kernel launch
         auto convertArgs = ConvertArgs<Params>(params, argTuple);
-#if ATVOSS_DEBUG_MODE == 2
+#if Atvoss_DEBUG_MODE == 2
         for(auto i = 0; i < 20 ; i++) {
              LaunchKernelWithDataTuple<KernelOp>(opParam.kernelParam.blockNum, stream_, opParam, convertArgs);
         }
@@ -210,11 +210,11 @@ private:
     bool CalcParam(OpParam &opParam)
     {
         if (!KernelOp::ScheduleClz::MakeKernelParam(shapeInfo_, opParam.kernelParam)) {
-            printf("[ERROR]: [ATVOSS][Device] MakeKernelParam failed!\n");
+            printf("[ERROR]: [Atvoss][Device] MakeKernelParam failed!\n");
             return false;
         }
         if (!BlockOp::ScheduleClz::MakeBlockParam(opParam.blockParam)){
-            printf("[ERROR]: [ATVOSS][Device] MakeBlockParam failed!\n");
+            printf("[ERROR]: [Atvoss][Device] MakeBlockParam failed!\n");
             return false;
         }
         return true;
@@ -224,7 +224,7 @@ private:
     auto GetInParams(ParamTup& params)
     {
         constexpr auto size = Util::TMP::Size_v<Params>;
-        static_assert(size == std::tuple_size_v<ParamTup>, "[ERROR]: [ATVOSS][Device] Size must match the number of element num in ParamTup!\n");
+        static_assert(size == std::tuple_size_v<ParamTup>, "[ERROR]: [Atvoss][Device] Size must match the number of element num in ParamTup!\n");
         return GetInParamsImpl<Params>(
             params, std::make_index_sequence<size>{});
     }
@@ -233,7 +233,7 @@ private:
     auto GetOutParams(ParamTup& params)
     {
         constexpr auto size = Util::TMP::Size_v<Params>;
-        static_assert(size == std::tuple_size_v<ParamTup>, "[ERROR]: [ATVOSS][Device] Size must match the number of element num in ParamTup!\n");
+        static_assert(size == std::tuple_size_v<ParamTup>, "[ERROR]: [Atvoss][Device] Size must match the number of element num in ParamTup!\n");
         return GetOutParamsImpl<Params>(
             params, std::make_index_sequence<size>{});
     }
@@ -242,7 +242,7 @@ private:
     void CopyIn(InParamTup& inParams, ArgTup& args)
     {
         constexpr auto size = Util::TMP::Size_v<InParams>;
-        static_assert(size == std::tuple_size_v<InParamTup>, "[ERROR]: [ATVOSS][Device] Size must match the number of element num in InParamTup!\n");
+        static_assert(size == std::tuple_size_v<InParamTup>, "[ERROR]: [Atvoss][Device] Size must match the number of element num in InParamTup!\n");
         CopyInImpl<InParams>(inParams, args,
                                     std::make_index_sequence<size>{});
     }
@@ -251,7 +251,7 @@ private:
     void CopyOut(OutParamTup& outParams, ArgTup& args)
     {
         constexpr auto size = Util::TMP::Size_v<OutParams>;
-        static_assert(size == std::tuple_size_v<OutParamTup>, "[ERROR]: [ATVOSS][Device] Size must match the number of element num in OutParamTup!\n");
+        static_assert(size == std::tuple_size_v<OutParamTup>, "[ERROR]: [Atvoss][Device] Size must match the number of element num in OutParamTup!\n");
         CopyOutImpl<OutParams>(outParams, args,
                                     std::make_index_sequence<size>{});
     }
@@ -281,7 +281,7 @@ private:
     constexpr auto ConvertOneArg(ParamTup& params, ArgTup& args)
     {
         constexpr auto pos =
-            Util::TMP::Find_v<ATVOSS::ExprTmpl::CheckVarNum<Index + 1>::template Checker, Params>;
+            Util::TMP::Find_v<Atvoss::ExprTmpl::CheckVarNum<Index + 1>::template Checker, Params>;
         if constexpr (pos < Util::TMP::Size_v<Params>) {
             return std::get<pos>(params);
         } else {
@@ -304,7 +304,7 @@ private:
             std::make_index_sequence<std::tuple_size_v<ArgTup>>{});
     }
 
-    template <typename Params, std::size_t Index, ATVOSS::ParamUsage... usages,
+    template <typename Params, std::size_t Index, Atvoss::ParamUsage... usages,
           typename ParamTup>
     constexpr auto GetOneParam(ParamTup& params)
     {
@@ -320,14 +320,14 @@ private:
     constexpr auto GetInParamsImpl(ParamTup& params, std::index_sequence<Ints...>)
     {
         return std::tuple_cat(
-            GetOneParam<Params, Ints, ATVOSS::ParamUsage::in, ATVOSS::ParamUsage::in_out>(params)...);
+            GetOneParam<Params, Ints, Atvoss::ParamUsage::in, Atvoss::ParamUsage::in_out>(params)...);
     }
 
     template <typename Params, typename ParamTup, std::size_t... Ints>
     constexpr auto GetOutParamsImpl(ParamTup& params, std::index_sequence<Ints...>)
     {
         return std::tuple_cat(
-            GetOneParam<Params, Ints, ATVOSS::ParamUsage::out, ATVOSS::ParamUsage::in_out>(params)...);
+            GetOneParam<Params, Ints, Atvoss::ParamUsage::out, Atvoss::ParamUsage::in_out>(params)...);
     }
 
     template <typename InParams, std::size_t Index, typename T, typename ArgTup>
@@ -367,5 +367,5 @@ private:
     std::vector<uint32_t> shapeInfo_;
 };
 
-} // namespace ATVOSS::Device
+} // namespace Atvoss::Device
 #endif

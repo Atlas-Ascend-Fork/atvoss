@@ -8,10 +8,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_TUPLE_UTIL_H
-#define ATVOSS_TUPLE_UTIL_H
+#ifndef Atvoss_TUPLE_UTIL_H
+#define Atvoss_TUPLE_UTIL_H
 
-namespace ATVOSS {
+namespace Atvoss {
 template<class T>
 struct ArgSize { constexpr static int arg = 0;};
 

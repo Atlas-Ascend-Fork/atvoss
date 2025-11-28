@@ -29,7 +29,7 @@ eg1：
 #ifndef _LOOP_BUFFER_POOL_H_
 #define _LOOP_BUFFER_POOL_H_
 
-namespace ATVOSS {
+namespace Atvoss {
 
 struct BufPoolCustom {
     uint64_t startAddr;
@@ -40,8 +40,8 @@ struct BufPoolCustom {
 template<AscendC::TPosition src, AscendC::TPosition dst, int tileNum, int tileSize>
 class LoopBufferEx {
 private:
-    static_assert(tileSize % 1024 == 0, "[ERROR]: [ATVOSS][LoopBuffer] Tile must be a multiple of 1024\n");
-    static_assert(tileNum >= 0 && tileNum <= 8, "[ERROR]: [ATVOSS][LoopBuffer] TileNum must be [0, 8]\n");
+    static_assert(tileSize % 1024 == 0, "[ERROR]: [Atvoss][LoopBuffer] Tile must be a multiple of 1024\n");
+    static_assert(tileNum >= 0 && tileNum <= 8, "[ERROR]: [Atvoss][LoopBuffer] TileNum must be [0, 8]\n");
 
     static __aicore__ constexpr pipe_t ToPipe(AscendC::TPosition p){
         if( p == AscendC::TPosition::VECIN) {
@@ -96,7 +96,7 @@ public:
         if constexpr (tileNum == 0) {
             return;
         }
-        ASCENDC_ASSERT((baseAddr % 32 == 0),  { KERNEL_LOG(KERNEL_ERROR, "[ERROR]: [ATVOSS][LoopBuffer] InitBuffer bufferSize must be free state."); });
+        ASCENDC_ASSERT((baseAddr % 32 == 0),  { KERNEL_LOG(KERNEL_ERROR, "[ERROR]: [Atvoss][LoopBuffer] InitBuffer bufferSize must be free state."); });
         bufPool_.startAddr = baseAddr;
         bufPool_.maxAddr = baseAddr + POOL_LEN;
         bufPool_.maxLen = POOL_LEN;
@@ -131,7 +131,7 @@ public:
 		}
 
 #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
-        ASCENDC_ASSERT(( bufState[header].state == 0),  { KERNEL_LOG(KERNEL_ERROR, "[ERROR]: [ATVOSS][LoopBuffer] buffer must be free state."); });
+        ASCENDC_ASSERT(( bufState[header].state == 0),  { KERNEL_LOG(KERNEL_ERROR, "[ERROR]: [Atvoss][LoopBuffer] buffer must be free state."); });
         bufState[header].state = 1;
         addr.absAddr = nullptr;
 #endif
@@ -159,7 +159,7 @@ public:
 
 #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
         ASCENDC_ASSERT(( bufPos >= 0 && bufPos < tileNum),  { KERNEL_LOG(KERNEL_ERROR, ""); });
-        ASCENDC_ASSERT(( bufState[bufPos].state == 1),  { KERNEL_LOG(KERNEL_ERROR, "[ERROR]: [ATVOSS][LoopBuffer] buffer must be alloc state."); });
+        ASCENDC_ASSERT(( bufState[bufPos].state == 1),  { KERNEL_LOG(KERNEL_ERROR, "[ERROR]: [Atvoss][LoopBuffer] buffer must be alloc state."); });
         bufState[bufPos].state = 0;
 #endif
         if constexpr( sizeof...(args) > 0) {
@@ -203,6 +203,6 @@ template<int tileNum, int tileSize>
 class LoopBuffer<AscendC::TPosition::VECCALC, tileNum, tileSize>
     : public LoopBufferEx<AscendC::TPosition::VECCALC, AscendC::TPosition::VECCALC, tileNum, tileSize> {
 };
-} //namespace ATVOSS
+} //namespace Atvoss
 
 #endif //_LOOP_BUFFER_POOL_H_
