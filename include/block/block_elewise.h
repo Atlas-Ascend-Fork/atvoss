@@ -55,6 +55,7 @@ template <typename Compute, const auto& Policy = policyDefault, typename Schedul
 class BlockBuilder {
 public:
     using ScheduleClz = Schedule;
+    using BlockTileShape = typename ScheduleClz::TileShape;
     template <typename ArgTup>
     __aicore__ inline void Run(ScheduleCfg& cfg, ArgTup& argTuple)
     {

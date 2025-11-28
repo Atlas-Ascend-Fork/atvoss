@@ -27,7 +27,7 @@ public:
     static constexpr auto EXPRESSION = ExprMaker{}.template Compute<AscendC::GlobalTensor>();
     using Expr = typename decltype(EXPRESSION)::Type;
     using Params = ATVOSS::ExprTmpl::Params_t<Expr>;
-    using TileShape = typename BlockTemplate::ScheduleClz::TileShape;
+     using TileShape = typename BlockTemplate::BlockTileShape;
     static constexpr uint32_t TILE_SHAPE_SIZE = TileShape::size::value;
     static constexpr uint32_t BASIC_BLOCK = BlockOp::ScheduleClz::BASIC_BLOCK;
     /*!

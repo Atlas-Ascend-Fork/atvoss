@@ -560,24 +560,31 @@ Block层模板负责单个核的任务分解到多个Tile的数据搬运、Tile�
 
 ### 3.3.1 BlockBuilder模板
 ```cpp
-template <typename ExprMaker, const auto& Policy=policyDefault, class OpTraits = void, typename Arguments = ATVOSS::Block::Config,
-    class Schedule = DefaultSchedule<ExprMaker, Policy, OpTraits, Arguments>>
-class BlockBuilder{
-    ... // 类实现
-}
+template <typename Compute, const auto& Policy = policyDefault, typename ScheduleCfg = ATVOSS::Block::Config, class Schedule = DefaultSchedule<Compute, Policy, ScheduleCfg>>
+class BlockBuilder {
+public:
+    // 调度策略模板类
+    using ScheduleClz = Schedule;
+    // Block层执行函数，调用对应调度策略的执行函数
+    template <typename ArgTup>
+    __aicore__ inline void Run(ScheduleCfg& cfg, ArgTup& argTuple)
+    {
+        Schedule schedule;
+        schedule.Run(cfg, argTuple);
+    }
+};
 ```
-模板参数说明：
+
+#### 3.3.1.1 BlockBuilder模板的范式表达
+`BlockBuilder`模板对外提供三个部分内容：
+- 模板参数  
 
 | 参数名                             | 描述                |
 |---------------------------------|-------------------|
-| [ExprMaker](#31-实现自定义计算表达式)     | 自定义计算表达式          |
-| [Policy](#33121-Policy)         | Block层UB相关配置项     |
-| [Arguments](#33122-Arguments)   | Block层数据元素切分结果配置项 |
-| [Schedule](#33123-Schedule（预留）) | Block层切分算法        |
-
-#### 3.3.1.1 BlockBuilder模板的范式表达
-`class BlockBuilder`模板对外提供三个部分内容：
-
+| [Compute](#31-实现自定义计算表达式)     | 自定义计算表达式          |
+| [Policy](#33121-policy)         | Block层UB相关配置项     |
+| [ScheduleCfg](#33122-schedulecfg)   | Block层数据元素切分结果配置项 |
+| [Schedule](#33123-schedule) | Block层切分算法        |
 - 默认构造函数
 ```cpp
 // 默认构造函数：根据表达式最大存活节点中输入、输出元素个数进行UB内存分配的管理，主要实现在utils/buf_pool/loopbuf.h中
@@ -594,9 +601,10 @@ __aicore__ inline void Run(Arguments &cfg, ArgTup &argTuple);
 #### 3.3.1.2.1 Policy
 `Policy`：配置的是针对UB的使用，以及N对齐的数据处理策略。
 ```cpp
-struct PolicyEleWise {
+template <typename Shape>
+struct BlockPolicy {
     uint32_t ubSizeMax = 190 * 1024;  // 最大使用的UB空间大小，默认190K
-    Shape tileShape{};               // 一维: 不需要额外对齐， 二维： 按Shape的第二个配置值对齐
+    Shape tileShape{};                // 一维: 不需要额外对齐，二维：按Shape的第二个配置值对齐
 };
 ```
 #### 3.3.1.2.2 ScheduleCfg
@@ -620,57 +628,21 @@ struct UbAssign {
 };
 ```
 #### 3.3.1.2.3 Schedule
-`Schedule`：多Tile切分算法类实际计算。
-- 对外提供的静态参数信息。
-```cpp
-// 算子数学表达式结构体
-using ExpressMaker = ExprMaker;
-// 算子数学表达式中元素数据类型，类型不同时获取较大的
-using MaxSizeType = typename ExpressMaker::maxSizeType;
-// device、kernel层感知Block层的配置参数 
-using ParamStruct = Arguments;
-
-// 计算表达式类型
-using Expr = typename decltype(FakeEXPRESSION)::Type;
-// 声明参数类型
-using Params = ATVOSS::ExprTmpl::Params_t<Expr>; // 萃取表达式所有参数类型列表
-using InParams = ATVOSS::ExprTmpl::InParams_t<Expr>; // 萃取表达式输入参数类型列表
-using OutParams = ATVOSS::ExprTmpl::OutParams_t<Expr>; // 萃取表达式输出参数类型列表
-using LocalVars = ATVOSS::ExprTmpl::LocalVars_t<Expr>; // 萃取表达式临时参数类型列表
-
-// 计算输入，输出，临时参数的数量
-static constexpr uint32_t IN_PARAMS_COUNT =  Util::TMP::Size_v<InParams> + 1;
-static constexpr uint32_t OUT_PARAMS_COUNT = Util::TMP::Size_v<OutParams> + 1;
-static constexpr uint32_t LOCAL_VAR_COUNT =  Util::TMP::Size_v<LocalVars>;
-
-// 计算需要的存活节点数量
-static constexpr uint32_t MAX_BUFFER_COUNT = IN_PARAMS_COUNT + OUT_PARAMS_COUNT + LOCAL_VAR_COUNT;
-// 单个节点占用UB大小
-static constexpr uint32_t UB_TILE_SIZE = Policy.ubSizeMax / MAX_BUFFER_COUNT / 1024 * 1024;
-// 内存管理输入变量在UB空间首地址
-static constexpr uint64_t UB_ADDR_IN = 0;
-// 内存管理输出变量在UB空间首地址
-static constexpr uint64_t UB_ADDR_OUT = UB_TILE_SIZE * IN_PARAMS_COUNT;
-// 内存管理临时变量在UB空间首地址
-static constexpr uint64_t UB_ADDR_CALC = UB_ADDR_OUT + UB_TILE_SIZE * OUT_PARAMS_COUNT;
-
-// 用户配置的layout计算作为单次Tile块元素大小
-static constexpr uint32_t BASIC_BLOCK = ATVOSS::Tile::GetTotal<0, ExpressMaker>();
-```
-- 编译期根据[Policy](#33121-Policy)参数配置，计算单个存活节点占用`UB`空间。
+`Schedule`是计算任务的调度核心，它调用对应的切分策略来执行计算。在扩展性方面，用户可以通过继承`BaseBlockSchedule`基类可实现自定义策略；系统默认的执行策略为`DefaultSchedule`。
+- 编译期根据[Policy](#33121-policy)参数配置，计算单个存活节点占用`UB`空间。
 ```cpp
 // 编译期获取单个存活节点占用UB空间大小
 static constexpr uint32_t GetEleCntInTensor();
 ```
-- 编译期计算Block层配置，作为默认[ScheduleCfg](#33122-ScheduleCfg)参数
+- 编译期计算Block层配置，作为默认[ScheduleCfg](#33122-schedulecfg)参数
 ```cpp
 // Schedule层默认配置计算
 static constexpr bool MakeBlockParam(Arguments &blockParam);
 ```
 
-- 对`Block`运行接口`Run`
+- 运行接口`Run`
 ```cpp
-// Block层执行函数。
+// Block层调用的实际执行函数。
 // cfg切分结果配置，通过单Block最大处理元素个数（totalElemCnt）计算Tile整块与尾块个数
 // argTuple为GM侧的输入、输出数据空间
 template<typename ArgTup>
@@ -678,12 +650,12 @@ __aicore__ inline void Run(Arguments &cfg, ArgTup &argTuple);
 ```
 
 #### 3.3.1.3 模板对外接口说明
+计算逻辑的实际执行是通过`BaseBlockSchedule`类中的Run方法实现。接下来对用户可感知的`BaseBlockSchedule`类中的核心函数进行介绍。
 #### 3.3.1.3.1 Run接口
-`Schedule`提供`Run()`接口按批次完成输入数据从GM->UB，计算，输出结果UB->GM过程，参数和函数说明如下：
+`BaseBlockSchedule`提供`Run()`接口按批次完成输入数据从GM->UB，计算，输出结果UB->GM过程，参数和函数说明如下：
 - 参数说明：接收切分配置`cfg`，以及`Kernel`层传入的输入、输出GM的地址`argTuple`。
 - 函数功能说明：通过Block需要处理的总元素个数（`cfg.totalElemCnt`）计算Tile整块数量与尾块元素个数，申请输入、输出、临时变量映射的`AscendC::LocalTensor`的UB空间，循环处理`Tile`整块元素，一次性处理`Tile`尾块元素。
 ```cpp
-public:
 template <typename ArgTup>
 __aicore__ inline void Run(Arguments& cfg, ArgTup& argTuple) {
     // 动态计算单个block需要处理的tile整块数量
@@ -697,7 +669,7 @@ __aicore__ inline void Run(Arguments& cfg, ArgTup& argTuple) {
 }
 ```
 #### 3.3.1.3.2 MakeBlockParam接口
-`Schedule`提供`MakeBlockParam()`接口，参数和函数说明如下：
+`BaseBlockSchedule`提供`MakeBlockParam()`接口，参数和函数说明如下：
 - 参数说明：用户输入`Schedule`层承载切分信息的`blockParam`。
 - 函数功能说明：`Schedule`层计算切分参数后并填充`blockParam`。
 ```cpp
@@ -712,126 +684,86 @@ static constexpr bool MakeBlockParam(Arguments& blockParam)
 ```
 ## 3.4 配置Kernel层模板
 Kernel层承担来自Device层的分配的计算任务，需对任务进行分解并调度至相应的Block执行。  
-当前实现了KernelBuilder模板，其具备对逐元素操作进行高效多核任务分配与调度的能力。
+当前实现了`KernelBuilder`模板，其具备对逐元素操作进行高效多核任务分配与调度的能力。
 ### 3.4.1 KernelBuilder模板
 
 ```cpp
-template <typename BlockOp, const auto &Policy = policyDefault, class OpTraits = void, typename Arguments = ATVOSS::Kernel::Config,
-    class Schedule = DefaultSchedule<BlockOp, Policy, OpTraits, Arguments>>
+template <typename BlockOp, const auto &Policy = policyDefault, typename ScheduleCfg = ATVOSS::Kernel::Config, class Schedule = DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
 class KernelBuilder {
 public:
-    // 从BlockOp中萃取出来的表达式模板
-    using ExprMaker = typename BlockOp::ExpressMaker;
-    // 存储切分参数
-    using ParamStruct = Arguments;
-    // 用户定义的计算表达式的数据类型
-    using MaxSizeType = typename ExprMaker::maxSizeType;
-    static constexpr auto FakeEXPRESSION = ExprMaker{}.template Get<AscendC::GlobalTensor>();
-    // Kernel层计算表达式类型
-    using Expr = typename decltype(FakeEXPRESSION)::Type;
-    // 萃取表达式所有参数类型列表
-    using Params = ATVOSS::ExprTmpl::Params_t<Expr>;
-    // 从Block层萃取的Tile块大小
-    static constexpr uint32_t BASIC_BLOCK = BlockOp::BASIC_BLOCK;
-    ...
-    // 构造函数
-    __aicore__ inline KernelBuilder(){
-        ...
-    };
-    //计算切分参数
-    static bool MakeKernelParam(std::vector<uint32_t> &shapeInfo, Arguments &kernelParam){
-        ...
-    }
+    // 调度策略模板类
+    using ScheduleClz = Schedule;
+    //Kernel层执行函数 调用对应调度策略的执行函数
     template <typename OpParam, typename... Args>
     __aicore__ inline void Run(OpParam& cfg, Args... args)
     {
-        // 根据切分策略循环调用Block完成计算
-        ...
+       Schedule schedule;
+       schedule.Run(cfg, args...);
     }
-}
+};
 ```
 #### 3.4.1.1 KernelBuilder模板的范式表达
 支持用户自定义修改模板参数实现，实现局部拓展，也支持用户按照规则自定义模板类，实现模板拓展。
 `KernelBuilder`类定义如下：
 ```cpp
-template <typename BlockOp, const auto &Policy = policyDefault, class OpTraits = void, typename Arguments = ATVOSS::Kernel::Config, class Schedule = DefaultSchedule<BlockOp, Policy, OpTraits, Arguments>>
+template <typename BlockOp, const auto &Policy = policyDefault, typename ScheduleCfg = ATVOSS::Kernel::Config, class Schedule = DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
 class KernelBuilder {
+public:
     ...
-}
+};
 ```
-KernelBuilder模板对外提供五部分内容：
+KernelBuilder模板对外提供四部分内容：
 - 对外提供的模板参数信息  
 
 | 参数名        | 描述                          |  
 |------------|-----------------------------|
 | [BlockOp](#33-配置block层模板)   | Block层模板类                 | 
 | [Policy](#34122-policy)   | 采用的切分策略                 |
-| [OpTraits](#34123-optraits预留)   | 当前层输入输出的类型信息                 |
-| [Arguments](#34124-arguments)   | 根据切分策略计算的切分信息           |
-| [Schedule](#34125-schedule预留)   | 采用不同的切分策略进行调度运行  | 
+| [ScheduleCfg](#34123-schedulecfg)   | 根据切分策略计算的切分信息           |
+| [Schedule](#34124-schedule)   | 采用不同的切分策略进行调度计算  | 
 - 对外提供的静态参数信息 
 ```cpp 
-using ExprMaker = typename BlockOp::ExpressMaker;               // 从BlockOp中萃取出来的表达式模板
-using MaxSizeType = typename ExprMaker::maxSizeType;            // 用户定义的计算表达式的数据类型
-using Expr = typename decltype(FakeEXPRESSION)::Type;               // Kernel层计算表达式类型
-using Params = ATVOSS::ExprTmpl::Params_t<Expr>;                 // 萃取表达式所有参数类型列表
-static constexpr uint32_t BASIC_BLOCK = BlockOp::BASIC_BLOCK;   // 从Block层萃取的Tile块大小
+using ScheduleClz = Schedule; // 提供调度策略供给上层调用
 ```
 - 默认模板构造函数
 ```cpp
 KernelBuilder()
 ```
-- 计算切分参数函数
+- 对外运行接口`Run`
 ```cpp
-static bool MakeKernelParam(std::vector<uint32_t> &shapeInfo, Arguments &kernelParam)
+__aicore__ inline void Run(ScheduleCfg& cfg, ArgTup& argTuple);
 ```
-使用时需要传入Tensor的Shape信息`shapeInfo`，来计算总的元素个数，`kernelParam`为存储切分信息的结构体。
-- 对外运行接口，接口固定命名`Run()`，接口接受`OpParam`参数，以及不定长参数`template <typename... Args>`
-```cpp
-template <typename OpParam, typename... Args>
-    __aicore__ inline void Run(OpParam& cfg, Args... args);
-```
-在使用时，限制`Run`的入参`cfg`必须是`Arguments`类型，可变参数`args`必须是GM的地址指针，并且入参需要严格和`ExprMaker`计算表达中描述的算子输入输出信息保持一致（参数个数、顺序）。
-
 #### 3.4.1.2 相关参数说明
 #### 3.4.1.2.1 BlockOp
 `BlockOp`：Kernel层需要封装的Block层的模板类，并且Block模板类必须指定Block层使用的计算表达式模板。
 #### 3.4.1.2.2 Policy
 `Policy`：配置的是用户采用的静态切分策略，比如均匀切分和整尾块切分，默认是均匀切分策略。  
-当前`KernelBuilder`提供默认的配置策略`PolicyEleWise`，结构体定义如下：
+当前`KernelBuilder`提供默认的配置策略`KernelPolicy`，结构体定义如下：
 ```cpp
-enum class PolicySegment
-{
+enum class PolicySegment {
     Auto = 0U,      // 自动切分
     UniformSegment, // 均匀切分
     FullAddTail     // 整块+尾块
 };
 
-struct PolicyEleWise { 
-    uint32_t blockDimMax;       // Maximum blockDim used
-    uint32_t tailBlock;         //  =0 只处理整块，=1 包含整尾块，=2 只处理尾块(预留) 
-    uint32_t shapeNAssign = 0;  // 是否需要N对齐，0代表不需要做特殊的N对齐操作，注意：N必须32对齐
-    uint32_t minTileNumPerCore; // 单核最小的需要分配的Tile块的个数
-    PolicySegment segmentPolicy;// 多核切分策略
+struct KernelPolicy {
+    uint32_t blockDimMax;           // 使用的最大核数
+    PolicySegment segmentPolicy;    // 多核切分策略
 };
 ```
 参数说明：  
 + `blockDimMax`： 最大可用的核数。  
-+ `tailBlock`：整尾块的标识（预留）。
-+ `shapeNAssign` ：是否需要特殊的N对齐（用于Reduce操作等），0代表不需要做特殊的N对齐操作，默认32对齐，注意：用户自定义的N必须是32的倍数。
-+ `minTileNumPerCore`：单核最小的需要分配的Tile块的个数，用户可使用该参数控制单核处理的元素数量。
 + `segmentPolicy`：多核切分策略，通过枚举值代表不同的切分策略即`PolicySegment`。  
-#### 3.4.1.2.3 OpTraits（预留）
-`OpTraits`：当前层的输入输出的类型信息。
-#### 3.4.1.2.4 Arguments
- `Arguments`：用户根据不同的切分策略计算出来的切分参数信息。
-#### 3.4.1.2.5 Schedule（预留）
-`Schedule`调用对应切分策略完成计算。切分计算整体流程如下：
-1. 根据`Arguments`获取到Kernel层切分参数信息`Config`。
+#### 3.4.1.2.3 ScheduleCfg
+ `ScheduleCfg`：用户根据不同的切分策略计算出来的切分参数信息。
+#### 3.4.1.2.4 Schedule
+`Schedule`是计算任务的调度核心，它调用对应的切分策略来执行计算。在扩展性方面，用户可以通过继承`BaseKernelSchedule`基类可实现自定义策略；系统默认的执行策略为 `DefaultSchedule`。  
+切分计算整体流程如下：
+1. 根据`ScheduleCfg`获取到Kernel层切分参数信息`Config`。
 2. `PrepareParams`函数根据当前核的`BlockId`得到当前`Kernel`需要处理的所有`GlobalTensor`的数据。
-3. 计算当前核实际处理的数据量`actualNum`。
+3. 根据切分策略计算当前核实际处理的数据量`actualNum`。
 4. 调用Block层完成计算。
-#### 3.4.1.2.6 动态Param信息
+#### 3.4.1.2.5 动态Param信息
 ```cpp
 struct Config {                   // Kernel 层的切分信息
     uint32_t blockNum = 1;        // 启动的核数
@@ -848,83 +780,47 @@ Kernel层提供了结构体`Config`，用于记录切分信息，内置参数说
 + `tailNum`：最后一个核要处理的尾部元素数量。
 + `unitNum`：一个单元块元素个数。
 #### 3.4.1.3 模板对外接口说明
+计算逻辑的实际执行是通过`BaseKernelSchedule`类中的`Run`方法实现。接下来对用户可感知的`BaseKernelSchedule`类中的核心函数进行介绍。
 ##### 3.4.1.3.1 Run接口
-模板提供`Run()`接口，参数和函数说明如下：
+`BaseKernelSchedule`提供`Run()`接口，参数和函数说明如下：
 1. 参数说明：接收切分计算参数`cfg`，以及Device层传入的输入输出的GM的地址指针`args`。
 2. 函数功能说明：接收Device层传入的`GM`指针，根据当前`BlockId`计算需要处理的GM首地址，调用Block层完成计算。
 ```cpp
-template <typename BlockOp, const auto &Policy = policyDefault, class OpTraits = void, typename Arguments = ATVOSS::Kernel::Config,class Schedule = DefaultSchedule<BlockOp, Policy, OpTraits, Arguments>>
-class KernelBuilder {
-    template <typename OpParam, typename... Args>
-    __aicore__ inline void Run(OpParam& cfg, Args... args)
-    {
-        ...
-        // 计算当前核实际需要处理的元素总数量
-        uint32_t actualNum = CalCurCoreEleCnt(cfg.kernelParam);
-        ...
-        // 计算当前核需要处理的GM的首地址
-        auto params = PrepareParams<Params>(cfg.kernelParam, argTuple);
-        ...
-        // 调用Block层完成计算
-        blockOp.Run(configBlock, convertArgs);
-    }
-};
+template <typename OpParam, typename... Args>
+__aicore__ inline void Run(OpParam& cfg, Args... args)
+{
+    ...
+    // 计算当前核实际需要处理的元素总数量
+    uint32_t actualNum = CalCurCoreEleCnt(cfg.kernelParam);
+    ...
+    // 计算当前核需要处理的GM的首地址
+    auto params = PrepareParams<Params>(cfg.kernelParam, argTuple);
+    ...
+    // 调用Block层完成计算
+}
+
 ```
 ##### 3.4.1.3.2 MakeKernelParam接口
-模板提供`MakeKernelParam()`接口，参数和函数说明如下：
+`BaseKernelSchedule`提供`MakeKernelParam()`接口，参数和函数说明如下：
 1. 参数说明：用户输入的向量的Shape信息`shapeInfo`，以及Kernel层承载切分信息的`kernelParam`。
 2. 函数功能说明：接收用户输入的向量的Shape信息，计算切分参数并填充`kernelParam`。
 ```cpp
-static bool MakeKernelParam(std::vector<uint32_t> &shapeInfo, Arguments &kernelParam)
+static bool MakeKernelParam(std::vector<uint32_t> &shapeInfo, ScheduleCfg &kernelParam)
 {
-        // 计算需要处理的总元素个数
-        uint32_t  totalEleNum = 1;
-        for(int i = 0;i < shapeInfo.size();i++){
-            totalEleNum = totalEleNum * shapeInfo[i];
-        }
-        
-        uint32_t actualNAssign = Policy.shapeNAssign == 0 ? 32 : Policy.shapeNAssign;
-        // 初始的分核基线
-        uint32_t basicCoreEleNum = (Policy.minTileNumPerCore * BASIC_BLOCK + actualNAssign - 1) / actualNAssign * actualNAssign; 
-        ...
-        kernelParam.unitNum = actualNAssign;
-        if (totalEleNum <= basicCoreEleNum) {
-            kernelParam.blockNum = 1;
-            kernelParam.tailNum = totalEleNum;
-            ...
-        } else {
-            // 单核可以处理的对齐单元的个数
-            uint32_t basicCoreUnitNum = basicCoreEleNum / actualNAssign; 
-            // 总共有多少个对齐单元
-            uint32_t totalUnitCnt = totalEleNum / actualNAssign;
-            // 计算启动核的数量  
-            kernelParam.blockNum = (totalUnitCnt + basicCoreUnitNum -1 ) / basicCoreUnitNum;
-            if (kernelParam.blockNum > Policy.BlockDimMax) {
-                kernelParam.blockNum = Policy.BlockDimMax;
-            }
-            // 计算每个核处理的对齐单元的个数
-            kernelParam.unitNumPerCore = totalUnitCnt / kernelParam.blockNum;
-            // 计算额外需要处理整块单元的核数
-            kernelParam.moreUnitCoreNum = totalUnitCnt % kernelParam.blockNum; 
-            // 计算剩余的总元素数量
-            kernelParam.tailNum = totalEleNum % actualNAssign; 
-        }
-        return true;
+    // 计算需要处理的总元素个数
+    ···
+    // 计算初始的分核基线
+    uint32_t basicCoreEleNum = (Policy.minTileNumPerCore * BASIC_BLOCK + actualNAssign - 1) / actualNAssign * actualNAssign; 
+    ...
+    // 计算切分信息并填充到kernelParam中
 }
 ```
 
-#### 3.4.1.4 模板对外静态信息说明
-```cpp
-using ExprMaker = typename BlockOp::ExpressMaker;             // 从BlockOp中萃取出来的表达式模板
-using MaxSizeType = typename ExprMaker::maxSizeType;          // 用户定义的计算表达式的数据类型
-using Expr = typename decltype(FakeEXPRESSION)::Type;             // Kernel层计算表达式类型
-using Params = ATVOSS::ExprTmpl::Params_t<Expr>;               // 萃取表达式所有参数类型列表
-static constexpr uint32_t BASIC_BLOCK = BlockOp::BASIC_BLOCK; // 从Block层萃取的Tile块大小
-```
-#### 3.4.1.5 KernelBuilder模板配置
+
+#### 3.4.1.4 KernelBuilder模板配置
 用户自定义的样例举例：
 ```cpp
-using KernelOp = ATVOSS::Kernel::KernelBuilder<BlockOp, kernelPolicyWidthAssign>;
+using KernelOp = ATVOSS::Kernel::KernelBuilder<BlockOp, kernelPolicy, ATVOSS::Kernel::Config>;
 using DeviceOp = ATVOSS::Device::DeviceAdapter<KernelOp>;
 ```
 约束说明：  
@@ -991,7 +887,7 @@ int64_t Run(const Args& arguments)
   - `.input(tensor1, tensor2, ...)` 设置算子的输入张量，可接受一个或多个`ATVOSS::Tensor`对象。
   - `.output(tensor1, tensor2, ...)` 设置算子的输出张量，可接受一个或多个`ATVOSS::Tensor`对象。
   - `.attr("key", value)` 设置算子的Attr属性入参，可接受key-value键值对的形式，value不限类型，可调用多次，配置多个Attr属性入参。
-- `.build()` 生成最终的 arguments 对象。
+  - `.build()` 生成最终的 arguments 对象。
   
 ArgumentsBuilder 构建输入`.input()`、输出`.output()`、Attr`.attr()`没有先后顺序要求，只需要保证构建arguments最后调用`.build()`即可。
   
@@ -1094,10 +990,10 @@ struct Evaluator<OpAssign<T, OpAdd<U, V>>> {
 在[tile_ascendc_math.h](../include/tile/tile_ascendc_math.h)（基础函数）和[tile_ascendc_transcendental.h](../include/tile/tile_ascendc_transcendental.h)（超越函数）中，
 新增对应的`Assign`函数，调用`AscendC`的接口。
 ```cpp
-template <typename T>
+template <typename OperationShape, typename T>
 __aicore__ inline void AddAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src0,
-                                 const AscendC::LocalTensor<T>& src1, uint32_t count = 0)
+                                 const AscendC::LocalTensor<T>& src1, OperationShape& operationShape)
 {
-    AscendC::Add(dst, src0, src1, count);
+    AscendC::Add(dst, src0, src1, operationShape.axis0);
 }
 ```
