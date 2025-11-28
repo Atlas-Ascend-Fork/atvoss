@@ -61,12 +61,26 @@ using layout = AscendC::Std::tuple<shape>;
 
 - 各层模板组装
 ```cpp
+
+static constexpr Atvoss::EleWise::BlockPolicy<TileShape> blockPolicy {
+    190 * 1024,
+    TileShape{}
+};
+static constexpr Atvoss::EleWise::KernelPolicy kernelPolicy {
+    48,
+    Atvoss::EleWise::KernelPolicySegment::UniformSegment
+};
 // 选择Block模板类，使用RmsNormOp Expr模板封装BlockOp层模板
-using BlockOp = ATVOSS::Block::BlockBuilder<RmsNormOp<float>, blockPolicyWidthAssign>;
+using BlockOp = Atvoss::EleWise::BlockBuilder<
+        RmsNormCompute,
+        blockPolicy,
+        Atvoss::EleWise::BlockConfig>;
 // 选择Kernel模板类，使用BlockOp层模板封装Kernel层模板
-using KernelOp = ATVOSS::Kernel::KernelBuilder<BlockOp, kernelPolicyWidthAssign>;
+using KernelOp = Atvoss::EleWise::KernelBuilder<
+        BlockOp,
+        kernelPolicy>;
 // 使用DeviceAdapter模板，使用KernelOp封装Device适配器
-using DeviceOp = ATVOSS::Device::DeviceAdapter<KernelOp>;
+using DeviceOp = Atvoss::DeviceAdapter<KernelOp>;
 ```
 更多模板使用指导，参见[开发指南](./02_developer_guide.md)
 
