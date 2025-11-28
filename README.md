@@ -8,7 +8,7 @@ ATVOSS（Ascend C Templates for Vector Operator Subroutines）是一套基于[As
 
 ## 🔍目录结构
 
-ATVOS代码目录结构如下：
+ATVOSS代码目录结构如下：
 
 ```
 ├── build.sh                            # 项目工程编译脚本

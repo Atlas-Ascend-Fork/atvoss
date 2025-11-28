@@ -555,7 +555,7 @@ Block层模板负责单个核的任务分解到多个Tile的数据搬运、Tile�
 
 ### 3.3.1 BlockBuilder模板
 ```cpp
-template <typename Compute, const auto& Policy = policyDefault, typename ScheduleCfg = ATVOSS::Block::Config, class Schedule = DefaultSchedule<Compute, Policy, ScheduleCfg>>
+template <typename Compute, const auto& Policy = policyDefault, typename ScheduleCfg = Atvoss::Block::Config, class Schedule = DefaultSchedule<Compute, Policy, ScheduleCfg>>
 class BlockBuilder {
 public:
     // 调度策略模板类
@@ -683,7 +683,7 @@ Kernel层承担来自Device层的分配的计算任务，需对任务进行分�
 ### 3.4.1 KernelBuilder模板
 
 ```cpp
-template <typename BlockOp, const auto &Policy = policyDefault, typename ScheduleCfg = ATVOSS::Kernel::Config, class Schedule = DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
+template <typename BlockOp, const auto &Policy = policyDefault, typename ScheduleCfg = Atvoss::Kernel::Config, class Schedule = DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
 class KernelBuilder {
 public:
     // 调度策略模板类
@@ -701,7 +701,7 @@ public:
 支持用户自定义修改模板参数实现，实现局部拓展，也支持用户按照规则自定义模板类，实现模板拓展。
 `KernelBuilder`类定义如下：
 ```cpp
-template <typename BlockOp, const auto &Policy = policyDefault, typename ScheduleCfg = ATVOSS::Kernel::Config, class Schedule = DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
+template <typename BlockOp, const auto &Policy = policyDefault, typename ScheduleCfg = Atvoss::Kernel::Config, class Schedule = DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
 class KernelBuilder {
 public:
     ...
@@ -815,8 +815,8 @@ static bool MakeKernelParam(std::vector<uint32_t> &shapeInfo, ScheduleCfg &kerne
 #### 3.4.1.4 KernelBuilder模板配置
 用户自定义的样例举例：
 ```cpp
-using KernelOp = ATVOSS::Kernel::KernelBuilder<BlockOp, kernelPolicy, ATVOSS::Kernel::Config>;
-using DeviceOp = ATVOSS::Device::DeviceAdapter<KernelOp>;
+using KernelOp = Atvoss::Kernel::KernelBuilder<BlockOp, kernelPolicy, Atvoss::Kernel::Config>;
+using DeviceOp = Atvoss::Device::DeviceAdapter<KernelOp>;
 ```
 约束说明：  
 必须先定义好Block模板类之后再定义Kernel层的模板类。
