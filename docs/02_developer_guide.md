@@ -1,5 +1,5 @@
-# 1. Atvoss概述
-Atvoss针对昇腾AI处理器的Vector计算的多核并行计算过程，提供了一套统一的编程模型，可简化用户开发Vector算子的复杂度，简化Tiling计算，并支持模板的自由组合及模板扩展。
+# 1. ATVOSS概述
+ATVOSS针对昇腾AI处理器的Vector计算的多核并行计算过程，提供了一套统一的编程模型，可简化用户开发Vector算子的复杂度，简化Tiling计算，并支持模板的自由组合及模板扩展。
 
 编程模型包含如下分层，由高到低分别是：
 
@@ -11,11 +11,11 @@ Atvoss针对昇腾AI处理器的Vector计算的多核并行计算过程，提供
 <br><img src="./images/architecture.png" width="50%" height="50%" style="margin: 20px 0;"><br>
 # 2. 公共基础工具
 ## 2.1 表达式模板
-Atvoss使用表达式模板进行计算流的描述，表达式模板是C++利用运算符重载、类型计算来实现延迟计算的技巧。表达式模板的基本要点是在形成使用运算符或进行函数调用时，我们只是把要进行的操作记录下来不立即进行计算。直到最后Tile层计算的时候，才会进行计算操作。详细的表达式模板实现，可从[Expression表达式模板](../include/utils/expression/expression.h)进入阅读代码。
+ATVOSS使用表达式模板进行计算流的描述，表达式模板是C++利用运算符重载、类型计算来实现延迟计算的技巧。表达式模板的基本要点是在形成使用运算符或进行函数调用时，我们只是把要进行的操作记录下来不立即进行计算。直到最后Tile层计算的时候，才会进行计算操作。详细的表达式模板实现，可从[Expression表达式模板](../include/utils/expression/expression.h)进入阅读代码。
 
-# 3. 基于Atvoss的算子开发
+# 3. 基于ATVOSS的算子开发
 ## 3.1 实现自定义计算表达式
-Atvoss模板支持Expr的计算表达，用户通过计算表达完成对自定义算子的描述。具体使用样例如下：
+ATVOSS模板支持Expr的计算表达，用户通过计算表达完成对自定义算子的描述。具体使用样例如下：
 ```cpp
 static constexpr int32_t HEIGHT = 1;
 static constexpr int32_t WIDTH = 32;
@@ -555,9 +555,9 @@ Block层模板负责单个核的任务分解到多个Tile的数据搬运、Tile�
 
 ### 3.3.1 BlockBuilder模板
 ```cpp
-template <typename ExprMaker, const auto& Policy=policyDefault, class OpTraits = void, typename Arguments = Atvoss::Block::Config,
-    class Schedule = DefaultSchedule<ExprMaker, Policy, OpTraits, Arguments>>
-class BlockBuilder{
+template <typename Compute, const auto& Policy = blockPolicyDefault, typename ScheduleCfg = BlockConfig,
+          class Schedule = Block::DefaultSchedule<Compute, Policy, ScheduleCfg>>
+class BlockBuilder {
     ... // 类实现
 }
 ```
@@ -711,8 +711,8 @@ Kernel层承担来自Device层的分配的计算任务，需对任务进行分�
 ### 3.4.1 KernelBuilder模板
 
 ```cpp
-template <typename BlockOp, const auto &Policy = policyDefault, class OpTraits = void, typename Arguments = Atvoss::Kernel::Config,
-    class Schedule = DefaultSchedule<BlockOp, Policy, OpTraits, Arguments>>
+template <typename BlockOp, const auto &Policy = kernelPolicyDefault,   typename ScheduleCfg = KernelConfig,
+    class Schedule = Kernel::DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
 class KernelBuilder {
 public:
     // 从BlockOp中萃取出来的表达式模板
@@ -1011,7 +1011,7 @@ ArgumentsBuilder 构建输入`.input()`、输出`.output()`、Attr`.attr()`没�
 ### 3.5.2 使用DeviceAdaptor
 - 使用`KernelOp`作为模板参数封装DeviceAdapter模板类
 ```cpp
-using DeviceOp = Atvoss::Device::DeviceAdapter<KernelOp>;
+using DeviceOp = Atvoss::DeviceAdapter<KernelOp>;
 ```
 
 - 调用DeviceAdapter的运行接口
