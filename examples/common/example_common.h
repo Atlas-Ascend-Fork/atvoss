@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_EXAMPLE_COMMON_H
-#define ATVOSS_EXAMPLE_COMMON_H
+#ifndef Atvoss_EXAMPLE_COMMON_H
+#define Atvoss_EXAMPLE_COMMON_H
 #include "acl/acl.h"
 
 namespace {

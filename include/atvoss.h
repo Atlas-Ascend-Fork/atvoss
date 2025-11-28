@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_H
-#define ATVOSS_H
+#ifndef Atvoss_H
+#define Atvoss_H
 #include "utils/expression/expression.h"
 #include "tile/tile_elewise.h"
 #include "block/block_elewise.h"

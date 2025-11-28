@@ -7,15 +7,15 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef ATVOSS_ARGUMENTS_H
-#define ATVOSS_ARGUMENTS_H
+#ifndef Atvoss_ARGUMENTS_H
+#define Atvoss_ARGUMENTS_H
 
 #include <tuple>
 #include <string>
 #include <type_traits>
 #include <vector>
 
-namespace ATVOSS {
+namespace Atvoss {
 
 template<typename Key, typename Value>
 struct AttrMap {
@@ -163,5 +163,5 @@ struct ArgumentsBuilder {
         };
     }
 };
-} // namespace ATVOSS
-#endif  // ATVOSS_ARGUMENTS_H
+} // namespace Atvoss
+#endif  // Atvoss_ARGUMENTS_H

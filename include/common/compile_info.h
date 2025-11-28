@@ -8,14 +8,14 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_COMPILE_INFO_H
-#define ATVOSS_COMPILE_INFO_H
+#ifndef Atvoss_COMPILE_INFO_H
+#define Atvoss_COMPILE_INFO_H
 #include "tiling/platform/platform_ascendc.h"
 #include <map>
-namespace ATVOSS {
+namespace Atvoss {
 struct OpCompileInfo {
     uint64_t vectorCoreNum = 0;
-    uint64_t ubSize = 0;    
+    uint64_t ubSize = 0;
     uint64_t cacheLineSize = 0;
     uint64_t ubBlockSize = 0;
     OpCompileInfo(uint64_t a, uint64_t b, uint64_t c, uint64_t d)
@@ -31,7 +31,7 @@ inline OpCompileInfo GetOpCompileInfo()
 {
     const auto& platformInfoMgr = platform_ascendc::PlatformAscendCManager::GetInstance();
     if (platformInfoMgr == nullptr) {
-        printf("[ERROR]: [ATVOSS][Common] Failed to retrieve platform infomation.\n");
+        printf("[ERROR]: [Atvoss][Common] Failed to retrieve platform infomation.\n");
         return {0, 0, 0, 0};
     }
     auto soc = platformInfoMgr->GetSocVersion();
@@ -52,8 +52,8 @@ inline OpCompileInfo GetOpCompileInfo()
         }
         return compileInfo;
     }
-    printf("[ERROR]: [ATVOSS][Common] Current framework does not support this current device. Please check chip version.\n");
+    printf("[ERROR]: [Atvoss][Common] Current framework does not support this current device. Please check chip version.\n");
     return {0, 0, 0, 0};
 }
-} // namespace ATVOSS
+} // namespace Atvoss
 #endif

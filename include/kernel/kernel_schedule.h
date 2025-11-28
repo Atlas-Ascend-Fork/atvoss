@@ -8,11 +8,11 @@
 * See LICENSE in the root of the software repository for the full text of the License.
 */
 
-#ifndef ATVOSS_INCLUDE_KERNEL_KERNEL_SCHEDULE_H_
-#define ATVOSS_INCLUDE_KERNEL_KERNEL_SCHEDULE_H_
+#ifndef Atvoss_INCLUDE_KERNEL_KERNEL_SCHEDULE_H_
+#define Atvoss_INCLUDE_KERNEL_KERNEL_SCHEDULE_H_
 #include "base_schedule.h"
-namespace ATVOSS::Kernel {
+namespace Atvoss::Kernel {
 template <typename BlockOp, const auto& Policy, typename Arguments>
 class DefaultSchedule :public BaseKernelSchedule<BlockOp,Policy,Arguments>{};
-}      // namespace ATVOSS::Kernel
-#endif // ATVOSS_INCLUDE_KERNEL_KERNEL_SCHEDULE_H_
+}      // namespace Atvoss::Kernel
+#endif // Atvoss_INCLUDE_KERNEL_KERNEL_SCHEDULE_H_

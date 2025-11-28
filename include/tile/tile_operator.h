@@ -8,11 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef __ATVOSS_TILE_OPERATOR_H__
-#define __ATVOSS_TILE_OPERATOR_H__
+#ifndef __Atvoss_TILE_OPERATOR_H__
+#define __Atvoss_TILE_OPERATOR_H__
 #include "tile_evaluator_common.h"
 
-namespace ATVOSS::Tile {
+namespace Atvoss::Tile {
 
 /*!
  * \brief Datacopy from src to dst
@@ -37,5 +37,5 @@ __aicore__ inline void CopyIn(AscendC::GlobalTensor<T> dst, AscendC::LocalTensor
 {
     AscendC::DataCopy(dst, src, copyCnt);
 }
-} // namespace ATVOSS::Tile
+} // namespace Atvoss::Tile
 #endif

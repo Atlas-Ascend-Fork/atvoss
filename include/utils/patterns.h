@@ -8,9 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_DEV_PATTERNS_H
-#define ATVOSS_DEV_PATTERNS_H
-namespace ATVOSS::Patterns {
+#ifndef Atvoss_DEV_PATTERNS_H
+#define Atvoss_DEV_PATTERNS_H
+namespace Atvoss::Patterns {
     enum class Pattern {
         AR,
         RA,
@@ -20,7 +20,7 @@ namespace ATVOSS::Patterns {
 
 };
 
-namespace ATVOSS {
+namespace Atvoss {
     enum class CastMode {
         CAST_NONE = 0,
         CAST_RINT,
@@ -31,4 +31,4 @@ namespace ATVOSS {
         CAST_ODD
     };
 }
-#endif //ATVOSS_DEV_PATTERNS_H
+#endif //Atvoss_DEV_PATTERNS_H

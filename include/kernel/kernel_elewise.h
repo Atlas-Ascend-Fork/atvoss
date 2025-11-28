@@ -13,9 +13,9 @@
 #include <functional>
 #include "common/compile_info.h"
 #include "kernel_schedule.h"
-namespace ATVOSS::Kernel {
+namespace Atvoss::EleWise {
 
-struct Config {                     // Kernel layer tiling information
+struct KernelConfig {                     // Kernel layer tiling information
     uint32_t blockNum = 1;          // Number of cores started
     uint32_t unitNumPerCore = 0;    // Average number of unit processed per core
     uint32_t moreUnitCoreNum = 0;   // Number of cores that need to process an additional full unit
@@ -23,7 +23,7 @@ struct Config {                     // Kernel layer tiling information
     uint32_t unitNum = 1;           // Number of elements per unit block
 };
 
-enum class PolicySegment {
+enum class KernelPolicySegment {
     Auto = 0U,       // Automatic tiling
     UniformSegment,  // Uniform tiling
     FullAddTail      // Full block and tail block tiling
@@ -31,19 +31,19 @@ enum class PolicySegment {
 
 struct KernelPolicy {
     uint32_t blockDimMax;           // Maximum blockDim used
-    PolicySegment segmentPolicy;    // Multi-core tiling strategy
+    KernelPolicySegment segmentPolicy;    // Multi-core tiling strategy
 };
 
 
-static constexpr ATVOSS::Kernel::KernelPolicy policyDefault{48, ATVOSS::Kernel::PolicySegment::UniformSegment};
+static constexpr Atvoss::EleWise::KernelPolicy kernelPolicyDefault{48, KernelPolicySegment::UniformSegment};
 
 
 /*!
  * KernelBuilder: Calculate the tiling information, then determine the GM data that the current core needs to process based on the block ID,
  * and pass it to the block to complete the computation.
 */
-template <typename BlockOp, const auto &Policy = policyDefault,   typename ScheduleCfg = ATVOSS::Kernel::Config,
-    class Schedule = DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
+template <typename BlockOp, const auto &Policy = kernelPolicyDefault,   typename ScheduleCfg = KernelConfig,
+    class Schedule = Kernel::DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
 class KernelBuilder {
 public:
     using ScheduleClz = Schedule;
@@ -60,5 +60,5 @@ public:
     }
 };
 
-} // namespace ATVOSS::Kernel
+} // namespace Atvoss::Kernel
 #endif

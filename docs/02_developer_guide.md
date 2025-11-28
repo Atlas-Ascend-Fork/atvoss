@@ -1,5 +1,5 @@
 # 1. ATVOSS概述
-ATVOSS针对昇腾AI处理器的Vector计算的多核并行计算过程，提供了一套统一的编程模型，可简化用户开发Vector算子的复杂度，简化Tiling计算，并支持模板的自由组合及模板扩展。
+Atvoss针对昇腾AI处理器的Vector计算的多核并行计算过程，提供了一套统一的编程模型，可简化用户开发Vector算子的复杂度，简化Tiling计算，并支持模板的自由组合及模板扩展。
 
 编程模型包含如下分层，由高到低分别是：
 
@@ -11,28 +11,28 @@ ATVOSS针对昇腾AI处理器的Vector计算的多核并行计算过程，提供
 <br><img src="./images/architecture.png" width="50%" height="50%" style="margin: 20px 0;"><br>
 # 2. 公共基础工具
 ## 2.1 表达式模板
-ATVOSS使用表达式模板进行计算流的描述，表达式模板是C++利用运算符重载、类型计算来实现延迟计算的技巧。表达式模板的基本要点是在形成使用运算符或进行函数调用时，我们只是把要进行的操作记录下来不立即进行计算。直到最后Tile层计算的时候，才会进行计算操作。详细的表达式模板实现，可从[Expression表达式模板](../include/utils/expression/expression.h)进入阅读代码。
+Atvoss使用表达式模板进行计算流的描述，表达式模板是C++利用运算符重载、类型计算来实现延迟计算的技巧。表达式模板的基本要点是在形成使用运算符或进行函数调用时，我们只是把要进行的操作记录下来不立即进行计算。直到最后Tile层计算的时候，才会进行计算操作。详细的表达式模板实现，可从[Expression表达式模板](../include/utils/expression/expression.h)进入阅读代码。
 
-# 3. 基于ATVOSS的算子开发
+# 3. 基于Atvoss的算子开发
 ## 3.1 实现自定义计算表达式
-ATVOSS模板支持Expr的计算表达，用户通过计算表达完成对自定义算子的描述。具体使用样例如下：
+Atvoss模板支持Expr的计算表达，用户通过计算表达完成对自定义算子的描述。具体使用样例如下：
 ```cpp
 static constexpr int32_t HEIGHT = 1;
 static constexpr int32_t WIDTH = 32;
-using TileShape = ATVOSS::Shape<HEIGHT, WIDTH>;
+using TileShape = Atvoss::Shape<HEIGHT, WIDTH>;
 
 struct RmsNormCompute {
     template <template <typename> class Tensor>
     __host_aicore__ constexpr auto Compute() const
     {
-        auto in1 = ATVOSS::PlaceHolder<1, Tensor<DtypeV1>, ATVOSS::ParamUsage::in>();
-        auto in2 = ATVOSS::PlaceHolder<2, Tensor<DtypeV2>, ATVOSS::ParamUsage::in>();
-        auto out = ATVOSS::PlaceHolder<3, Tensor<DtypeV3>, ATVOSS::ParamUsage::out>();
-        auto temp = ATVOSS::PlaceHolderTmpLike<1>(in1);
+        auto in1 = Atvoss::PlaceHolder<1, Tensor<DtypeV1>, Atvoss::ParamUsage::in>();
+        auto in2 = Atvoss::PlaceHolder<2, Tensor<DtypeV2>, Atvoss::ParamUsage::in>();
+        auto out = Atvoss::PlaceHolder<3, Tensor<DtypeV3>, Atvoss::ParamUsage::out>();
+        auto temp = Atvoss::PlaceHolderTmpLike<1>(in1);
 
         return (temp = in1 * in1,
-                out = ReduceSum<ATVOSS::Patterns::Pattern::AR>(temp),
-                out = Broadcast<ATVOSS::Patterns::Pattern::AB>(out),
+                out = ReduceSum<Atvoss::Patterns::Pattern::AR>(temp),
+                out = Broadcast<Atvoss::Patterns::Pattern::AB>(out),
                 temp = Divs<WIDTH>(out),
                 out = Sqrt(temp),
                 temp = in1 / out,
@@ -41,15 +41,15 @@ struct RmsNormCompute {
 };
 ```
 
-以上代码为例，定义一个`RmsNormOp`的Expr模板类。Tile块的切分设置，使用如下示例的固定写法，使用`ATVOSS::Shape`模板定义每个维度的元素大小。
+以上代码为例，定义一个`RmsNormOp`的Expr模板类。Tile块的切分设置，使用如下示例的固定写法，使用`Atvoss::Shape`模板定义每个维度的元素大小。
 ```cpp
-using TileShape = ATVOSS::Shape<HEIGHT, WIDTH>;
+using TileShape = Atvoss::Shape<HEIGHT, WIDTH>;
 ```
 `Get()`接口完成算子计算操作的描述，需要先定义输入输出，再定义基于输入输出的计算表达，设置说明如下：
 
 | 表达式元素| 功能描述|约束说明|
 | ------------ | ------------ |---|
-| `PlaceHolder` | 定义输入输出参数信息，传入的模板参数为<序号，Type，layout，输入输出标识>|序号需要按照`PlaceHolder`定义的先后顺序，从1开始累加； Type固定设置为 `VectorType<T>`， 用户无需感知；暂不支持不同的输入输出设置不同的layout；输入输出标识为可选参数，默认为`ParamUsage::in`，还可设置为`ParamUsage::out`|
+| `PlaceHolder` | 定义输入输出参数信息，传入的模板参数为<序号，Type，输入输出标识>|序号需要按照`PlaceHolder`定义的先后顺序，从1开始累加； Type固定设置为 `Tensor<T>`， 用户无需感知；输入输出标识为可选参数，默认为`ParamUsage::in`，还可设置为`ParamUsage::out`|
 | `PlaceHolderTmpLike` | 定义计算时需要使用的临时buffer|模板参数是标识该临时buffer内存大小跟随哪个`PlaceHolder`的|
 | 返回值 | 使用Tile层API描述计算过程|每次使用1个Tile层的API操作实现一次计算过程，每个计算过程是按“,”隔开，用户需要保证计算表达的正确性|
 
@@ -57,13 +57,13 @@ using TileShape = ATVOSS::Shape<HEIGHT, WIDTH>;
 1个Tile层API有两个接口呈现方式，两者一一对应， 用户在计算图中使用API接口名来描述计算操作过程，Tile层内部则是调用实现接口完成实际的计算过程。
 
 - API接口名
-是用户在计算图中调用时使用的接口名，例如`Sqrt()`接口。
+  是用户在计算图中调用时使用的接口名，例如`Sqrt()`接口。
 ```cpp
 _2 = Sqrt(_1) // _1 是Sqrt()的输入，_2是输出
 ```
 
 - 实现接口名
-是Tile层的真正执行计算时调用的接口定义。
+  是Tile层的真正执行计算时调用的接口定义。
 
 ### 已支持的Tile层API列表
 | API接口名    | 实现接口名                                    | 备注                            |
@@ -88,40 +88,39 @@ dst_i=src0_i + src1_i
 $$
 #### 3.2.1.2 函数原型
 ```cpp
-template <typename T>
+template <typename OperationShape, typename T>
 __aicore__ inline void AddAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src0,
-                                 const AscendC::LocalTensor<T>& src1, uint32_t count = 0)
+                                 const AscendC::LocalTensor<T>& src1, OperationShape& operationShape)
 ```
 #### 3.2.1.3 模版参数说明
-| 参数名        | 描述                          |
-|------------|-----------------------------|
-| T          | 数据类型，支持的数据类型为：int32_t/float |
+| 参数名            | 描述                          |
+|----------------|-----------------------------|
+| OperationShape | 数据长度结构体的类型                  |
+| T              | 数据类型，支持的数据类型为：int32_t/float |
 
 #### 3.2.1.4 参数说明
-| 参数名       | 输入/输出 | 描述                      |
-|-----------|-------|-------------------------|
-| dst       | 输出    | 目的操作数                   |
-| src0、src1 | 输入    | 源操作数                    |
-| count     | 输入    | 需要计算数据的长度               |
+| 参数名            | 输入/输出 | 描述           |
+|----------------|-------|--------------|
+| dst            | 输出    | 目的操作数        |
+| src0、src1      | 输入    | 源操作数         |
+| operationShape | 输入    | 需要计算数据长度的结构体 |
 #### 3.2.1.5 表达式调用示例
 ```c++
+using TileShape = Atvoss::Shape<WIDTH>;
+
 template<typename T>
-struct AddOp : ATVOSS::ExprTmpl::Maker {
-    using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-    using layout = AscendC::Std::tuple<shape>;
-    using maxSizeType = T;
-    template <template <typename> class VectorType>
-    __host_aicore__ constexpr auto Get() const
+struct AddCompute {
+    template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
     {
-        using namespace ATVOSS::ExprTmpl;
-        auto _1 = PlaceHolder<1, VectorType<T>, layout>();
-        auto _2 = PlaceHolder<2, VectorType<T>, layout>();
-        auto _3 = PlaceHolder<3, VectorType<T>, layout, ParamUsage::out>();
-        return (_3 = _1 + _2);
+        auto src0 = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto src1 = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto dst = Atvoss::PlaceHolder<3, Tensor<T>, Atvoss::ParamUsage::out>();
+        return (dst = src0 + src1);
     }
 };
 ```
-`_1`对应`src0`，`_2`对应`src1`，`_3`对应`dst`， `count`用户无需感知。
+`operationShape`用户无需感知。
 
 ### 3.2.2 SubAssign
 #### 3.2.2.1 功能说明
@@ -131,40 +130,39 @@ dst_i=src0_i - src1_i
 $$
 #### 3.2.2.2 函数原型
 ```cpp
-template <typename T>
+template <typename OperationShape, typename T>
 __aicore__ inline void SubAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src0,
-                                 const AscendC::LocalTensor<T>& src1, uint32_t count = 0)
+                                 const AscendC::LocalTensor<T>& src1, OperationShape& operationShape)
 ```
 #### 3.2.2.3 模版参数说明
-| 参数名        | 描述                          |
-|------------|-----------------------------|
-| T          | 数据类型，支持的数据类型为：int32_t/float |
+| 参数名            | 描述                          |
+|----------------|-----------------------------|
+| OperationShape | 数据长度结构体的类型                  |
+| T              | 数据类型，支持的数据类型为：int32_t/float |
 
 #### 3.2.2.4 参数说明
-| 参数名       | 输入/输出 | 描述        |
-|-----------|-------|-----------|
-| dst       | 输出    | 目的操作数     |
-| src0、src1 | 输入    | 源操作数      |
-| count     | 输入    | 需要计算数据的长度 |
+| 参数名            | 输入/输出 | 描述           |
+|----------------|-------|--------------|
+| dst            | 输出    | 目的操作数        |
+| src0、src1      | 输入    | 源操作数         |
+| operationShape | 输入    | 需要计算数据长度的结构体 |
 #### 3.2.2.5 表达式调用示例
 ```c++
+using TileShape = Atvoss::Shape<WIDTH>;
+
 template<typename T>
-struct SubOp : ATVOSS::ExprTmpl::Maker {
-    using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-    using layout = AscendC::Std::tuple<shape>;
-    using maxSizeType = T;
-    template <template <typename> class VectorType>
-    __host_aicore__ constexpr auto Get() const
+struct SubCompute {
+    template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
     {
-        using namespace ATVOSS::ExprTmpl;
-        auto _1 = PlaceHolder<1, VectorType<T>, layout>();
-        auto _2 = PlaceHolder<2, VectorType<T>, layout>();
-        auto _3 = PlaceHolder<3, VectorType<T>, layout, ParamUsage::out>();
-        return (_3 = _1 - _2);
+        auto src0 = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto src1 = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto dst = Atvoss::PlaceHolder<3, Tensor<T>, Atvoss::ParamUsage::out>();
+        return (dst = src0 - src1);
     }
 };
 ```
-`_1`对应`src0`，`_2`对应`src1`，`_3`对应`dst`，`count`用户无需感知。
+`operationShape`用户无需感知。
 
 ### 3.2.3 MulAssign
 #### 3.2.3.1 功能说明
@@ -174,40 +172,39 @@ dst_i=src0_i * src1_i
 $$
 #### 3.2.3.2 函数原型
 ```cpp
-template <typename T>
+template <typename OperationShape, typename T>
 __aicore__ inline void MulAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src0,
-                                 const AscendC::LocalTensor<T>& src1, uint32_t count = 0)
+                                 const AscendC::LocalTensor<T>& src1, OperationShape& operationShape)
 ```
 #### 3.2.3.3 模版参数说明
-| 参数名        | 描述                          |
-|------------|-----------------------------|
-| T          | 数据类型，支持的数据类型为：int32_t/float |
+| 参数名            | 描述                          |
+|----------------|-----------------------------|
+| OperationShape | 数据长度结构体的类型                  |
+| T              | 数据类型，支持的数据类型为：int32_t/float |
 
 #### 3.2.3.4 参数说明
-| 参数名       | 输入/输出 | 描述        |
-|-----------|-------|-----------|
-| dst       | 输出    | 目的操作数     |
-| src0、src1 | 输入    | 源操作数      |
-| count     | 输入    | 需要计算数据的长度 |
+| 参数名            | 输入/输出 | 描述           |
+|----------------|-------|--------------|
+| dst            | 输出    | 目的操作数        |
+| src0、src1      | 输入    | 源操作数         |
+| operationShape | 输入    | 需要计算数据长度的结构体 |
 #### 3.2.3.5 表达式调用示例
 ```c++
+using TileShape = Atvoss::Shape<WIDTH>;
+
 template<typename T>
-struct MulOp : ATVOSS::ExprTmpl::Maker {
-    using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-    using layout = AscendC::Std::tuple<shape>;
-    using maxSizeType = T;
-    template <template <typename> class VectorType>
-    __host_aicore__ constexpr auto Get() const
+struct MulCompute {
+    template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
     {
-        using namespace ATVOSS::ExprTmpl;
-        auto _1 = PlaceHolder<1, VectorType<T>, layout>();
-        auto _2 = PlaceHolder<2, VectorType<T>, layout>();
-        auto _3 = PlaceHolder<3, VectorType<T>, layout, ParamUsage::out>();
-        return (_3 = _1 * _2);
+        auto src0 = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto src1 = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto dst = Atvoss::PlaceHolder<3, Tensor<T>, Atvoss::ParamUsage::out>();
+        return (dst = src0 * src1);
     }
 };
 ```
-`_1`对应`src0`，`_2`对应`src1`，`_3`对应`dst`，`count`用户无需感知。
+`operationShape`用户无需感知。
 
 ### 3.2.4 DivAssign
 #### 3.2.4.1 功能说明
@@ -217,40 +214,39 @@ dst_i=src0_i/src1_i
 $$
 #### 3.2.4.2 函数原型
 ```cpp
-template <typename T>
+template <typename OperationShape, typename T>
 __aicore__ inline void DivAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src0,
-                                 const AscendC::LocalTensor<T>& src1, uint32_t count = 0)
+                                 const AscendC::LocalTensor<T>& src1, OperationShape& operationShape)
 ```
 #### 3.2.4.3 模版参数说明
-| 参数名        | 描述                   |
-|------------|----------------------|
-| T          | 数据类型，支持的数据类型为：float  |
+| 参数名            | 描述                  |
+|----------------|---------------------|
+| OperationShape | 数据长度结构体的类型          |
+| T              | 数据类型，支持的数据类型为：float |
 
 #### 3.2.4.4 参数说明
-| 参数名       | 输入/输出 | 描述        |
-|-----------|-------|-----------|
-| dst       | 输出    | 目的操作数     |
-| src0、src1 | 输入    | 源操作数      |
-| count     | 输入    | 需要计算数据的长度 |
+| 参数名            | 输入/输出 | 描述           |
+|----------------|-------|--------------|
+| dst            | 输出    | 目的操作数        |
+| src0、src1      | 输入    | 源操作数         |
+| operationShape | 输入    | 需要计算数据长度的结构体 |
 #### 3.2.4.5 表达式调用示例
 ```c++
+using TileShape = Atvoss::Shape<WIDTH>;
+
 template<typename T>
-struct DivOp : ATVOSS::ExprTmpl::Maker {
-    using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-    using layout = AscendC::Std::tuple<shape>;
-    using maxSizeType = T;
-    template <template <typename> class VectorType>
-    __host_aicore__ constexpr auto Get() const
+struct DivCompute {
+    template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
     {
-        using namespace ATVOSS::ExprTmpl;
-        auto _1 = PlaceHolder<1, VectorType<T>, layout>();
-        auto _2 = PlaceHolder<2, VectorType<T>, layout>();
-        auto _3 = PlaceHolder<3, VectorType<T>, layout, ParamUsage::out>();
-        return (_3 = _1 / _2);
+        auto src0 = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto src1 = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto dst = Atvoss::PlaceHolder<3, Tensor<T>, Atvoss::ParamUsage::out>();
+        return (dst = src0 / src1);
     }
 };
 ```
-`_1`对应`src0`，`_2`对应`src1`，`_3`对应`dst`，`count`用户无需感知。
+`operationShape`用户无需感知。
 
 ### 3.2.5 DivsAssign
 #### 3.2.5.1 功能说明
@@ -260,38 +256,39 @@ dst_i=src_i/scalar
 $$
 #### 3.2.5.2 函数原型
 ```cpp
-template <auto scalarValue, typename T>
-__aicore__ inline void DivsAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src, uint32_t count = 0)
+template <typename OperationShape, auto scalarValue, typename T>
+__aicore__ inline void DivsAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src,
+                                  OperationShape& operationShape)
 ```
 #### 3.2.5.3 模版参数说明
-| 参数名         | 描述                          |
-|-------------|-----------------------------|
-| scalarValue | 源操作数，作为除数                   |
-| T           | 数据类型，支持的数据类型为：int32_t/float |
+| 参数名            | 描述                          |
+|----------------|-----------------------------|
+| OperationShape | 数据长度结构体的类型                  |
+| scalarValue    | 源操作数，作为除数                   |
+| T              | 数据类型，支持的数据类型为：int32_t/float |
 
 #### 3.2.5.4 参数说明
-| 参数名   | 输入/输出 | 描述        |
-|-------|-------|-----------|
-| dst   | 输出    | 目的操作数     |
-| src   | 输入    | 源操作数      |
-| count | 输入    | 需要计算数据的长度 |
+| 参数名            | 输入/输出 | 描述           |
+|----------------|-------|--------------|
+| dst            | 输出    | 目的操作数        |
+| src            | 输入    | 源操作数         |
+| operationShape | 输入    | 需要计算数据长度的结构体 |
 #### 3.2.5.5 表达式调用示例
 ```c++
+using TileShape = Atvoss::Shape<WIDTH>;
+
 template<typename T>
-struct DivsOp : ATVOSS::ExprTmpl::Maker {
-    using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-    using layout = AscendC::Std::tuple<shape>;
-    using maxSizeType = T;
-    template <template <typename> class VectorType>
-    __host_aicore__ constexpr auto Get() const
+struct DivsCompute {
+    template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
     {
-        auto _1 = PlaceHolder<1, VectorType<T>, layout>();
-        auto _2 = PlaceHolder<2, VectorType<T>, layout, ParamUsage::out>();
-        return  _2 = Divs<2>(_1);
-    }
+        auto src = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto dst = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::out>();
+        return (dst = Divs<2>(src));
+    } 
 };
 ```
-`_1`对应`src`，`_2`对应`dst`，`2`对应`scalarValue`，`count`用户无需感知。
+`operationShape`用户无需感知。
 
 ### 3.2.6 ExpAssign
 #### 3.2.6.1 功能说明
@@ -301,8 +298,9 @@ dst_i=e^{src_i}
 $$
 #### 3.2.6.2 函数原型
 ```cpp
-template <typename T>
-__aicore__ inline void ExpAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src, uint32_t count = 0)
+template <typename OperationShape, typename T>
+__aicore__ inline void ExpAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src,
+                                 OperationShape& operationShape)
 ```
 #### 3.2.6.3 模版参数说明
 | 参数名       | 描述                  |
@@ -310,30 +308,27 @@ __aicore__ inline void ExpAssign(AscendC::LocalTensor<T>& dst, const AscendC::Lo
 | T         | 数据类型，支持的数据类型为：float |
 
 #### 3.2.6.4 参数说明
-| 参数名   | 输入/输出 | 描述        |
-|-------|-------|-----------|
-| dst   | 输出    | 目的操作数     |
-| src   | 输入    | 源操作数      |
-| count | 输入    | 需要计算数据的长度 |
+| 参数名            | 输入/输出 | 描述           |
+|----------------|-------|--------------|
+| dst            | 输出    | 目的操作数        |
+| src            | 输入    | 源操作数         |
+| operationShape | 输入    | 需要计算数据长度的结构体 |
 #### 3.2.6.5 表达式调用示例
 ```c++
+using TileShape = Atvoss::Shape<WIDTH>;
+
 template<typename T>
-struct ExpOp : ATVOSS::ExprTmpl::Maker {
-    using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-    using layout = AscendC::Std::tuple<shape>;
-    using maxSizeType = T;
-    template <template <typename> class VectorType>
-    __host_aicore__ constexpr auto Get() const
+struct ExpCompute {
+    template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
     {
-        using shape = AscendC::Shape<Int<32>, Int<32>>;
-        using layout = AscendC::Std::tuple<shape>;
-        auto _1 = PlaceHolder<1, VectorType<T>, layout>();
-        auto _2 = PlaceHolder<2, VectorType<T>, layout, ParamUsage::out>();
-        return (_2 = Exp(_1));
+        auto src = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto dst = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::out>();
+        return (dst = Exp(src));
     }
 };
 ```
-`_1`对应src，`_2`对应dst，`count`用户无需感知。
+`operationShape`用户无需感知。
 
 ### 3.2.7 SqrtAssign
 #### 3.2.7.1 功能说明
@@ -343,37 +338,38 @@ dst_i=\sqrt{src_i}
 $$
 #### 3.2.7.2 函数原型
 ```cpp
-template <typename T>
-__aicore__ inline void SqrtAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src, uint32_t count = 0)
+template <typename OperationShape, typename T>
+__aicore__ inline void SqrtAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src,
+                                  OperationShape& operationShape)
 ```
 #### 3.2.7.3 模版参数说明
-| 参数名       | 描述                  |
-|-----------|---------------------|
-| T         | 数据类型，支持的数据类型为：float |
+| 参数名            | 描述                  |
+|----------------|---------------------|
+| OperationShape | 数据长度结构体的类型          |
+| T              | 数据类型，支持的数据类型为：float |
 
 #### 3.2.7.4 参数说明
-| 参数名   | 输入/输出 | 描述        |
-|-------|-------|-----------|
-| dst   | 输出    | 目的操作数     |
-| src   | 输入    | 源操作数      |
-| count | 输入    | 需要计算数据的长度 |
+| 参数名            | 输入/输出 | 描述           |
+|----------------|-------|--------------|
+| dst            | 输出    | 目的操作数        |
+| src            | 输入    | 源操作数         |
+| operationShape | 输入    | 需要计算数据长度的结构体 |
 #### 3.2.7.5 表达式调用示例
 ```c++
+using TileShape = Atvoss::Shape<WIDTH>;
+
 template<typename T>
-struct SqrtOp : ATVOSS::ExprTmpl::Maker {
-    using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-    using layout = AscendC::Std::tuple<shape>;
-    using maxSizeType = T;
-    template <template <typename> class VectorType>
-    __host_aicore__ constexpr auto Get() const
+struct SqrtCompute {
+    template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
     {
-        auto _1 = PlaceHolder<1, VectorType<T>, layout>();
-        auto _2 = PlaceHolder<2, VectorType<T>, layout, ParamUsage::out>();
-        return (_2 = Sqrt(_1));
+        auto src = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto dst = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::out>();
+        return (dst = Sqrt(src));
     }
 };
 ```
-`_1`对应src，`_2`对应dst，`count`用户无需感知。
+`operationShape`用户无需感知。
 
 ### 3.2.8 PowerAssign
 #### 3.2.8.1 功能说明
@@ -383,38 +379,39 @@ dst_i=src_i^{scalarValue}
 $$
 #### 3.2.8.2 函数原型
 ```cpp
-template <auto scalarValue, typename T>
-__aicore__ inline void PowerAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src, uint32_t count = 0)
+template <typename OperationShape, auto scalarValue, typename T>
+__aicore__ inline void PowerAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src,
+                                   OperationShape& operationShape)
 ```
 #### 3.2.8.3 模版参数说明
-| 参数名         | 描述                  |
-|-------------|---------------------|
-| scalarValue | 源操作数，作为指数，只支持平方     |
-| T           | 数据类型，支持的数据类型为：float |
+| 参数名            | 描述                  |
+|----------------|---------------------|
+| OperationShape | 数据长度结构体的类型          |
+| scalarValue    | 源操作数，作为指数，只支持平方     |
+| T              | 数据类型，支持的数据类型为：float |
 
 #### 3.2.8.4 参数说明
-| 参数名   | 输入/输出 | 描述        |
-|-------|-------|-----------|
-| dst   | 输出    | 目的操作数     |
-| src   | 输入    | 源操作数      |
-| count | 输入    | 需要计算数据的长度 |
+| 参数名            | 输入/输出 | 描述           |
+|----------------|-------|--------------|
+| dst            | 输出    | 目的操作数        |
+| src            | 输入    | 源操作数         |
+| operationShape | 输入    | 需要计算数据长度的结构体 |
 #### 3.2.8.5 表达式调用示例
 ```c++
+using TileShape = Atvoss::Shape<WIDTH>;
+
 template<typename T>
-struct PowerOp : ATVOSS::ExprTmpl::Maker {
-    using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-    using layout = AscendC::Std::tuple<shape>;
-    using maxSizeType = T;
-    template <template <typename> class VectorType>
-    __host_aicore__ constexpr auto Get() const
+struct PowerCompute {
+    template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
     {
-        auto _1 = PlaceHolder<1, VectorType<T>, layout>();
-        auto _2 = PlaceHolder<2, VectorType<T>, layout, ParamUsage::out>();
-        return _2 = (Power<2>(_1));
+        auto src = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto dst = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::out>();
+        return dst = (Power<2>(src));
     }
 };
 ```
-`_1`对应`src`，`_2`对应`dst`，`2`对应`scalarValue`，`count`用户无需感知。
+`operationShape`用户无需感知。
 
 ### 3.2.9 BroadcastAssign
 #### 3.2.9.1 功能说明
@@ -430,7 +427,7 @@ struct PowerOp : ATVOSS::ExprTmpl::Maker {
 ```
 #### 3.2.9.2 函数原型
 ```cpp
-template <typename OperationShape, ATVOSS::Patterns::Pattern pattern, typename T>
+template <typename OperationShape, Atvoss::Patterns::Pattern pattern, typename T>
 __aicore__ inline void BroadcastAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src,
                                        OperationShape& operationShape)
 ```
@@ -442,28 +439,27 @@ __aicore__ inline void BroadcastAssign(AscendC::LocalTensor<T>& dst, const Ascen
 | T              | 数据类型，支持的数据类型为：float     |
 
 #### 3.2.9.4 参数说明
-| 参数名            | 输入/输出 | 描述          |
-|----------------|-------|-------------|
-| dst            | 输出    | 目的操作数       |
-| src            | 输入    | 源操作数        |
-| operationShape | 输入    | 需要广播数据的维度数据 |
+| 参数名            | 输入/输出 | 描述           |
+|----------------|-------|--------------|
+| dst            | 输出    | 目的操作数        |
+| src            | 输入    | 源操作数         |
+| operationShape | 输入    | 需要计算数据长度的结构体 |
 #### 3.2.9.5 表达式调用示例
 ```c++
+using TileShape = Atvoss::Shape<WIDTH>;
+
 template<typename T>
-struct BroadcastOp : ATVOSS::ExprTmpl::Maker {
-    using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-    using layout = AscendC::Std::tuple<shape>;
-    using maxSizeType = T;
-    template <template <typename> class VectorType>
-    __host_aicore__ constexpr auto Get() const
+struct BroadcastCompute {
+    template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
     {
-        auto _1 = PlaceHolder<1, VectorType<T>, layout>();
-        auto _2 = PlaceHolder<2, VectorType<T>, layout, ParamUsage::out>();
-        return (_2 = Broadcast<ATVOSS::Patterns::Pattern::AB>(_1));
+        auto src = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto dst = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::out>();
+        return (dst = Broadcast<Atvoss::Patterns::Pattern::AB>(src));
     }
 };
 ```
-`_1`对应`src`，`_2`对应`dst`，`operationShape`用户无需感知。
+`operationShape`用户无需感知。
 
 ### 3.2.10 ReduceSumAssign
 #### 3.2.10.1 功能说明
@@ -479,7 +475,7 @@ ReduceSum按最后一个维度计算示例：
 
 #### 3.2.10.2 函数原型
 ```cpp
-template <typename OperationShape, ATVOSS::Patterns::Pattern pattern, typename T>
+template <typename OperationShape, Atvoss::Patterns::Pattern pattern, typename T>
 __aicore__ inline void ReduceSumAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src,
                                        OperationShape& operationShape)
 ```
@@ -498,21 +494,20 @@ __aicore__ inline void ReduceSumAssign(AscendC::LocalTensor<T>& dst, const Ascen
 | operationShape | 输入    | reduce数据的维度数据 |
 #### 3.2.10.5 表达式调用示例
 ```c++
+using TileShape = Atvoss::Shape<WIDTH>;
+
 template<typename T>
-struct ReduceSumOp : ATVOSS::ExprTmpl::Maker {
-    using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-    using layout = AscendC::Std::tuple<shape>;
-    using maxSizeType = T;
-    template <template <typename> class VectorType>
-    __host_aicore__ constexpr auto Get() const
+struct ReduceSumCompute {
+    template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
     {
-        auto _1 = PlaceHolder<1, VectorType<T>, layout>();
-        auto _2 = PlaceHolder<2, VectorType<T>, layout, ParamUsage::out>();
-        return (_2 = ReduceSum<ATVOSS::Patterns::Pattern::AR>(_1));
+        auto src = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto dst = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::out>();
+        return (dst = ReduceSum<Atvoss::Patterns::Pattern::AR>(src));
     }
 };
 ```
-`_1`对应`src`，`_2`对应`dst`，`operationShape`用户无需感知。
+`operationShape`用户无需感知。
 
 ### 3.2.11 CastAssign
 #### 3.2.11.1 功能说明
@@ -520,40 +515,40 @@ struct ReduceSumOp : ATVOSS::ExprTmpl::Maker {
 
 #### 3.2.11.2 函数原型
 ```cpp
-template <CastMode castMode, typename T1, typename T2>
+template <typename OperationShape, CastMode castMode, typename T1, typename T2>
 __aicore__ inline void CastAssign(AscendC::LocalTensor<T1>& dst, const AscendC::LocalTensor<T2>& src,
-                                  uint32_t count = 0)
+                                  OperationShape& operationShape)
 ```
 #### 3.2.11.3 模版参数说明
-| 参数名       | 描述                                    |
-|-----------|---------------------------------------|
-| castMode  | 精度转换处理模式                              |
-| T1        | 目的操作数数据类型，支持的数据类型为：half、float、int32_t |
-| T2        | 源操作数数据类型，支持的数据类型为：half、float、int32_t  |
+| 参数名            | 描述                                    |
+|----------------|---------------------------------------|
+| OperationShape | 数据长度结构体的类型                            |
+| castMode       | 精度转换处理模式                              |
+| T1             | 目的操作数数据类型，支持的数据类型为：half、float、int32_t |
+| T2             | 源操作数数据类型，支持的数据类型为：half、float、int32_t  |
 
 #### 3.2.11.4 参数说明
-| 参数名   | 输入/输出 | 描述        |
-|-------|-------|-----------|
-| dst   | 输出    | 目的操作数     |
-| src   | 输入    | 源操作数      |
-| count | 输入    | 需要计算数据的长度 |
+| 参数名            | 输入/输出 | 描述           |
+|----------------|-------|--------------|
+| dst            | 输出    | 目的操作数        |
+| src            | 输入    | 源操作数         |
+| operationShape | 输入    | 需要计算数据长度的结构体 |
 #### 3.2.11.5 表达式调用示例
 ```c++
+using TileShape = Atvoss::Shape<WIDTH>;
+
 template<typename T, typename U>
-struct CasrOp : ATVOSS::ExprTmpl::Maker {
-    using shape = AscendC::Shape<Int<HEIGHT>, Int<WIDTH>>;
-    using layout = AscendC::Std::tuple<shape>;
-    using maxSizeType = std::conditional_t<sizeof(T) >= sizeof(U),T,U>;
-    template <template <typename> class VectorType>
-    __host_aicore__ constexpr auto Get() const
+struct CastCompute {
+    template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
     {
-        auto _1 = PlaceHolder<1, VectorType<T>, layout>();
-        auto _2 = PlaceHolder<2, VectorType<U>, layout, ParamUsage::out>();
-        return (_2 = Cast<ATVOSS::CastMode::CAST_ROUND>(_1));
+        auto src = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto dst = Atvoss::PlaceHolder<2, Tensor<U>, Atvoss::ParamUsage::out>();
+        return (dst = Cast<Atvoss::CastMode::CAST_ROUND>(src));
     }
 };
 ```
-`_1`对应`src`，`_2`对应`dst`，`count`用户无需感知。
+`operationShape`用户无需感知。
 
 ## 3.3 配置Block层模板
 Block层模板负责单个核的任务分解到多个Tile的数据搬运、Tile层的计算调用。
@@ -855,9 +850,9 @@ int64_t Run(const Args& arguments)
 ```
 参数构建涉及关键组件如下：
 
-- Tensor 构建(ATVOSS::Tensor)
+- Tensor 构建(Atvoss::Tensor)
 
-  `ATVOSS::Tensor`用于封装内存数据，表示多维张量。
+  `Atvoss::Tensor`用于封装内存数据，表示多维张量。
 
   ```cpp
   template<size_t N>
@@ -875,7 +870,7 @@ int64_t Run(const Args& arguments)
   uint32_t shape[2] = {32, 32};       // 定义形状为 32 行 32 列
   
   // 创建 Tensor 对象
-  ATVOSS::Tensor<float> t1(v1.data(), shape);
+  Atvoss::Tensor<float> t1(v1.data(), shape);
   ```
 
 - ArgumentsBuilder 构建
@@ -884,8 +879,8 @@ int64_t Run(const Args& arguments)
 
   主要方法：
 
-  - `.input(tensor1, tensor2, ...)` 设置算子的输入张量，可接受一个或多个`ATVOSS::Tensor`对象。
-  - `.output(tensor1, tensor2, ...)` 设置算子的输出张量，可接受一个或多个`ATVOSS::Tensor`对象。
+  - `.input(tensor1, tensor2, ...)` 设置算子的输入张量，可接受一个或多个`Atvoss::Tensor`对象。
+  - `.output(tensor1, tensor2, ...)` 设置算子的输出张量，可接受一个或多个`Atvoss::Tensor`对象。
   - `.attr("key", value)` 设置算子的Attr属性入参，可接受key-value键值对的形式，value不限类型，可调用多次，配置多个Attr属性入参。
   - `.build()` 生成最终的 arguments 对象。
   
@@ -894,7 +889,7 @@ ArgumentsBuilder 构建输入`.input()`、输出`.output()`、Attr`.attr()`没�
   示例：
 
   ```cpp
-  auto arguments = ATVOS::ArgumentsBuilder{}
+  auto arguments = ATVOSS::ArgumentsBuilder{}
       .input(t1, t2)						// 设置输入张量
       .output(t3)							// 设置输出张量
       .attr("dim", 4)						// 设置Attr属性
@@ -912,7 +907,7 @@ ArgumentsBuilder 构建输入`.input()`、输出`.output()`、Attr`.attr()`没�
 ### 3.5.2 使用DeviceAdaptor
 - 使用`KernelOp`作为模板参数封装DeviceAdapter模板类
 ```cpp
-using DeviceOp = ATVOSS::Device::DeviceAdapter<KernelOp>;
+using DeviceOp = Atvoss::Device::DeviceAdapter<KernelOp>;
 ```
 
 - 调用DeviceAdapter的运行接口
@@ -926,12 +921,12 @@ std::vector<float> v3(32*32);
 uint32_t shape[2] = {32, 32};
 
 // 构造输入/输出Tensor
-ATVOSS::Tensor<float> t1(v1.data(), shape);
-ATVOSS::Tensor<float> t2(v2.data(), shape);
-ATVOSS::Tensor<float> t3(v3.data(), shape);
+Atvoss::Tensor<float> t1(v1.data(), shape);
+Atvoss::Tensor<float> t2(v2.data(), shape);
+Atvoss::Tensor<float> t3(v3.data(), shape);
 
 // 构造入参信息
-auto arguments = ATVOSS::ArgumentsBuilder{}
+auto arguments = Atvoss::ArgumentsBuilder{}
     .input(t1, t2)
     .output(t3)
     .attr("dim", 4)

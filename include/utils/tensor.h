@@ -8,15 +8,15 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_DEV_TENSOR_H
-#define ATVOSS_DEV_TENSOR_H
+#ifndef Atvoss_DEV_TENSOR_H
+#define Atvoss_DEV_TENSOR_H
 
 #include <algorithm>
 #include <stdexcept>
 #include <cstdint>
 #include <cstddef>
 
-namespace ATVOSS {
+namespace Atvoss {
 constexpr size_t MAX_DIMS = 8;
 
 template<typename T>
@@ -58,4 +58,4 @@ private:
     size_t dims_ = 0;
 };
 }
-#endif // ATVOSS_DEV_TENSOR_H
+#endif // Atvoss_DEV_TENSOR_H

@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_DEV_COMMON_H
-#define ATVOSS_DEV_COMMON_H
+#ifndef Atvoss_DEV_COMMON_H
+#define Atvoss_DEV_COMMON_H
 #include <cstddef>
 #include <iostream>
 #include <stdexcept>
@@ -24,7 +24,7 @@
 #else 
 namespace std = AscendC::std;
 #endif 
-namespace ATVOSS {
+namespace Atvoss {
     enum class ParamUsage {
         in,
         out,
@@ -32,7 +32,7 @@ namespace ATVOSS {
     };
 }
 
-namespace ATVOSS::ExprTmpl {
+namespace Atvoss::ExprTmpl {
 
 template <typename T, typename = void>
 struct HasDataTrait {
@@ -52,7 +52,7 @@ struct HasDataTrait<T, std::void_t<decltype(T::hasData)>> {
  */
 template <typename T>
 struct Expression {
-    static_assert(!std::is_rvalue_reference_v<T>, "[ERROR]: [ATVOSS][Expression] Rvalue references cannot be stored");
+    static_assert(!std::is_rvalue_reference_v<T>, "[ERROR]: [Atvoss][Expression] Rvalue references cannot be stored");
     using Type = T;
     static constexpr bool hasData = HasDataTrait<T>::value;
 
@@ -74,7 +74,7 @@ inline constexpr bool IsExpression_v = IsExpression<T>::value;
 
 template <std::size_t N, typename T, typename L = void>
 struct LocalVar {
-    static_assert(!std::is_reference_v<T>,  "[ERROR]: [ATVOSS][Expression] A LocalVar must not be a reference");
+    static_assert(!std::is_reference_v<T>,  "[ERROR]: [Atvoss][Expression] A LocalVar must not be a reference");
     using Type = T;
     using Like = L;
     using layout = typename L::layout;
@@ -83,7 +83,7 @@ struct LocalVar {
 
     template <typename V>
     constexpr auto operator=(Expression<V>) {
-        static_assert(Util::AlwaysFalse_v<V>, "[ERROR]: [ATVOSS][Expression] Please use Expression<LocalVar> for assignment");
+        static_assert(Util::AlwaysFalse_v<V>, "[ERROR]: [Atvoss][Expression] Please use Expression<LocalVar> for assignment");
     }
 };
 
@@ -106,7 +106,7 @@ struct Param {
 
     template <typename W>
     constexpr auto operator=(Expression<W>) {
-        static_assert(Util::AlwaysFalse_v<W>, "[ERROR]: [ATVOSS][Expression] Please use Expression<Param> for assignment");
+        static_assert(Util::AlwaysFalse_v<W>, "[ERROR]: [Atvoss][Expression] Please use Expression<Param> for assignment");
     }
 };
 
@@ -161,7 +161,7 @@ private:
 
 public:
     static_assert(!std::is_rvalue_reference_v<T>,
-                  "[ERROR]: [ATVOSS][Expression] Rvalue references cannot be stored");
+                  "[ERROR]: [Atvoss][Expression] Rvalue references cannot be stored");
     static constexpr bool hasData = HasDataTrait<T>::value;
     using IsUnaryOp = void;
     using DataType = T;
@@ -180,7 +180,7 @@ private:
 public:
     static_assert(!(std::is_rvalue_reference_v<T> ||
                     std::is_rvalue_reference_v<U>),
-                  "[ERROR]: [ATVOSS][Expression] Rvalue references cannot be stored");
+                  "[ERROR]: [Atvoss][Expression] Rvalue references cannot be stored");
     static constexpr bool hasData =
             HasDataTrait<T>::value || HasDataTrait<U>::value;
     using IsBinaryOp = void;
@@ -198,7 +198,7 @@ template <typename T, typename U, typename V>
 struct TernaryOp {
     static_assert(!(std::is_rvalue_reference_v<T> ||
                     std::is_rvalue_reference_v<U>),
-                  "[ERROR]: [ATVOSS][Expression] Rvalue references cannot be stored");
+                  "[ERROR]: [Atvoss][Expression] Rvalue references cannot be stored");
     static constexpr bool hasData = HasDataTrait<T>::value || HasDataTrait<U>::value  || HasDataTrait<V>::value;
     using IsBinaryOp = void;
     using LhsType = T;
@@ -274,7 +274,7 @@ private:
     template <typename U>
     struct InRange  : std::bool_constant<(U::number > 0 && U::number <= size)> {};
     static_assert(Util::TMP::Check_v<InRange, Type>,
-                  "[ERROR]: [ATVOSS][Expression] LocalVars must be numbered sequentially from 1");
+                  "[ERROR]: [Atvoss][Expression] LocalVars must be numbered sequentially from 1");
 };
 
 template <typename T>
@@ -290,7 +290,7 @@ private:
     template <typename U>
     struct InRange : std::bool_constant<(U::number > 0 && U::number <= size)> {};
     static_assert(Util::TMP::Check_v<InRange, Type>,
-                  "[ERROR]: [ATVOSS][Expression] Params must be numbered sequentially from 1");
+                  "[ERROR]: [Atvoss][Expression] Params must be numbered sequentially from 1");
 };
 
 template <typename T>
@@ -330,7 +330,7 @@ __host_aicore__ constexpr auto Expression<T>::operator=(Expression<U> u)
 {
     static_assert(
             (IsParam_v<T> || IsLocalVar_v<T> || std::is_lvalue_reference_v<T>),
-            "[ERROR]: [ATVOSS][Expression] Only a Param, LocalVar, or reference can appear on the left side "
+            "[ERROR]: [Atvoss][Expression] Only a Param, LocalVar, or reference can appear on the left side "
             "of assignment");
     return Expression<OpAssign<T, U>>{{data, u.data}};
 }
@@ -351,12 +351,12 @@ __host_aicore__ constexpr auto operator,(Expression<T> t, Expression<U> u)
  */
 class Maker {};
 
-} // namespace ATVOSS::ExprTmpl
+} // namespace Atvoss::ExprTmpl
 
-namespace ATVOSS{
+namespace Atvoss{
     template <std::size_t N, typename L>
     __host_aicore__ constexpr auto PlaceHolderTmpLike(ExprTmpl::Expression<L> /*unused*/) {
-        static_assert(ExprTmpl::IsParam_v<L>, "[ERROR]: [ATVOSS][Expression] A LocalVar can only be like a Param");
+        static_assert(ExprTmpl::IsParam_v<L>, "[ERROR]: [Atvoss][Expression] A LocalVar can only be like a Param");
         return ExprTmpl::Expression<ExprTmpl::LocalVar<N, typename L::Type, L>>{};
     }
 
@@ -367,4 +367,4 @@ namespace ATVOSS{
     }
 };
 
-#endif //ATVOSS_DEV_COMMON_H
+#endif //Atvoss_DEV_COMMON_H

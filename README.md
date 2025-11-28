@@ -1,9 +1,9 @@
-# ATVOS
+# ATVOSS
 ## 🔥Latest News
- 
-- [2025/11] ATVOS项目首次上线。
+
+- [2025/11] ATVOSS项目首次上线。
 ## 🚀概述
-ATVOS（Ascend C Templates for Vector Operator Subroutines）是一套基于[Ascend C](https://hiascend.com/cann/ascend-c)开发的Vector算子模板库，致力于为昇腾硬件上的Vector类融合算子提供极简、高效、高性能、高拓展的编程方式。
+ATVOSS（Ascend C Templates for Vector Operator Subroutines）是一套基于[Ascend C](https://hiascend.com/cann/ascend-c)开发的Vector算子模板库，致力于为昇腾硬件上的Vector类融合算子提供极简、高效、高性能、高拓展的编程方式。
 
 
 ## 🔍目录结构
@@ -15,7 +15,7 @@ ATVOS代码目录结构如下：
 ├── cmake                               # 项目工程编译目录
 ├── CMakeLists.txt                      # 编译配置文件
 ├── docs                                # 项目文档介绍
-├── examples                            # ATVOS 样例
+├── examples                            # ATVOSS 样例
 ├── include                             # 项目公共头文件
 ├── scripts                             # 项目脚本文件存放目录
 ├── README.md
@@ -37,8 +37,8 @@ ATVOS代码目录结构如下：
 | 文档 | 说明 |
 |------|------|
 |[快速入门](./docs/01_quick_start.md)|快速体验项目的简易教程。|
-|[编程指南](./docs/02_developer_guide.md)|使用ATVOS实现算子开发的教程。|
-|[分层设计](./docs/03_design.md)|介绍ATVOS分层模型。|
+|[编程指南](./docs/02_developer_guide.md)|使用ATVOSS实现算子开发的教程。|
+|[分层设计](./docs/03_design.md)|介绍ATVOSS分层模型。|
 
 ## 📝相关信息
 

@@ -7,10 +7,10 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef ATVOSS_LAYOUT_H
-#define ATVOSS_LAYOUT_H
+#ifndef Atvoss_LAYOUT_H
+#define Atvoss_LAYOUT_H
 
-namespace ATVOSS::Layout {
+namespace Atvoss::Layout {
 
 struct OperationShape {
     uint32_t axis0 = 1;
@@ -61,5 +61,5 @@ private:
     OperationShape unaryShape_;
     OperationShape binaryShape_;
 };
-}  // namespace ATVOSS::Layout
-#endif  //ATVOSS_LAYOUT_H
+}  // namespace Atvoss::Layout
+#endif  //Atvoss_LAYOUT_H

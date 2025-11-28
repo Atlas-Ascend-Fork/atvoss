@@ -8,15 +8,15 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_BLOCK_TENSOR_H
-#define ATVOSS_BLOCK_TENSOR_H
+#ifndef Atvoss_BLOCK_TENSOR_H
+#define Atvoss_BLOCK_TENSOR_H
 
 #include "tile/tile_operator.h"
 #include "utils/layout/layout.h"
 
-namespace ATVOSS::Block {
+namespace Atvoss::Block {
 
-template <typename T, typename L = ATVOSS::Layout::Layout<ATVOSS::Layout::FixedRankExtents<1, 1, 1>>>
+template <typename T, typename L = Atvoss::Layout::Layout<Atvoss::Layout::FixedRankExtents<1, 1, 1>>>
 class Tensor {
 public:
     using PrimType = T;
@@ -25,7 +25,7 @@ public:
     __aicore__ inline Tensor() = default;
 
     __aicore__ inline Tensor(AscendC::GlobalTensor<T> gmTensor,
-                             ParamUsage usage = ATVOSS::ParamUsage::in, int index = 0)
+                             ParamUsage usage = Atvoss::ParamUsage::in, int index = 0)
     {
         SetGmTensor(gmTensor);
         index_ = index;
@@ -89,12 +89,12 @@ public:
 
     __aicore__ inline void CopyIn(uint64_t offset, uint32_t copyCnt) 
     {
-        ATVOSS::Tile::CopyIn(ubTensor_, gmTensor_[offset], copyCnt);
+        Atvoss::Tile::CopyIn(ubTensor_, gmTensor_[offset], copyCnt);
     }
 
     __aicore__ inline void CopyOut(uint64_t offset, uint32_t copyCnt) 
     {
-        ATVOSS::Tile::CopyIn(gmTensor_[offset], ubTensor_, copyCnt);
+        Atvoss::Tile::CopyIn(gmTensor_[offset], ubTensor_, copyCnt);
     }
 private:
     AscendC::LocalTensor <T> ubTensor_;
