@@ -50,24 +50,24 @@ create_relatively_softlink() {
   fi
 }
 
-create_atvos_include_softlink() {
+create_atvoss_include_softlink() {
   osName=""
   if [ -f "$1/atvoss/scene.info" ]; then
     . $1/atvoss/scene.info
     osName=${os}
   fi
-  atvos_include_src_path="$1/${architecture_dir}/asc/atvoss/include"
+  atvoss_include_src_path="$1/${architecture_dir}/asc/atvoss/include"
 
-  if [ ! -d ${atvos_include_src_path} ]; then
+  if [ ! -d ${atvoss_include_src_path} ]; then
     return 3
   fi
 
   if [ -d $1/${architecture_dir}/ascendc/act ]; then
-    atvos_include_dst_path="$1/${architecture_dir}/ascendc/act/include"
-    if [ -d $atvos_include_dst_path ] || [ -L $atvos_include_dst_path ]; then
-      rm -fr "$atvos_include_dst_path"
+    atvoss_include_dst_path="$1/${architecture_dir}/ascendc/act/include"
+    if [ -d $atvoss_include_dst_path ] || [ -L $atvoss_include_dst_path ]; then
+      rm -fr "$atvoss_include_dst_path"
     fi
-    create_relatively_softlink ${atvos_include_src_path} ${atvos_include_dst_path}
+    create_relatively_softlink ${atvoss_include_src_path} ${atvoss_include_dst_path}
   fi
 }
 
@@ -82,7 +82,7 @@ remove_relatively_softlink() {
   fi
 }
 
-remove_atvos_include_softlink() {
+remove_atvoss_include_softlink() {
   targetdir=$1
   osName=""
   if [ -f "$targetdir/atvoss/scene.info" ]; then
@@ -91,7 +91,7 @@ remove_atvos_include_softlink() {
   fi
 
   if [ -d $targetdir/${architecture_dir}/ascendc/act ]; then
-    atvos_include_path="$targetdir/${architecture_dir}/ascendc/act/include"
-    remove_relatively_softlink ${atvos_include_path}
+    atvoss_include_path="$targetdir/${architecture_dir}/ascendc/act/include"
+    remove_relatively_softlink ${atvoss_include_path}
   fi
 }

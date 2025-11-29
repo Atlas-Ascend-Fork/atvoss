@@ -10,7 +10,7 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set -e
-UT_TARGETS=("atvos_ascend910b_ut")
+UT_TARGETS=("atvoss_ascend910b_ut")
 SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93")
 
 # 所有支持的短选项

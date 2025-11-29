@@ -92,7 +92,7 @@ check_version_file() {
   return
 }
 
-check_atvos_version_file() {
+check_atvoss_version_file() {
   if [ -f "${_CURR_PATH}/../../version.info" ]; then
     ver_info="${_CURR_PATH}/../../version.info"
   # atvoss/version.info -> atvoss
@@ -146,8 +146,8 @@ do you want to continue.  [y/n] "
 version_check() {
   path_val="$1"
   #get atvoss version
-  check_atvos_version_file
-  ret_check_atvos_version_file=$ver_info
+  check_atvoss_version_file
+  ret_check_atvoss_version_file=$ver_info
   #get checked path
   check_path_pre "${path_val}"
   ret_check_path_pre=$checked_path
@@ -162,7 +162,7 @@ version_check() {
       check_version_file "${var}" "${ret_last_component}"
       ret_check_version_file=$version_file
       #check relation
-      check_relation "${ret_check_atvos_version_file}" "${ret_last_component}" "${ret_check_version_file}"
+      check_relation "${ret_check_atvoss_version_file}" "${ret_last_component}" "${ret_check_version_file}"
       ret_check_relation=$ret_situation
       #show relation
       show_relation "${ret_check_relation}" "${ret_last_component}" "${var}"

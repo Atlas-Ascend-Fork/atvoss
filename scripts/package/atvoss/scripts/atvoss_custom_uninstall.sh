@@ -41,12 +41,12 @@ while true; do
         ;;
     esac
 done
-get_version_dir "atvos_version_dir" "$install_path/$version_dir/atvoss/version.info"
+get_version_dir "atvoss_version_dir" "$install_path/$version_dir/atvoss/version.info"
 
-if [ -z "$atvos_version_dir" ]; then
+if [ -z "$atvoss_version_dir" ]; then
     # before remove the oppkernel, remove the softlinks
     logandprint "[INFO]: Start remove atvoss softlinks."
-    remove_atvos_include_softlink ${install_path}/${version_dir}
+    remove_atvoss_include_softlink ${install_path}/${version_dir}
     if [ $? -ne 0 ]; then
         logandprint "[WARNING]: Remove atvoss softlinks failed, some softlinks may not exist."
     else

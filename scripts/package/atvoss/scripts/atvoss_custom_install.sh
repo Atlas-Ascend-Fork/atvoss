@@ -41,11 +41,11 @@ while true; do
         ;;
     esac
 done
-get_version_dir "atvos_version_dir" "$install_path/$version_dir/atvoss/version.info"
+get_version_dir "atvoss_version_dir" "$install_path/$version_dir/atvoss/version.info"
 
 # create atvoss soft link
 logandprint "[INFO]: Start create atvoss softlinks."
-create_atvos_include_softlink "${install_path}/${version_dir}"
+create_atvoss_include_softlink "${install_path}/${version_dir}"
 return_code=$?
 if [ ${return_code} -eq 0 ]; then
     logandprint "[INFO]: Create atvoss softlinks successfully!"

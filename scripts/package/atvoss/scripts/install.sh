@@ -196,11 +196,11 @@ check_version_file() {
   return
 }
 
-check_atvos_version_info() {
+check_atvoss_version_info() {
   if [ -f "${CURR_PATH}/../../version.info" ]; then
-    atvos_ver_info="${CURR_PATH}/../../version.info"
+    atvoss_ver_info="${CURR_PATH}/../../version.info"
   elif [ -f "${DEFAULT_INSTALL_PATH}/${ATVOSS_PLATFORM_DIR}/version.info" ]; then
-    atvos_ver_info="${DEFAULT_INSTALL_PATH}/${ATVOSS_PLATFORM_DIR}/version.info"
+    atvoss_ver_info="${DEFAULT_INSTALL_PATH}/${ATVOSS_PLATFORM_DIR}/version.info"
   else
     logandprint "[ERROR]: ERR_NO:${FILE_NOT_EXIST}; The [${ATVOSS_PLATFORM_DIR}] version.info not exists."
     exitlog
@@ -210,12 +210,12 @@ check_atvos_version_info() {
 }
 
 check_relation() {
-  atvos_ver_info_val="$1"
+  atvoss_ver_info_val="$1"
   req_pkg_name="$2"
   req_pkg_version="$3"
   if [ -f "${COMMON_INC_FILE}" ]; then
     . "${COMMON_INC_FILE}"
-    check_pkg_ver_deps "${atvos_ver_info_val}" "${req_pkg_name}" "${req_pkg_version}"
+    check_pkg_ver_deps "${atvoss_ver_info_val}" "${req_pkg_name}" "${req_pkg_version}"
     ret_situation=$ver_check_status
   else
     logandprint "[ERROR]: ERR_NO:${FILE_NOT_EXIST}; The ${COMMON_INC_FILE} not exists."
@@ -249,8 +249,8 @@ find_version_check() {
     comp_res=$(find /usr/local -name "ccec_compiler" | grep Ascend | grep Ascend/compiler)
     ccec_compiler_path="$atc_res $fwk_res $comp_res"
   fi
-  check_atvos_version_info
-  ret_check_atvos_version_info=$atvos_ver_info
+  check_atvoss_version_info
+  ret_check_atvoss_version_info=$atvoss_ver_info
   for var in ${ccec_compiler_path}; do
     run_pkg_path_val=$(dirname "${var}")
     # find run pkg name
@@ -260,7 +260,7 @@ find_version_check() {
     check_version_file "${run_pkg_path_val}" "${ret_pkg_name}"
     ret_check_version_file=$version_file
     #check relation
-    check_relation "${ret_check_atvos_version_info}" "${ret_pkg_name}" "${ret_check_version_file}"
+    check_relation "${ret_check_atvoss_version_info}" "${ret_pkg_name}" "${ret_check_version_file}"
     ret_check_relation_val=$ret_situation
     #show relation
     show_relation "${ret_check_relation_val}" "${ret_pkg_name}" "${run_pkg_path_val}"
@@ -270,8 +270,8 @@ find_version_check() {
 
 path_version_check() {
   path_env_list="$1"
-  check_atvos_version_info
-  ret_check_atvos_version_info_name=$atvos_ver_info
+  check_atvoss_version_info
+  ret_check_atvoss_version_info_name=$atvoss_ver_info
   path_list=$(echo "${path_env_list}" | cut -d"=" -f2)
   array=$(echo ${path_list} | awk '{split($0,arr,":");for(i in arr) print arr[i]}')
   for var in ${array}; do
@@ -285,7 +285,7 @@ path_version_check() {
       check_version_file "${pkg_path_val}" "${ret_pkg_name_val}"
       ret_check_version_file_val=$version_file
       #check relation
-      check_relation "${ret_check_atvos_version_info_name}" "${ret_pkg_name}" "${ret_check_version_file_val}"
+      check_relation "${ret_check_atvoss_version_info_name}" "${ret_pkg_name}" "${ret_check_version_file_val}"
       ret_check_relation=$ret_situation
       #show relation
       show_relation "${ret_check_relation}" "${ret_pkg_name}" "${pkg_path_val}"

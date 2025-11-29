@@ -8,7 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-project(atvos_test)
+project(atvoss_test)
 cmake_minimum_required(VERSION 3.16.0)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -57,11 +57,11 @@ set(ATVOSS_TEST_ascend910b_HEADER_FILES
 
 
 set(ATVOSS_TEST_ascend910b_PARAM_CASE_SRC_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/param/test_atvos_param.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/param/test_atvoss_param.cpp
 )
 # 仅针对ATVOSS产品类型构建和运行测试
 foreach(product_type ${PRODUCT_TYPE_LIST})
-    add_executable(atvos_${product_type}_ut
+    add_executable(atvoss_${product_type}_ut
 	    ${UT_PATH}/main_global.cpp
 	    $<$<STREQUAL:${product_type},ascend910b>:${UT_PATH}/common/platform_stub.cpp>
       ${ATVOSS_TEST_${product_type}_PARAM_CASE_SRC_FILES}
@@ -69,39 +69,39 @@ foreach(product_type ${PRODUCT_TYPE_LIST})
 
     # add soc version flags
     if(${product_type} STREQUAL "ascend910b")
-        target_compile_definitions(atvos_${product_type}_ut PRIVATE
+        target_compile_definitions(atvoss_${product_type}_ut PRIVATE
             UT_TEST
             __CCE_AICORE__=220
             __NPU_ARCH__=2201
             __DAV_C220__
             __DAV_C220_VEC__
         )
-        target_link_directories(atvos_${product_type}_ut PRIVATE
+        target_link_directories(atvoss_${product_type}_ut PRIVATE
             ${ASCEND_DEP_LIB_DIR}
             ${ASCEND_DIR}/tools/tikicpulib/lib/Ascend910B1/
             ${ASCENDC_SYS_DIR}/simulator/Ascend910B1/lib/
         )
     endif()
 
-    target_compile_definitions(atvos_${product_type}_ut PRIVATE
+    target_compile_definitions(atvoss_${product_type}_ut PRIVATE
         __CCE_KT_TEST__=1
         ASCENDC_CPU_DEBUG=1
         ASCENDC_OOM=1
     )
 
-    target_include_directories(atvos_${product_type}_ut PRIVATE
+    target_include_directories(atvoss_${product_type}_ut PRIVATE
         ${ATVOSS_TEST_HEADER_FILES}
         ${ASCENDC_DEP_HEADER_DIR}
         ${ATVOSS_TEST_${product_type}_HEADER_FILES}
     )
 
-    target_compile_options(atvos_${product_type}_ut PRIVATE
+    target_compile_options(atvoss_${product_type}_ut PRIVATE
         -fno-access-control
         -DCMAKE_C_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
         -DCMAKE_Cxx_COMPILER_LAUNCHER=${CCACHE_PROGRAM}
     )
 
-    target_link_libraries(atvos_${product_type}_ut PRIVATE
+    target_link_libraries(atvoss_${product_type}_ut PRIVATE
         $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
         $<BUILD_INTERFACE:dlog_headers>
         -Wl,--no-as-needed
@@ -142,33 +142,33 @@ foreach(product_type ${PRODUCT_TYPE_LIST})
 
       set(PRELOAD "LD_PRELOAD=${LIBASAN_PATH}:${LIBSTDC_PATH}")
       add_custom_command(
-        TARGET atvos_${product_type}_ut POST_BUILD
+        TARGET atvoss_${product_type}_ut POST_BUILD
         COMMAND
         COMMAND bash -c "source ${ASCEND_DIR}/bin/setenv.bash && \
-        ${PRELOAD} ASAN_OPTIONS=detect_leaks=0 ./atvos_${product_type}_ut"
+        ${PRELOAD} ASAN_OPTIONS=detect_leaks=0 ./atvoss_${product_type}_ut"
         VERBATIM
-        COMMENT "Run atvos utest with asan"
+        COMMENT "Run atvoss utest with asan"
       )
     else()
       add_custom_command(
-        TARGET atvos_${product_type}_ut POST_BUILD
-        COMMAND bash -c "source ${ASCEND_DIR}/bin/setenv.bash && ./atvos_${product_type}_ut"
+        TARGET atvoss_${product_type}_ut POST_BUILD
+        COMMAND bash -c "source ${ASCEND_DIR}/bin/setenv.bash && ./atvoss_${product_type}_ut"
         VERBATIM
-        COMMENT "Run atvos utest"
+        COMMENT "Run atvoss utest"
       )
     endif()
 
     if(ENABLE_COVERAGE)
       # set(_collect_coverage_data_target collect_coverage_data)
-      get_filename_component(_atvos_builtin_bin_path ${CMAKE_BINARY_DIR} DIRECTORY)
+      get_filename_component(_atvoss_builtin_bin_path ${CMAKE_BINARY_DIR} DIRECTORY)
       set(_cov_report ${CMAKE_BINARY_DIR}/cov_report)
       set(_cov_html ${_cov_report})
       set(_cov_data ${_cov_report}/coverage.info)
       set(_generate_cov_script ${UT_PATH}/scripts/generate_cpp_cov.sh)
 
       add_custom_command(
-          TARGET atvos_${product_type}_ut POST_BUILD
-          COMMAND bash ${_generate_cov_script} ${_atvos_builtin_bin_path} ${_cov_data} ${_cov_html}
+          TARGET atvoss_${product_type}_ut POST_BUILD
+          COMMAND bash ${_generate_cov_script} ${_atvoss_builtin_bin_path} ${_cov_data} ${_cov_html}
           COMMENT "Run collect coverage data"
       )
     endif()

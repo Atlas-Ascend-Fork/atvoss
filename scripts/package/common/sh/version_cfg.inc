@@ -13,7 +13,7 @@
 # 版本状态配置文件格式为
 # # version: 1.0
 # runtime_running_version=[1.80:CANN-1.80]
-# atvos_running_version=[1.80:CANN-1.80]
+# atvoss_running_version=[1.80:CANN-1.80]
 # toolkit_running_version=[1.80:CANN-1.80]
 # fwkplugin_running_version=[1.80:CANN-1.80]
 # runtime_installed_version=[1.79:CANN-1.79][1.80:CANN-1.80]

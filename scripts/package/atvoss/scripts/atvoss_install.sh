@@ -347,7 +347,7 @@ create_latest_softlink() {
   fi
 }
 
-install_atvos() {
+install_atvoss() {
   logandprint "[INFO]: Begin install atvoss."
   local version_mod=""
   local module_mod=""
@@ -394,7 +394,7 @@ install_atvos() {
 }
 
 main() {
-  logandprint "[INFO]: Command atvos_install"
+  logandprint "[INFO]: Command atvoss_install"
 
   get_opts "$@"
 
@@ -408,7 +408,7 @@ main() {
 
   check_env
 
-  install_atvos
+  install_atvoss
 
   #chmod to support copy
   if [ -d "${TARGET_MOULDE_DIR}/vendors" ] && [ "$(id -u)" != "0" ]; then

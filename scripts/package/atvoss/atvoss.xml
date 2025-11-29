@@ -30,7 +30,7 @@
         <arch>$(ARCH)</arch>
     </generate_info>
 
-    <file_info value="atvos_script" copy_type="source" src_path="" dst_path="atvoss" install_path="atvoss">
+    <file_info value="atvoss_script" copy_type="source" src_path="" dst_path="atvoss" install_path="atvoss">
         <file value="script" entity="true"/>
         <file value="bin" entity="true"/>
         <file value="version.info" dst_path="."/>
@@ -41,7 +41,7 @@
         <block name="EngineeringFiles"/>
     </block_info>
 
-    <dir_info value="atvos_dir" install_path="" install_mod="550">
+    <dir_info value="atvoss_dir" install_path="" install_mod="550">
         <path value="$(TARGET_ENV)/ascendc"/>
         <path value="$(TARGET_ENV)/ascendc/act"/>
         <path value="$(TARGET_ENV)/asc"/>
@@ -49,7 +49,7 @@
         <path value="$(TARGET_ENV)/asc/atvoss/include"/>
     </dir_info>
 
-    <file_info value="atvos_include" copy_type="delivery" src_path="" dst_path="atvoss" install_path="$(TARGET_ENV)/asc/atvoss" install_type="all">
+    <file_info value="atvoss_include" copy_type="delivery" src_path="" dst_path="atvoss" install_path="$(TARGET_ENV)/asc/atvoss" install_type="all">
         <file value="include" install_mod="550" entity="true" install_softlink="$(TARGET_ENV)/ascendc/act/include"/>
     </file_info>
 </config>

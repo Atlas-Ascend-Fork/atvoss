@@ -181,7 +181,7 @@ remove_module() {
   done
 }
 
-remove_atvos() {
+remove_atvoss() {
   local ori_mod=$(stat -c %a ${TARGET_MOULDE_DIR})
   if [ "$(id -u)" != 0 ] && [ ! -w "${TARGET_MOULDE_DIR}" ]; then
     chmod u+w "${TARGET_MOULDE_DIR}" 2>/dev/null
@@ -226,7 +226,7 @@ main() {
 
   check_installed_type "${INSTALLED_TYPE}"
 
-  remove_atvos
+  remove_atvoss
 
   remote_all_soft_link
 
