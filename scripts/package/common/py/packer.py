@@ -70,6 +70,13 @@ class MakeselfPkgParams(NamedTuple):
     """run包打包参数。"""
     package_name: str
     comments: str
+    makeself_tool: Optional[str] = None
+    makeself_header: Optional[str] = None
+    help_info: Optional[str] = None
+    source_target: Optional[str] = None
+
+    install_script: Optional[str] = None
+    independent_pkg: Optional[bool] = False
     cleanup: Optional[str] = None
 
 
@@ -113,10 +120,22 @@ def compose_makeself_command(params: MakeselfPkgParams) -> str:
         if params.cleanup:
             return ['--cleanup', params.cleanup]
         return []
-    
+    independent_pkg = params.independent_pkg
     compress_tool = get_compress_tool()
     tar_format = get_compress_format()
-    commands = chain(
+    if independent_pkg:
+        commands = chain(
+        [
+            'TMPDIR=$PWD', params.makeself_tool, "--header", params.makeself_header,
+            "--help-header", params.help_info, compress_tool, '--complevel', '4',
+            '--nomd5', '--sha256', '--nooverwrite', '--chown', '--tar-format', tar_format,
+            '--tar-extra', '--numeric-owner', '--tar-quietly'
+        ],
+        get_cleanup_commands(),
+        [params.source_target, params.package_name, params.comments, params.install_script]
+        )
+    else:
+        commands = chain(
         [
             compress_tool, '--complevel', '4',
             '--nomd5', '--sha256', '--nooverwrite', '--chown', '--tar-format', tar_format,
@@ -124,28 +143,48 @@ def compose_makeself_command(params: MakeselfPkgParams) -> str:
         ],
         get_cleanup_commands(),
         ['./', params.package_name, params.comments]
-    )
+       )
     
     command = ' '.join(commands)
     return command
 
 
-def create_makeself_pkg_params_factory(package_name: str,
+def create_makeself_pkg_params_factory(source_target: str,
+                                       package_name: str,
                                        comments: str
-                                       ) -> Callable[[Dict], MakeselfPkgParams]:
+                                       ) -> Callable[[str, dict, bool], MakeselfPkgParams]:
     """创建Makeself打包参数工厂。"""
 
-    def create_makeself_pkg_params(package_attr: Dict) -> MakeselfPkgParams:
+    def create_makeself_pkg_params(makeself_dir: str,
+                                  package_attr: Dict,
+                                  independent_pkg=False) -> MakeselfPkgParams:
         """创建Makeself打包参数。"""
         cleanup = package_attr.get('cleanup')
-        params = MakeselfPkgParams(
+
+        if independent_pkg:
+            install_script = str(package_attr.get('install_script'))
+            help_info = str(package_attr.get('help'))
+            makeself_tool = os.path.join(makeself_dir, 'makeself.sh')
+            makeself_header = os.path.join(makeself_dir, 'makeself-header.sh')
+            params = MakeselfPkgParams(
+            package_name=package_name,
+            comments=comments,
+            makeself_tool=makeself_tool,
+            makeself_header=makeself_header,
+            help_info=help_info,
+            source_target=source_target,
+
+            install_script=install_script,
+            independent_pkg=independent_pkg,
+            cleanup=cleanup,
+        )
+        else:
+            params = MakeselfPkgParams(
             package_name=package_name,
             comments=comments,
             cleanup=cleanup,
         )
-
         return params
-
     return create_makeself_pkg_params
 
 
@@ -156,3 +195,20 @@ def create_run_package_command(params: MakeselfPkgParams
     返回值: command
     """
     return compose_makeself_command(params), None
+
+
+def exec_pack_cmd(delivery_dir: str,
+                 pack_cmd: str,
+                 package_name: str) -> str:
+    """执行打包命令"""
+    if delivery_dir:
+        cmd = f'cd {delivery_dir} && {pack_cmd}'
+    else:
+        cmd = pack_cmd
+    CommLog.cilog_info("package cmd:%s", cmd)
+    result = subprocess.run(cmd, shell=True, check=False, stdout=PIPE, stderr=STDOUT)
+    output = result.stdout.decode()
+    if result.returncode != 0:
+        CommLog.cilog_error(__file__, "compress package(%s) failed! %s.", package_name, output)
+        raise CompressError(package_name)
+    return package_name

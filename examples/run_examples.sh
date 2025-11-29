@@ -11,13 +11,30 @@
 
 set -e
 
+# if use split cann run, need to set the following environment variables
+if [[ -n "${ASCEND_HOME_PATH}" ]]; then
+    echo "env exists ASCEND_HOME_PATH : ${ASCEND_HOME_PATH}"
+elif [[ $EUID -eq 0 ]]; then
+    if [[ -d "/usr/local/Ascend/ascend-toolkit/cann" ]]; then
+        export ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/cann
+    else
+        export ASCEND_HOME_PATH=/usr/local/Ascend/cann
+    fi
+else
+    if [[ -d "${HOME}/Ascend/ascend-toolkit/cann" ]]; then
+        export ASCEND_HOME_PATH=${HOME}/Ascend/ascend-toolkit/cann
+    else
+        export ASCEND_HOME_PATH=${HOME}/Ascend/cann
+    fi
+fi
+
 CURRENT_DIR=$(
     cd $(dirname ${BASH_SOURCE:-$0})
     pwd
 )
 
-Atvoss_HOME_DIR=$CURRENT_DIR/../
-TEST_CASE_LIST=$(ls $Atvoss_HOME_DIR/examples | grep -v '^run_examples.sh$' | grep -v '^ops_*' | grep -v '^common*' | grep -v '^README*'  | xargs)
+ATVOSS_HOME_DIR=$CURRENT_DIR/../
+TEST_CASE_LIST=$(ls $ATVOSS_HOME_DIR/examples | grep -v '^run_examples.sh$' | grep -v '^ops_*' | grep -v '^common*' | grep -v '^README*'  | xargs)
 if [ $# -lt 1 ]; then
     echo "This script requires an input as the test case name. Execution example: 'bash run_examples.sh [$TEST_CASE_LIST]'"
     exit 1
@@ -37,24 +54,13 @@ function parse_run_mode(){
 
 # 根据不同run-mode执行不同的操作
 function compile_operator(){
-    if [ -n "$ASCEND_INSTALL_PATH" ]; then
-        _ASCEND_INSTALL_PATH=$ASCEND_INSTALL_PATH
-    elif [ -n "$ASCEND_HOME_PATH" ]; then
-        _ASCEND_INSTALL_PATH=$ASCEND_HOME_PATH
-    else
-        if [ -d "$HOME/Ascend/ascend-toolkit/latest" ]; then
-            _ASCEND_INSTALL_PATH=$HOME/Ascend/ascend-toolkit/latest
-        else
-            _ASCEND_INSTALL_PATH=/usr/local/Ascend/ascend-toolkit/latest
-        fi
-    fi
-    cd $Atvoss_HOME_DIR/examples/$TEST_NAME
+    cd $ATVOSS_HOME_DIR/examples/$TEST_NAME
     if [ -z "$RUN_MODE" ]; then
         echo "Executing with npu mode"
-        bisheng -x asc --npu-arch=dav-2201 $TEST_NAME.cpp -o $TEST_NAME -I ${Atvoss_HOME_DIR}/include -I ${CURRENT_DIR}/common -ltiling_api -lplatform -lm -ldl -L${_ASCEND_INSTALL_PATH}/lib64 -w
+        bisheng -x asc --npu-arch=dav-2201 $TEST_NAME.cpp -o $TEST_NAME -I ${ATVOSS_HOME_DIR}/include -I ${CURRENT_DIR}/common -ltiling_api -lplatform -lm -ldl -L${ASCEND_HOME_PATH}/lib64 -w
     elif [ "$RUN_MODE" = "profiling" ]; then
         echo "Executing with profiling mode"
-        bisheng -x asc --npu-arch=dav-2201 $TEST_NAME.cpp -o $TEST_NAME -I ${Atvoss_HOME_DIR}/include -I ${CURRENT_DIR}/common  -ltiling_api -lplatform -lm -ldl -L${_ASCEND_INSTALL_PATH}/lib64 -w -DAtvoss_DEBUG_MODE=2 -DASCENDC_DUMP=0
+        bisheng -x asc --npu-arch=dav-2201 $TEST_NAME.cpp -o $TEST_NAME -I ${ATVOSS_HOME_DIR}/include -I ${CURRENT_DIR}/common  -ltiling_api -lplatform -lm -ldl -L${ASCEND_HOME_PATH}/lib64 -w -DAtvoss_DEBUG_MODE=2 -DASCENDC_DUMP=0
     else
         echo "--run-mode is an optional parameter and can be left unset. If set, the value must be profiling."
         echo "Execution example: 'bash run_examples.sh $TEST_NAME --run-mode=profiling'"
@@ -63,7 +69,7 @@ function compile_operator(){
 }
 
 if [[ " $TEST_CASE_LIST " == *" ${TEST_NAME} "* ]]; then
-    cd $Atvoss_HOME_DIR/examples/$TEST_NAME
+    cd $ATVOSS_HOME_DIR/examples/$TEST_NAME
     rm -rf ./$TEST_NAME
     parse_run_mode "$@"
     compile_operator
@@ -81,8 +87,8 @@ if [[ " $TEST_CASE_LIST " == *" ${TEST_NAME} "* ]]; then
     else
         echo "Sample ${TEST_NAME} failed!"
     fi
-    cd ${Atvoss_HOME_DIR}
+    cd ${ATVOSS_HOME_DIR}
 else
-    echo "Error: Cannot find '$TEST_NAME' in ${Atvoss_HOME_DIR}examples. Execution example: 'bash run_examples.sh [$TEST_CASE_LIST]'"
+    echo "Error: Cannot find '$TEST_NAME' in ${ATVOSS_HOME_DIR}examples. Execution example: 'bash run_examples.sh [$TEST_CASE_LIST]'"
     exit 1
 fi

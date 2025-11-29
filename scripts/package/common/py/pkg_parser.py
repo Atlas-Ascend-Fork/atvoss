@@ -365,6 +365,7 @@ def get_env_items_by_version(version: Optional[str]) -> Iterator[Tuple[str, str]
     """根据version获取环境字典条目。"""
     if version:
         yield 'ASCEND_VER', version
+        yield 'VERSION', version
 
         version_parts = version.split('.')
         for idx in range(1, len(version_parts) + 1):
@@ -591,13 +592,7 @@ def evaluate_info(info: Dict[str, str],
 
     def replace_pkg_inner_softlink(key: str, value: str) -> Tuple[str, str]:
         if key == 'pkg_inner_softlink':
-            inner_softlink_new = [
-                join_pkg_inner_softlink(link_str.split(':'))
-                for link_str in value.split(';')
-                if ':' not in link_str or link_str.split(':')[0] == loaded_block.dst_path
-            ]
-            if inner_softlink_new:
-                return key, ';'.join(inner_softlink_new)
+            # 禁用pkg_inner_softlink
             return key, 'NA'
         return key, value
 

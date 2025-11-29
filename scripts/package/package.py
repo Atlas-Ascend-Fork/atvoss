@@ -28,7 +28,7 @@ from common.py.filelist import (
     get_transform_nested_path_func,
 )
 from common.py.packer import (
-    PackageName, create_makeself_pkg_params_factory, create_run_package_command
+    PackageName, create_makeself_pkg_params_factory, create_run_package_command, exec_pack_cmd
 )
 from common.py.pkg_parser import (
     ParseOption, XmlConfig, parse_xml_config, get_cann_version_info
@@ -50,25 +50,30 @@ def get_comments(package_name: PackageName) -> str:
     return f'"{comments}"'
 
 
-def get_compress_cmd(pkg_args: Namespace,
+def get_compress_cmd(delivery_dir: str,
+                     build_dir: str,
+                     pkg_args: Namespace,
                      xml_config: XmlConfig) -> str:
     """获取makeself压缩命令"""
     suffix = xml_config.package_attr.get('suffix')
     if suffix == "run":
         package_name = PackageName(xml_config.package_attr, pkg_args, xml_config.version)
         factory = create_makeself_pkg_params_factory(
-            package_name.getvalue(), get_comments(package_name)
+            pkg_args.pkg_output_dir, package_name.getvalue(), get_comments(package_name)
         )
-        params = factory(xml_config.package_attr)
+        params = factory(pkg_args.makeself_dir, xml_config.package_attr, pkg_args.independent_pkg)
         pack_cmd, err_msg = create_run_package_command(params)
         if err_msg:
             CommLog.cilog_error(err_msg)
             CommLog.cilog_error("create_run_command failed!")
+            raise CompressError(package_name.getvalue())
+        if pkg_args.independent_pkg:
+            exec_pack_cmd(delivery_dir, pack_cmd, package_name.getvalue())
     else:
         CommLog.cilog_error("the repack type '%s' is not support!", suffix)
         sys.exit(FAIL)
     try:
-        makeself_dir = os.path.join(TOP_DIR, "build/makeself.txt")
+        makeself_dir = os.path.join(build_dir, "makeself.txt")
         with open(makeself_dir, 'w') as f:
             f.write(pack_cmd)
     except Exception as exception:
@@ -139,8 +144,8 @@ def generate_version_header_content(target_conf) -> Iterator[str]:
     yield ''
 
 
-def generate_customized_file(target_conf, ext_name):
-    filepath = os.path.join(TOP_DIR, "build", target_conf.get('value'))
+def generate_customized_file(target_conf, ext_name, build_dir):
+    filepath = os.path.join(build_dir, target_conf.get('value'))
 
     generator = target_conf.get('generator', 'info')
     if generator == 'version_header':
@@ -302,9 +307,10 @@ def execute_repack_process(xml_config: XmlConfig,
     """
     release_dir = os.path.join(
         delivery_dir, xml_config.default_config.get('name', 'default'))
+    build_dir = delivery_dir.replace("_CPack_Packages/makeself_staging", "")
     # 生成自定义文件
     for item in xml_config.generate_infos:
-        if generate_customized_file(item, package_option.ext_name):
+        if generate_customized_file(item, package_option.ext_name, build_dir):
             return FAIL
 
     # 校验包中文件或目录大小
@@ -321,7 +327,7 @@ def execute_repack_process(xml_config: XmlConfig,
             if not result:
                 return FAIL
     try:
-        package_name = get_compress_cmd(pkg_args, xml_config)
+        package_name = get_compress_cmd(pkg_args.pkg_output_dir, build_dir, pkg_args, xml_config)
     except CompressError:
         return FAIL
 
@@ -490,6 +496,7 @@ def gen_file_install_list(xml_config: XmlConfig,
 
 def generate_filelist_file_by_xml_config(xml_config: XmlConfig,
                                          filter_key: List[str],
+                                         build_dir: str,
                                          package_check: bool):
     """生成文件列表文件。"""
     check_move = xml_config.package_attr.get('use_move', False)
@@ -506,7 +513,7 @@ def generate_filelist_file_by_xml_config(xml_config: XmlConfig,
         ),
         xml_config, filter_key
     )
-    generate_filelist(file_install_list, 'filelist.csv')
+    generate_filelist(file_install_list, 'filelist.csv', build_dir)
     # 先生成再检查，有利于问题定位
     if package_check:
         check_filelist(file_install_list, check_features, check_move)
@@ -536,12 +543,12 @@ def write_config_inc_var(name: str, package_attr: Dict, file: TextIO):
         file.write(f"{name.upper()}={value}\n")
 
 
-def generate_config_inc(package_attr: Dict):
+def generate_config_inc(package_attr: Dict, build_dir: str,):
     """生成config.inc文件。"""
     if 'parallel' not in package_attr and 'parallel_limit' not in package_attr and 'use_move' not in package_attr:
         return
     year = datetime.now(timezone.utc).year
-    config_inc = os.path.join(TOP_DIR, "build", 'config.inc')
+    config_inc = os.path.join(build_dir, 'config.inc')
     header = [
         '#!/bin/sh\n',
         '#----------------------------------------------------------------------------\n',
@@ -567,7 +574,12 @@ def main(pkg_name='', xml_file='', main_args=None):
     返回值: SUCCESS/FAIL
     """
     delivery_dir = os.path.join(TOP_DIR, DELIVERY_PATH)
+    build_dir = os.path.join(TOP_DIR, "build")
+    if main_args.delivery_dir and main_args.delivery_dir != "":
+        delivery_dir = os.path.join(main_args.delivery_dir, "_CPack_Packages/makeself_staging")
+        build_dir = main_args.delivery_dir
     if not os.path.exists(delivery_dir):
+        CommLog.cilog_error(f"delivery dir not exist: {delivery_dir}")
         return FAIL
 
     config_relative_path = get_pkg_xml_relative_path(main_args)
@@ -592,7 +604,7 @@ def main(pkg_name='', xml_file='', main_args=None):
     # 生成filelist.csv安装列表文件
     try:
         generate_filelist_file_by_xml_config(
-            xml_config, filter_key,
+            xml_config, filter_key, build_dir + "/_CPack_Packages/makeself_staging",
             main_args.package_check or xml_config.package_attr.get('package_check')
         )
     except PackageNameEmptyError:
@@ -605,7 +617,7 @@ def main(pkg_name='', xml_file='', main_args=None):
         CommLog.cilog_error('check filelist error! %s', str(ex))
         return FAIL
 
-    generate_config_inc(xml_config.package_attr)
+    generate_config_inc(xml_config.package_attr, build_dir)
 
     package_option = PackageOption(
         main_args.os_arch, main_args.package_suffix, main_args.not_in_name, main_args.pkg_version, main_args.ext_name,
@@ -665,6 +677,12 @@ def args_parse():
                         help="This parameter define package func name, has higher priority than func name in xml")
     parser.add_argument('--source_root', metavar='source_root', required=False, dest='source_root', nargs='?', const='',
                         help='source root dir.')
+    parser.add_argument('--makeself_dir', metavar='makeself_dir', required=False, dest='makeself_dir',
+                        nargs='?', const='', help='makeself dir.')
+    parser.add_argument('--delivery_dir', metavar='delivery_dir', required=False, dest='delivery_dir',
+                        nargs='?', const='', help='delivery dir.')
+    parser.add_argument('--independent_pkg', action='store_true', help='Independent pkg.')
+    parser.add_argument('--pkg-output-dir', default='', help='Package dirpath.')
     parser.add_argument('--version_dir', nargs='?', const='', default='', help='Set version dir.')
     parser.add_argument('--tag', metavar='tag', nargs='?', const='', default='')
     parser.add_argument('--disable-multi-version', action='store_true', help='Disable multi version.')

@@ -10,7 +10,7 @@
 
 #ifndef Atvoss_DEV_PATTERNS_H
 #define Atvoss_DEV_PATTERNS_H
-namespace Atvoss::Patterns {
+namespace Atvoss {
     enum class Pattern {
         AR,
         RA,

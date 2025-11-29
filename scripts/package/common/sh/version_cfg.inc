@@ -13,18 +13,18 @@
 # 版本状态配置文件格式为
 # # version: 1.0
 # runtime_running_version=[1.80:CANN-1.80]
-# atvos_running_version=[1.80:CANN-1.80]
+# compiler_running_version=[1.80:CANN-1.80]
 # toolkit_running_version=[1.80:CANN-1.80]
 # fwkplugin_running_version=[1.80:CANN-1.80]
 # runtime_installed_version=[1.79:CANN-1.79][1.80:CANN-1.80]
-# atvoss_installed_version=[1.79:CANN-1.79][1.80:CANN-1.80][1.81:CANN-1.81]
+# compiler_installed_version=[1.79:CANN-1.79][1.80:CANN-1.80][1.81:CANN-1.81]
 # toolkit_installed_version=[1.79:CANN-1.79][1.80:CANN-1.80][1.81:CANN-1.81]
 # fwkplugin_installed_version=[1.79:CANN-1.79][1.80:CANN-1.80][1.81:CANN-1.81]
 
 # 子包会source本文件，本文件中调用的函数，都需要在文件内找到定义
 
-# latest目录名
-LATEST_DIR="latest"
+# cann目录名
+LATEST_DIR="cann"
 
 # 配置版本号
 _CFG_VERSION="1.0"
@@ -504,7 +504,7 @@ get_upgrade_package_version() {
 # 包版本是否为某状态
 is_package_version_status() {
     local _outvar="$1"
-    local _latest_path="$2"
+    local _cann_path="$2"
     local _package="$3"
     local _version="$4"
     local _version_dir="$5"
@@ -514,7 +514,7 @@ is_package_version_status() {
 
     eval "${_outvar}=\"\""
 
-    get_package_version_version_cfg "_pkg_status_version" "${_latest_path}" "${_package}" "${_target_type}"
+    get_package_version_version_cfg "_pkg_status_version" "${_cann_path}" "${_package}" "${_target_type}"
     _ret="$?" && [ $_ret -ne 0 ] && return $_ret
 
     if [ "${_pkg_status_version}" = "${_version}:${_version_dir}" ]; then
@@ -529,23 +529,23 @@ is_package_version_status() {
 # 包版本是否running
 is_package_version_running() {
     local _outvar="$1"
-    local _latest_path="$2"
+    local _cann_path="$2"
     local _package="$3"
     local _version="$4"
     local _version_dir="$5"
 
-    is_package_version_status "${_outvar}" "${_latest_path}" "${_package}" "${_version}" "${_version_dir}" "running"
+    is_package_version_status "${_outvar}" "${_cann_path}" "${_package}" "${_version}" "${_version_dir}" "running"
 }
 
 # 包版本是否upgrade
 is_package_version_upgrade() {
     local _outvar="$1"
-    local _latest_path="$2"
+    local _cann_path="$2"
     local _package="$3"
     local _version="$4"
     local _version_dir="$5"
 
-    is_package_version_status "${_outvar}" "${_latest_path}" "${_package}" "${_version}" "${_version_dir}" "upgrade"
+    is_package_version_status "${_outvar}" "${_cann_path}" "${_package}" "${_version}" "${_version_dir}" "upgrade"
 }
 
 # 添加安装子包版本

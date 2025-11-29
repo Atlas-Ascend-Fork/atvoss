@@ -19,6 +19,25 @@ mk_dir() {
   logging "Created ${create_dir}"
 }
 
+# files no coverage
+generate_blacklist() {
+  local _source_dir="$1"
+
+  if [[ -z "${_source_dir}" ]]; then
+    logging "directory required to find the .da files"
+    exit 1
+  fi
+
+  if [[ ! -d "${_source_dir}" ]]; then
+    logging "directory is not exist, please check ${_source_dir}"
+    exit 1
+  fi
+
+  local _blacklist="${_source_dir}/blacklist.txt"
+
+  echo "include/matmul/matmul_intf.h" > "${_blacklist}" 2>/dev/null || return 0
+}
+
 # using lcov to generate coverage for cpp files
 generate_coverage() {
   local _source_dir="$1"
@@ -50,8 +69,8 @@ generate_coverage() {
     mk_dir "${_path_to_gen}"
   fi
   lcov -c -d "${_source_dir}" -o "${_coverage_file}"
-  lcov -r "${_coverage_file}" "/home/jenkins/Ascend/ascend-toolkit/latest/*" -o "${_coverage_file}"
-  lcov --extract "${_coverage_file}" -o "${_coverage_file}" "${_source_dir}/include/*"
+  lcov -r "${_coverage_file}" "/home/jenkins/Ascend/ascend-toolkit/cann/*" -o "${_coverage_file}"
+  lcov --extract "${_coverage_file}" -o "${_coverage_file}" "${_source_dir}/include/**/*.h"
   logging "generated coverage file ${_coverage_file}"
 }
 
@@ -102,6 +121,7 @@ _src="$1"
 _cov_file="$2"
 _out="$3"
 
+generate_blacklist "${_src}"
 generate_coverage "${_src}" "${_cov_file}"
 filter_coverage   "${_cov_file}" "${_cov_file}_filtered"
 generate_html     "${_cov_file}_filtered" "${_out}"

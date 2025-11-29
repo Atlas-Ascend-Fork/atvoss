@@ -10,15 +10,16 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set -e
-UT_TARGETS=("atvos_ascend910b_ut")
+UT_TARGETS=("atvoss_ascend910b_ut")
 SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93")
 
 # 所有支持的短选项
-SUPPORTED_SHORT_OPTS="hj:vt-:"
+SUPPORTED_SHORT_OPTS="hj:vcu-:"
 
 # 所有支持的长选项
 SUPPORTED_LONG_OPTS=(
-  "help" "verbose" "pkg" "make_clean" "cann_3rd_lib_path" "test" "noexec" "cov" "disable_asan" "cann_3rd_lib_path"
+  "help" "verbose" "pkg" "clean" "cann_3rd_lib_path" "utest" "noexec" "cov" "asan" "cann_3rd_lib_path"
+  "run_example" "build-type"
 )
 
 in_array() {
@@ -113,6 +114,7 @@ usage() {
         echo "    -j[n]                  Compile thread nums, default is 8, eg: -j8"
         echo "    --cann_3rd_lib_path=<PATH>"
         echo "                           Set ascend third_party package install path, default ./third_party"
+        echo "    --build-type=<TYPE>    Specify build type (TYPE options: Release/Debug), Default:Release"
         echo $dotted_line
         echo "Examples:"
         echo "    bash build.sh --pkg -j16"
@@ -121,29 +123,40 @@ usage() {
       clean)
         echo "Clean Options:"
         echo $dotted_line
-        echo "    --make_clean           Clean build artifacts"
+        echo "    -c, --clean            Clean build artifacts"
         echo $dotted_line
         return
         ;;
-      test)
+      utest)
         echo "Test Options:"
         echo $dotted_line
-        echo "    -t, --test             Build and run all unit tests"
-        echo "    --noexec               Only compile ut, do not execute"
-        echo "    --cov                  Enable code coverage for unit tests"
-        echo "    --disable_asan         Disable ASAN (Address Sanitizer)"
+        echo "    -u, --utest            Build and run all unit tests"
+        echo "    --noexec               Only compile ut, do not execute, only can bu used with -u"
+        echo "    --cov                  Enable code coverage for unit tests, only can bu used with -u"
+        echo "    --asan                 Enable ASAN (Address Sanitizer)"
         echo $dotted_line
         echo "Examples:"
-        echo "    bash build.sh -t --noexec"
-        echo "    bash build.sh --test --cov"
+        echo "    bash build.sh -u --noexec"
+        echo "    bash build.sh --utest --cov"
+        return
+        ;;
+      run_example)
+        echo "Run examples Options:"
+        echo $dotted_line
+        echo "    --run_example example_name   Compile and execute example"
+        echo $dotted_line
+        echo "Examples:"
+        echo "    bash build.sh --run_example 00_basic_matmul"
+        echo "    bash build.sh --run_example 00_basic_matmul,01_misplace_core_matmul"
+        echo "    bash build.sh --run_example all"
         return
         ;;
     esac
   fi
 
-  echo "build script for atvoss repository"
+  echo "build script for atcos repository"
   echo "Usage:"
-  echo "    bash build.sh [-h] [-j[n]] [-v] [-t] [--pkg]"
+  echo "    bash build.sh [-h] [-j[n]] [-v] [-u] [--pkg]"
   echo ""
   echo ""
   echo "Options:"
@@ -154,17 +167,18 @@ usage() {
   echo "    -j[n]                        Compile thread nums, default is 8, eg: -j8"
   echo "    -v                           Cmake compile verbose"
   echo "    --pkg                        Build run package"
-  echo "    -t, --test                   Compile all ut"
+  echo "    -u, --utest                  Compile all ut"
   echo $dotted_line
   echo "    examples, Build unit test and do not execute."
-  echo "    ./build.sh --test --noexec"
+  echo "    ./build.sh --utest --noexec"
   echo $dotted_line
   echo "    The following are all supported arguments:"
   echo $dotted_line
-  echo "    --make_clean                 Make clean"
-  echo "    --noexec                     Only compile ut, do not execute the compiled executable file"
-  echo "    --cov                        When building uTest locally, count the coverage"
-  echo "    --disable_asan               Disable ASAN (Address Sanitizer)"
+  echo "    -c, --clean                  Make clean"
+  echo "    --noexec                     Only compile ut, do not execute the compiled executable file, only can bu used with -u"
+  echo "    --cov                        When building uTest locally, count the coverage, only can bu used with -u"
+  echo "    --asan                       Enable ASAN (Address Sanitizer)"
+  echo "    --run_example                Compile and execute example"
   echo "to be continued ..."
 }
 
@@ -175,7 +189,7 @@ check_help_combinations() {
 
   for arg in "${args[@]}"; do
     case "$arg" in
-      -t | --test) has_t=true ;;
+      -u | --utest) has_t=true ;;
       --pkg) has_package=true ;;
       --help | -h) ;;
     esac
@@ -183,7 +197,7 @@ check_help_combinations() {
 
   # Check the invalid command combinations in help
   if [[ "$has_package" == "true" && "$has_t" == "true" ]]; then
-    echo "[ERROR] --pkg cannot be used with test(-t, --test)"
+    echo "[ERROR] --pkg cannot be used with test(-u, --utest)"
     return 1
   fi
   return 0
@@ -193,7 +207,21 @@ check_param() {
   # -pkg不能与-t（UT模式）同时存在
   if [[ "$ENABLE_PACKAGE" == "TRUE" ]]; then
     if [[ "$ENABLE_TEST" == "TRUE" ]]; then
-      echo "[ERROR] --pkg cannot be used with test(-t, --test)"
+      echo "[ERROR] --pkg cannot be used with test(-u, --utest)"
+      exit 1
+    fi
+  fi
+  # --noexec需要与-t（UT模式）同时存在
+  if [[ "$ENABLE_UT_EXEC" == "FALSE" ]]; then
+    if [[ "$ENABLE_TEST" == "FALSE" ]]; then
+      echo "[ERROR] --noexec must be used with test(-u, --utest)"
+      exit 1
+    fi
+  fi
+  # --cov需要与-t（UT模式）同时存在
+  if [[ "$ENABLE_COVERAGE" == "TRUE" ]]; then
+    if [[ "$ENABLE_TEST" == "FALSE" ]]; then
+      echo "[ERROR] --cov must be used with test(-u, --utest)"
       exit 1
     fi
   fi
@@ -213,12 +241,15 @@ checkopts() {
   VERBOSE=""
   UT_TEST_ALL=FALSE
   SHOW_HELP=""
+  EXAMPLE_NAME=""
 
   ENABLE_COVERAGE=FALSE
   ENABLE_UT_EXEC=TRUE
-  ENABLE_ASAN=TRUE
+  ENABLE_ASAN=FALSE
   ENABLE_PACKAGE=FALSE
   ENABLE_TEST=FALSE
+  ENABLE_RUN_EXAMPLE=FALSE
+  BUILD_TYPE="Release"
 
   # 首先检查所有参数是否合法
   for arg in "$@"; do
@@ -245,8 +276,9 @@ checkopts() {
       for prev_arg in "$@"; do
         case "$prev_arg" in
           --pkg) SHOW_HELP="package" ;;
-          -t | --test) SHOW_HELP="test" ;;
-          --make_clean) SHOW_HELP="clean" ;;
+          -u | --utest) SHOW_HELP="utest" ;;
+          -c | --clean) SHOW_HELP="clean" ;;
+          --run_example) SHOW_HELP="run_example" ;;
         esac
       done
 
@@ -264,19 +296,26 @@ checkopts() {
         ;;
       j) THREAD_NUM=$OPTARG ;;
       v) VERBOSE="VERBOSE=1" ;;
-      t) ENABLE_TEST=TRUE ;;
+      u) ENABLE_TEST=TRUE ;;
+      c)
+        clean_build
+        clean_build_out
+        exit 0
+        ;;
       -) case $OPTARG in
         help)
           usage
           exit 0
           ;;
-        test) ENABLE_TEST=TRUE ;;
+        utest) ENABLE_TEST=TRUE ;;
         cov) ENABLE_COVERAGE=TRUE ;;
         noexec) ENABLE_UT_EXEC=FALSE ;;
         pkg) ENABLE_PACKAGE=TRUE ;;
         cann_3rd_lib_path=*) CANN_3RD_LIB_PATH="$(realpath ${OPTARG#*=})" ;;
-        disable_asan) ENABLE_ASAN=FALSE ;;
-        make_clean)
+        asan) ENABLE_ASAN=TRUE ;;
+        run_example) ENABLE_RUN_EXAMPLE=TRUE ;;
+        build-type=*) BUILD_TYPE="${OPTARG#build-type=}" ;;
+        clean)
           clean_build
           clean_build_out
           exit 0
@@ -294,6 +333,10 @@ checkopts() {
         ;;
     esac
   done
+
+  if [[ "$1" == "--run_example" ]]; then
+    EXAMPLE_NAME="$2"
+  fi
 
   check_param
 }
@@ -355,9 +398,78 @@ build_ut() {
 
   cd "${BUILD_PATH}" && cmake ${CMAKE_ARGS} ..
   cmake --build . --target ${UT_TARGETS[@]} -- ${VERBOSE} -j $THREAD_NUM
-  # if [[ "$ENABLE_COVERAGE" =~ "TRUE" ]]; then
-  #   cmake --build . --target generate_atcos_cpp_cov -- -j $THREAD_NUM
-  # fi
+}
+
+build_example() {
+  return # 当前子包bisheng有编译问题，暂时下线
+  echo $dotted_line
+  echo "Start to run examples,name:${EXAMPLE_NAME}"
+  clean_build
+
+  if [[ "${EXAMPLE_NAME}" == "" ]]; then
+    echo "Failed to get examples"
+    exit 1
+  fi
+
+  example_list=""
+  if [[ "${EXAMPLE_NAME}" == *","* ]]; then
+    example_list=(${EXAMPLE_NAME//,/ })
+  elif [[ "${EXAMPLE_NAME}" == "all" ]]; then
+    example_list=(00_basic_matmul 01_misplace_core_matmul 02_batch_matmul 03_quant_matmul
+                  04_l2_misplace_core_matmul 05_l2_misplace_core_batchmatmul
+                  06_l2_misplace_core_quant_matmul 07_naive_matmul 08_sparse_matmul)
+  elif [[ "${EXAMPLE_NAME}" == "smoke" ]]; then
+      example_list=(00_basic_matmul 05_l2_misplace_core_batchmatmul
+                    06_l2_misplace_core_quant_matmul 07_naive_matmul 08_sparse_matmul)
+  else
+    example_list=("$EXAMPLE_NAME")
+  fi
+  echo "example_list : ${example_list[@]}"
+
+  if [[ -n "${ASCEND_HOME_PATH}" ]]; then
+    echo "env exists ASCEND_HOME_PATH : ${ASCEND_HOME_PATH}"
+    export PATH=${ASCEND_HOME_PATH}/${ARCH_INFO}-linux/ascc/:$PATH
+    env| grep PATH
+  elif [[ $EUID -eq 0 ]]; then
+    if [[ -d "/usr/local/Ascend/ascend-toolkit/cann" ]]; then
+      export ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/cann
+    else
+      export ASCEND_HOME_PATH=/usr/local/Ascend/cann
+    fi
+    source "${ASCEND_HOME_PATH}/bin/setenv.bash"
+  else
+    if [[ -d "${HOME}/Ascend/ascend-toolkit/cann" ]]; then
+      export ASCEND_HOME_PATH=${HOME}/Ascend/ascend-toolkit/cann
+    else
+      export ASCEND_HOME_PATH=${HOME}/Ascend/cann
+    fi
+    source "${ASCEND_HOME_PATH}/bin/setenv.bash"
+  fi
+
+  echo "Start to examples"
+  for i in "${!example_list[@]}"; do
+    echo $dotted_line
+    example_name=${example_list[$i]}
+    example_dir="${BASE_PATH}/examples/${example_name}"
+    echo "Start to run example ${example_name}"
+    export ASCEND_PROCESS_LOG_PATH="${example_dir}/log"
+    export ASCEND_SLOG_PRINT_TO_STDOUT=0
+    export ASCEND_GLOBAL_LOG_LEVEL=3
+    cd "${example_dir}" || { echo "Failed to enter directory ${UT_PATH}"; exit 1; }
+    output_dir="${example_dir}/output"
+    if [[ -d "${output_dir}" ]]; then
+      rm -rf "${output_dir}"
+    fi
+    bash run.sh -r npu -p 0
+    test_result=0
+    cat ${output_dir}/*.csv | grep "Fail\|None" || test_result=1
+    if [[ $test_result -eq 0 ]]; then
+      echo "run example ${example_name} failed."
+      grep -rn ERROR "${example_dir}/log"
+      exit 1
+    fi
+    echo "run example ${example_name} successful."
+  done
 }
 
 main() {
@@ -373,6 +485,9 @@ main() {
   fi
   if [[ "$ENABLE_TEST" == "TRUE" ]]; then
     build_ut
+  fi
+  if [[ "$ENABLE_RUN_EXAMPLE" == "TRUE" ]]; then
+    build_example
   fi
 }
 

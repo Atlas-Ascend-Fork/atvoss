@@ -29,7 +29,7 @@ message(STATUS "CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
 message(STATUS "CMAKE_BINARY_DIR = ${CMAKE_BINARY_DIR}")
 
-set(script_prefix ${CMAKE_SOURCE_DIR}/scripts/package/atvoss/scripts)
+set(script_prefix ${CMAKE_SOURCE_DIR}/scripts/package/scripts)
 install(DIRECTORY ${script_prefix}/
   DESTINATION atvoss/script
   FILE_PERMISSIONS
@@ -46,17 +46,33 @@ install(DIRECTORY ${script_prefix}/
 set(SCRIPTS_FILES
   ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/check_version_required.awk
   ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_func.inc
-  ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.sh
+  ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.bash
   ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.csh
   ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_interface.fish
   ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/version_compatiable.inc
+  ${CMAKE_SOURCE_DIR}/scripts/package/common/py/merge_binary_info_config.py
 )
 install(FILES ${SCRIPTS_FILES}
   DESTINATION atvoss/script
 )
+
+set(BIN_FILES
+  ${CMAKE_SOURCE_DIR}/scripts/package/scripts/prereq_check.bash
+  ${CMAKE_SOURCE_DIR}/scripts/package/scripts/prereq_check.csh
+  ${CMAKE_SOURCE_DIR}/scripts/package/scripts/prereq_check.fish
+  ${CMAKE_SOURCE_DIR}/scripts/package/scripts/setenv.bash
+  ${CMAKE_SOURCE_DIR}/scripts/package/scripts/setenv.csh
+  ${CMAKE_SOURCE_DIR}/scripts/package/scripts/setenv.fish
+)
+
+install(FILES ${BIN_FILES}
+  DESTINATION atvoss/bin
+)
+
 set(COMMON_FILES
   ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/install_common_parser.sh
   ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_func_v2.inc
+  ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_func_v3.inc
   ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/common_installer.inc
   ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/script_operator.inc
   ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/version_cfg.inc
@@ -88,17 +104,6 @@ install(FILES ${LATEST_MANGER_FILES}
 )
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/scripts/package/latest_manager/scripts/
   DESTINATION latest_manager
-)
-set(BIN_FILES
-  ${CMAKE_SOURCE_DIR}/scripts/package/atvoss/scripts/prereq_check.bash
-  ${CMAKE_SOURCE_DIR}/scripts/package/atvoss/scripts/prereq_check.csh
-  ${CMAKE_SOURCE_DIR}/scripts/package/atvoss/scripts/prereq_check.fish
-  ${CMAKE_SOURCE_DIR}/scripts/package/atvoss/scripts/setenv.bash
-  ${CMAKE_SOURCE_DIR}/scripts/package/atvoss/scripts/setenv.csh
-  ${CMAKE_SOURCE_DIR}/scripts/package/atvoss/scripts/setenv.fish
-)
-install(FILES ${BIN_FILES}
-  DESTINATION atvoss/bin
 )
 
 # ============= CPack =============

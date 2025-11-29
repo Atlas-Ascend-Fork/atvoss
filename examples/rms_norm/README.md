@@ -2,7 +2,7 @@
 # RmsNorm算子样例
 ## 概述
 
-样例概述：本样例介绍了利用Atvoss实现RmsNorm单算子并完成功能验证
+样例概述：本样例介绍了利用ATVOSS实现RmsNorm单算子并完成功能验证
 - 算子功能：RmsNorm算子是大模型常用的归一化操作，相比LayerNorm算子，其去掉了减去均值的部分
 - 调用方式：Kernel直调
 

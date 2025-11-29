@@ -8,18 +8,18 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.16.0)
+cmake_minimum_required(VERSION 3.16)
 set(PKG_NAME atvoss)
 project(${PKG_NAME} VERSION 1.0.0)
 
 include(CMakePrintHelpers)
 
-if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-    message(STATUS "Build atvoss with dependency cann pkgs installed")
-    option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build atvoss with dependency cann pkgs installed" TRUE)
+if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  message(STATUS "compile project with library")
+  option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build atvoss with cann pkg" ON)
 else()
-    message(STATUS "Build atvoss with cann source exist")
-    option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build atvoss need cann source code" FALSE)
+  message(STATUS "compile project with src")
+  option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build atvoss with cann source" OFF)
 endif()
 
 if(UNIX)
@@ -35,12 +35,6 @@ option(ENABLE_PACKAGE "Enable build package" OFF)
 
 if(ENABLE_TEST)
   set(COMPILE_OP_MODE "-O0 -g")
-endif()
-
-find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
-  set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-  set(CMAKE_Cxx_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
 endif()
 
 # Cmake Compile配置

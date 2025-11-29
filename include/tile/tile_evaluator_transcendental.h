@@ -22,7 +22,7 @@ namespace Atvoss::Tile::Eval {
  * \param[in] tail, Calculate the length of the data
  * \return Broadcast Expression calculation
  */
-template<typename T, typename U, Atvoss::Patterns::Pattern pattern>
+template<typename T, typename U, Atvoss::Pattern pattern>
 struct Evaluator<OpAssign<T, OpBroadcast<pattern, U>>> {
     using Type = void;
 
@@ -47,7 +47,7 @@ struct Evaluator<OpAssign<T, OpBroadcast<pattern, U>>> {
  * \param[in] tail, Calculate the length of the data
  * \return ReduceSum Expression calculation
  */
-template<typename T, typename U, Atvoss::Patterns::Pattern pattern>
+template<typename T, typename U, Atvoss::Pattern pattern>
 struct Evaluator<OpAssign<T, OpReduceSum<pattern, U>>> {
     using Type = void;
 

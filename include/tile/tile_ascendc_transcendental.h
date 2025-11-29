@@ -21,15 +21,15 @@ namespace Atvoss::Tile::Eval {
  * \param[in] src, Input LocalTensor
  * \param[out] dst, Output LocalTensor
  */
-template <typename OperationShape, Atvoss::Patterns::Pattern pattern, typename T>
+template <typename OperationShape, Atvoss::Pattern pattern, typename T>
 __aicore__ inline void BroadcastAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src,
                                        OperationShape& operationShape)
 {
     uint32_t dstShape[] = {operationShape.axis0, operationShape.axis1};
-    if constexpr (pattern == Atvoss::Patterns::Pattern::AB) {
+    if constexpr (pattern == Atvoss::Pattern::AB) {
         uint32_t srcShape_[] = {operationShape.axis0, 1};
         AscendC::Broadcast<T, 2, 1>(dst, src, dstShape, srcShape_);
-    } else if constexpr (pattern == Atvoss::Patterns::Pattern::BA) {
+    } else if constexpr (pattern == Atvoss::Pattern::BA) {
         uint32_t srcShape_[] = {1, operationShape.axis1};
         AscendC::Broadcast<T, 2, 0>(dst, src, dstShape, srcShape_);
     } else {
@@ -41,14 +41,14 @@ __aicore__ inline void BroadcastAssign(AscendC::LocalTensor<T>& dst, const Ascen
  * \param[in] src, Input LocalTensor
  * \param[out] dst, Output LocalTensor
  */
-template <typename OperationShape, Atvoss::Patterns::Pattern pattern, typename T>
+template <typename OperationShape, Atvoss::Pattern pattern, typename T>
 __aicore__ inline void ReduceSumAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src,
                                        OperationShape& operationShape)
 {
     uint32_t shape[] = {operationShape.axis0, operationShape.axis1};
-    if constexpr (pattern == Atvoss::Patterns::Pattern::AR) {
+    if constexpr (pattern == Atvoss::Pattern::AR) {
         AscendC::ReduceSum<T, AscendC::Pattern::Reduce::AR, true>(dst, src, shape, true);
-    } else if constexpr (pattern == Atvoss::Patterns::Pattern::RA) {
+    } else if constexpr (pattern == Atvoss::Pattern::RA) {
         AscendC::ReduceSum<T, AscendC::Pattern::Reduce::RA, true>(dst, src, shape, true);
     } else {
     }

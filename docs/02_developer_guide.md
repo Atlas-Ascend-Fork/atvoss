@@ -11,28 +11,26 @@ ATVOSS针对昇腾AI处理器的Vector计算的多核并行计算过程，提供
 <br><img src="./images/architecture.png" width="50%" height="50%" style="margin: 20px 0;"><br>
 # 2. 公共基础工具
 ## 2.1 表达式模板
-ATVOSS使用表达式模板进行计算流的描述，表达式模板是C++利用运算符重载、类型计算来实现延迟计算的技巧。表达式模板的基本要点是在形成使用运算符或进行函数调用时，我们只是把要进行的操作记录下来不立即进行计算。直到最后Tile层计算的时候，才会进行计算操作。详细的表达式模板实现，可从[Expression表达式模板](../include/utils/expression/expression.h)进入阅读代码。
+ATVOSS使用表达式模板进行计算流的描述，表达式模板是C++利用运算符重载、类型计算来实现延迟计算的技巧。表达式模板的基本要点是在形成使用运算符或进行函数调用时，在Kernel/Block/Tile层使用表达式模板，只是萃取表达式包含的计算操作信息，直到最后Tile层计算的时候，才会进行实际的计算操作。详细的表达式模板实现，可从[Expression表达式模板](../include/utils/expression/expression.h)进入阅读代码。
 
 # 3. 基于ATVOSS的算子开发
 ## 3.1 实现自定义计算表达式
 ATVOSS模板支持Expr的计算表达，用户通过计算表达完成对自定义算子的描述。具体使用样例如下：
 ```cpp
-static constexpr int32_t HEIGHT = 1;
-static constexpr int32_t WIDTH = 32;
-using TileShape = Atvoss::Shape<HEIGHT, WIDTH>;
+using T = float;
 
 struct RmsNormCompute {
     template <template <typename> class Tensor>
     __host_aicore__ constexpr auto Compute() const
     {
-        auto in1 = Atvoss::PlaceHolder<1, Tensor<DtypeV1>, Atvoss::ParamUsage::in>();
-        auto in2 = Atvoss::PlaceHolder<2, Tensor<DtypeV2>, Atvoss::ParamUsage::in>();
-        auto out = Atvoss::PlaceHolder<3, Tensor<DtypeV3>, Atvoss::ParamUsage::out>();
+        auto in1 = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto in2 = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::in>();
+        auto out = Atvoss::PlaceHolder<3, Tensor<T>, Atvoss::ParamUsage::out>();
         auto temp = Atvoss::PlaceHolderTmpLike<1>(in1);
 
         return (temp = in1 * in1,
-                out = ReduceSum<Atvoss::Patterns::Pattern::AR>(temp),
-                out = Broadcast<Atvoss::Patterns::Pattern::AB>(out),
+                out = ReduceSum<Atvoss::Pattern::AR>(temp),
+                out = Broadcast<Atvoss::Pattern::AB>(out),
                 temp = Divs<WIDTH>(out),
                 out = Sqrt(temp),
                 temp = in1 / out,
@@ -41,20 +39,80 @@ struct RmsNormCompute {
 };
 ```
 
-以上代码为例，定义一个`RmsNormOp`的Expr模板类。Tile块的切分设置，使用如下示例的固定写法，使用`Atvoss::Shape`模板定义每个维度的元素大小。
+以上代码为例，定义一个`RmsNormCompute`的Expr模板类, 模板类中固定提供一个`Compute()`接口，接口定义固定格式如下：
 ```cpp
-using TileShape = Atvoss::Shape<HEIGHT, WIDTH>;
+template <template <typename> class Tensor>
+    __host_aicore__ constexpr auto Compute() const
+    {
+        // 定义输入输出等参数描述
+        auto in1 = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
+        ...
+        // 返回计算表达式
+        return (...);
+    }
 ```
-`Get()`接口完成算子计算操作的描述，需要先定义输入输出，再定义基于输入输出的计算表达，设置说明如下：
+`Compute()`接口完成算子计算操作的描述，需要先定义输入输出，再定义基于输入输出的计算表达。
 
-| 表达式元素| 功能描述|约束说明|
-| ------------ | ------------ |---|
-| `PlaceHolder` | 定义输入输出参数信息，传入的模板参数为<序号，Type，输入输出标识>|序号需要按照`PlaceHolder`定义的先后顺序，从1开始累加； Type固定设置为 `Tensor<T>`， 用户无需感知；输入输出标识为可选参数，默认为`ParamUsage::in`，还可设置为`ParamUsage::out`|
-| `PlaceHolderTmpLike` | 定义计算时需要使用的临时buffer|模板参数是标识该临时buffer内存大小跟随哪个`PlaceHolder`的|
-| 返回值 | 使用Tile层API描述计算过程|每次使用1个Tile层的API操作实现一次计算过程，每个计算过程是按“,”隔开，用户需要保证计算表达的正确性|
+### 3.1.1 定义输入输出
+当前支持的表达式参数定义如下：
+
+#### 3.1.1.1 PlaceHolder
+- 功能说明
+描述输入输出信息。
+
+- 参数定义原型
+```cpp
+template <std::size_t N, typename T,  ParamUsage V = ParamUsage::in>
+    __host_aicore__ constexpr auto PlaceHolder()
+```
+- 模板参数
+
+| 参数名| 描述说明|
+| ------------ | ------------|
+| N | 输入输出的序号，`PlaceHolder`类的序号从1开始，依次加1递增，不能重复|
+| T | 数据类型， `PlaceHolder`若是Tensor类型， 固定使用`Tensor<T>`进行配置，若是Scalar类型，固定使用`T`进行配置，`T`为|
+| V | 输入/输出类型标识符, 支持设置的类型为：`ParamUsage::in`、`ParamUsage::out`、`ParamUsage::in_out`|
+
+- 返回值说明
+返回一个`Expression<ExprTmpl::Param<N ,T, V>>`型的表达式模板
+
+#### 3.1.1.2 PlaceHolderTmpLike
+
+- 功能说明
+
+描述临时Buffer的信息。
+
+- 参数定义原型
+```cpp
+template <std::size_t N, typename L>
+    __host_aicore__ constexpr auto PlaceHolderTmpLike(ExprTmpl::Expression<L>) {
+    }
+```
+- 模板参数
+
+| 参数名| 描述说明|
+| ------------ | ------------|
+| N | 临时Buffer的序号, `PlaceHolderTmpLike`类的序号从1开始，依次加1递增，不能重复|
+| L | 入参的`Expression`包含的模板参数，固定由入参类型推倒，用户无需关注|
+
+- 参数说明
+
+| 参数名| 描述说明|
+| ------------ | ------------|
+| `Expression<L>` | 固定配置为某个`PlaceHolder`, 表征需要给本临时Buffer申请的内存的大小与该`PlaceHolder`申请的内存大小一样|
+
+
+- 返回值说明
+
+返回一个`ExprTmpl::Expression<ExprTmpl::LocalVar<N, typename L::Type, L>>{}`型的表达式模板
+
+### 3.1.2 定义计算表达式
+
+使用Tile层API接口名描述计算过程, 每次使用1个Tile层的API操作实现一次计算过程，每个计算过程是按“,”隔开，用户需要保证计算表达的正确性。
+
 
 ## 3.2 Tile层API
-1个Tile层API有两个接口呈现方式，两者一一对应， 用户在计算图中使用API接口名来描述计算操作过程，Tile层内部则是调用实现接口完成实际的计算过程。
+1个Tile层API有两个接口呈现方式，两者相互对应， 用户在计算图中使用API接口名来描述计算操作过程，Tile层内部则是调用实现接口完成实际的计算过程。
 
 - API接口名
   是用户在计算图中调用时使用的接口名，例如`Sqrt()`接口。
@@ -65,7 +123,7 @@ _2 = Sqrt(_1) // _1 是Sqrt()的输入，_2是输出
 - 实现接口名
   是Tile层的真正执行计算时调用的接口定义。
 
-### 已支持的Tile层API列表
+- 已支持的Tile层API列表
 | API接口名    | 实现接口名                                    | 备注                            |
 |:----------|:-----------------------------------------|:------------------------------|
 | +         | [AddAssign](#321-AddAssign)              | 按元素求和                         |
@@ -427,7 +485,7 @@ struct PowerCompute {
 ```
 #### 3.2.9.2 函数原型
 ```cpp
-template <typename OperationShape, Atvoss::Patterns::Pattern pattern, typename T>
+template <typename OperationShape, Atvoss::Pattern pattern, typename T>
 __aicore__ inline void BroadcastAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src,
                                        OperationShape& operationShape)
 ```
@@ -455,7 +513,7 @@ struct BroadcastCompute {
     {
         auto src = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
         auto dst = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::out>();
-        return (dst = Broadcast<Atvoss::Patterns::Pattern::AB>(src));
+        return (dst = Broadcast<Atvoss::Pattern::AB>(src));
     }
 };
 ```
@@ -475,7 +533,7 @@ ReduceSum按最后一个维度计算示例：
 
 #### 3.2.10.2 函数原型
 ```cpp
-template <typename OperationShape, Atvoss::Patterns::Pattern pattern, typename T>
+template <typename OperationShape, Atvoss::Pattern pattern, typename T>
 __aicore__ inline void ReduceSumAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src,
                                        OperationShape& operationShape)
 ```
@@ -503,7 +561,7 @@ struct ReduceSumCompute {
     {
         auto src = Atvoss::PlaceHolder<1, Tensor<T>, Atvoss::ParamUsage::in>();
         auto dst = Atvoss::PlaceHolder<2, Tensor<T>, Atvoss::ParamUsage::out>();
-        return (dst = ReduceSum<Atvoss::Patterns::Pattern::AR>(src));
+        return (dst = ReduceSum<Atvoss::Pattern::AR>(src));
     }
 };
 ```
@@ -606,7 +664,7 @@ struct BlockPolicy {
 `ScheduleCfg`：根据不同策略计算出来的`Tile`层处理的元素信息。
 ```cpp
 // Block层的元素切分信息
-struct Config {
+struct BlockConfig {
     uint32_t wholeLoop = 0;    // 当前Block中切分的Tile整块个数（不包含尾块）
     uint32_t tileCnt = 0;      // 当前Block是尾块时，处理的输入元素数量。整块时为零
     uint32_t basicNum = 0;     // 当前Block中分配的Tile块处理的输入元素数量
@@ -702,7 +760,8 @@ public:
 支持用户自定义修改模板参数实现，实现局部拓展，也支持用户按照规则自定义模板类，实现模板拓展。
 `KernelBuilder`类定义如下：
 ```cpp
-template <typename BlockOp, const auto &Policy = policyDefault, typename ScheduleCfg = Atvoss::Kernel::Config, class Schedule = DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
+template <typename BlockOp, const auto &Policy = kernelPolicyDefault, typename ScheduleCfg = KernelConfig,
+    class Schedule = Kernel::DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
 class KernelBuilder {
 public:
     ...
@@ -736,32 +795,32 @@ __aicore__ inline void Run(ScheduleCfg& cfg, ArgTup& argTuple);
 `Policy`：配置的是用户采用的静态切分策略，比如均匀切分和整尾块切分，默认是均匀切分策略。  
 当前`KernelBuilder`提供默认的配置策略`KernelPolicy`，结构体定义如下：
 ```cpp
-enum class PolicySegment {
+enum class KernelPolicySegment {
     Auto = 0U,      // 自动切分
     UniformSegment, // 均匀切分
     FullAddTail     // 整块+尾块
 };
 
 struct KernelPolicy {
-    uint32_t blockDimMax;           // 使用的最大核数
-    PolicySegment segmentPolicy;    // 多核切分策略
+    uint32_t blockDimMax;                 // 使用的最大核数
+    KernelPolicySegment segmentPolicy;    // 多核切分策略
 };
 ```
 参数说明：  
 + `blockDimMax`： 最大可用的核数。  
-+ `segmentPolicy`：多核切分策略，通过枚举值代表不同的切分策略即`PolicySegment`。  
++ `segmentPolicy`：多核切分策略，通过枚举值代表不同的切分策略即`KernelPolicySegment`。  
 #### 3.4.1.2.3 ScheduleCfg
  `ScheduleCfg`：用户根据不同的切分策略计算出来的切分参数信息。
 #### 3.4.1.2.4 Schedule
 `Schedule`是计算任务的调度核心，它调用对应的切分策略来执行计算。在扩展性方面，用户可以通过继承`BaseKernelSchedule`基类可实现自定义策略；系统默认的执行策略为 `DefaultSchedule`。  
 切分计算整体流程如下：
-1. 根据`ScheduleCfg`获取到Kernel层切分参数信息`Config`。
+1. 根据`ScheduleCfg`获取到Kernel层切分参数信息`KernelConfig`。
 2. `PrepareParams`函数根据当前核的`BlockId`得到当前`Kernel`需要处理的所有`GlobalTensor`的数据。
 3. 根据切分策略计算当前核实际处理的数据量`actualNum`。
 4. 调用Block层完成计算。
 #### 3.4.1.2.5 动态Param信息
 ```cpp
-struct Config {                   // Kernel 层的切分信息
+struct KernelConfig {             // Kernel 层的切分信息
     uint32_t blockNum = 1;        // 启动的核数
     uint32_t unitNumPerCore = 0;  // 平均每个核一定会处理的单元块个数
     uint32_t moreUnitCoreNum = 0; // 额外需要处理一个整块的核数
@@ -769,7 +828,7 @@ struct Config {                   // Kernel 层的切分信息
     uint32_t unitNum = 1;         // 单元块元素个数
 };
 ```    
-Kernel层提供了结构体`Config`，用于记录切分信息，内置参数说明：    
+Kernel层提供了结构体`KernelConfig`，用于记录切分信息，内置参数说明：    
 + `blockNum`：计算需要启动的核的数量。   
 + `unitNumPerCore`：平均每个核一定会处理的单元块个数。
 + `moreUnitCoreNum`：额外需要处理一个整块的核数。
@@ -816,8 +875,8 @@ static bool MakeKernelParam(std::vector<uint32_t> &shapeInfo, ScheduleCfg &kerne
 #### 3.4.1.4 KernelBuilder模板配置
 用户自定义的样例举例：
 ```cpp
-using KernelOp = Atvoss::Kernel::KernelBuilder<BlockOp, kernelPolicy, Atvoss::Kernel::Config>;
-using DeviceOp = Atvoss::Device::DeviceAdapter<KernelOp>;
+using KernelOp = Atvoss::EleWise::KernelBuilder<BlockOp, kernelPolicy, Atvoss::EleWise::KernelConfig>;
+using DeviceOp = Atvoss::DeviceAdapter<KernelOp>;
 ```
 约束说明：  
 必须先定义好Block模板类之后再定义Kernel层的模板类。
@@ -836,11 +895,10 @@ class DeviceAdapter{
 
 - 对外提供的静态参数信息
 ```cpp
-using ExprMaker = typename KernelOp::ExprMaker;     // 从KernelOp中萃取出来的表达式模板
-using BlockOp = typename KernelOp::BlockTemplate;   // 从KernelOp中萃取出来的Block层模板
-using DType = typename BlockOp::ExpressMaker::type; // 萃取出来的数据类型
-using kernelParamStruct = typename KernelOp::ParamStruct;               // 萃取出Kennel层Arguments类型
-using blockParamStruct = typename KernelOp::BlockTemplate::ParamStruct; // 萃取出Block层Arguments类型
+using ExprMaker = typename KernelOp::ScheduleClz::ExprMaker;                // 从KernelOp中萃取出来的表达式模板
+using BlockOp = typename KernelOp::ScheduleClz::BlockTemplate;                // 从KernelOp中萃取出来的Block层模板
+using KernelParamStruct = typename KernelOp::ScheduleClz::ParamStruct;                    // 萃取出Kennel层Arguments类型
+using BlockParamStruct = typename KernelOp::ScheduleClz::BlockTemplate::ScheduleClz::ParamStruct // 萃取出Block层Arguments类型
 ```
 
 - 对外运行接口

@@ -950,8 +950,7 @@ del_ascend_install_info() {
     local package="$2"
     local package_dirpath
 
-    get_package_dirpath "package_dirpath" "$package"
-    rm -f "$install_path/$package_dirpath/ascend_install.info"
+    rm -f "$curpath/../ascend_install.info"
 }
 
 # 执行拷贝动作
@@ -979,7 +978,7 @@ do_copy_files() {
     fi
     ret="$?" && [ $ret -ne 0 ] && return $ret
 
-    if [ "${package}" != "" ] && [ "${SET_cann_uninstall}" = "y" ]; then
+    if [ "${package}" != "" ] && [ "${SET_CANN_UNINSTALL}" = "y" ]; then
         add_cann_uninstall_package "${install_path}" "${package}" "${USERNAME}" "${USERGROUP}" "${INSTALL_FOR_ALL}"
     fi
 }
@@ -1214,7 +1213,7 @@ do_remove() {
         ret="$?" && [ $ret -ne 0 ] && return $ret
 
         if [ "$REMOVE_INSTALL_INFO" = "y" ]; then
-            del_ascend_install_info "$install_path" "$package"
+            del_ascend_install_info
         fi
     fi
 
@@ -1941,12 +1940,13 @@ formal_commands_with_lock() {
 # change_mod_and_own_files与change_mod_and_own_dirs函数中会使用
 INSTALL_FOR_ALL=""
 SETENV=""
-SET_cann_uninstall=""
+SET_CANN_UNINSTALL=""
 IS_UPGRADE=""
 IS_RECREATE_SOFTLINK=""
 WITH_DOCKER_ROOT_PREFIX=""
 FEATURE_EXCLUDE_ALL="n"
 REMOVE_INSTALL_INFO="n"  # 卸载时移除ascend_install.info文件
+USE_SHARE_INFO="n"
 CHIP="all"
 FEATURE="all"
 INCREMENT="n"  # 增量安装
@@ -2135,7 +2135,7 @@ while true; do
         shift
         ;;
     --set-cann-uninstall)
-        SET_cann_uninstall="y"
+        SET_CANN_UNINSTALL="y"
         shift
         ;;
     --package=*)
@@ -2164,6 +2164,10 @@ while true; do
         ;;
     --remove-install-info)
         REMOVE_INSTALL_INFO="y"
+        shift
+        ;;
+    --use-share-info)
+        USE_SHARE_INFO="y"
         shift
         ;;
     --increment)

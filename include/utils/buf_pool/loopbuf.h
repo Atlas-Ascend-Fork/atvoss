@@ -133,7 +133,8 @@ public:
 #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
         ASCENDC_ASSERT(( bufState[header].state == 0),  { KERNEL_LOG(KERNEL_ERROR, "[ERROR]: [Atvoss][LoopBuffer] buffer must be free state."); });
         bufState[header].state = 1;
-        addr.absAddr = nullptr;
+        AscendC::LocalTensor<uint32_t> tmpTensor= tbuf_.Get<uint32_t>();
+        addr.absAddr = reinterpret_cast<uint8_t*>(tmpTensor.GetPhyAddr() + header * tileSize);
 #endif
 
         if( ++header >= tileNum ) {

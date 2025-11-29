@@ -34,7 +34,8 @@ if(NOT INSTALL_RESULT EQUAL 0)
 endif()
 
 # 生成安装配置文件
-set(CSV_OUTPUT ${CPACK_CMAKE_BINARY_DIR}/filelist.csv)
+set(CSV_OUTPUT ${STAGING_DIR}/filelist.csv)
+
 execute_process(
   COMMAND python3 ${CPACK_CMAKE_SOURCE_DIR}/scripts/package/package.py --pkg_name atvoss --os_arch linux-${CPACK_ARCH}
   WORKING_DIRECTORY ${CPACK_CMAKE_BINARY_DIR}
@@ -54,36 +55,44 @@ else ()
   endif ()
 endif ()
 
-set(SCENE_OUT_PUT
-  ${CPACK_CMAKE_BINARY_DIR}/scene.info
-)
-set(ATVOSS_VERSION_OUT_PUT
-  ${CPACK_CMAKE_BINARY_DIR}/atvoss_version.h
-)
-
-configure_file(
-  ${SCENE_OUT_PUT}
-  ${STAGING_DIR}/atvoss/
-  COPYONLY
+set(OUT_PUT_FILELIST_DIR
+  ${STAGING_DIR}/atvoss/script
 )
 configure_file(
   ${CSV_OUTPUT}
-  ${STAGING_DIR}/atvoss/script
+  ${OUT_PUT_FILELIST_DIR}
   COPYONLY
 )
+
+set(OUT_PUT_VERSION
+  ${STAGING_DIR}/version.info
+)
+set(OUT_PUT_VERSION_DIR
+  ${STAGING_DIR}/atvoss
+)
 configure_file(
-  ${ATVOSS_VERSION_OUT_PUT}
-  ${STAGING_DIR}/atvoss/
+  ${OUT_PUT_VERSION}
+  ${OUT_PUT_VERSION_DIR}
+  COPYONLY
+)
+
+set(OUT_PUT_SCENE
+  ${CPACK_CMAKE_BINARY_DIR}/scene.info
+)
+set(OUT_PUT_SCENE_DIR
+  ${STAGING_DIR}/atvoss
+)
+configure_file(
+  ${OUT_PUT_SCENE}
+  ${OUT_PUT_SCENE_DIR}
   COPYONLY
 )
 # makeself打包
 file(STRINGS ${CPACK_CMAKE_BINARY_DIR}/makeself.txt script_output)
 string(REPLACE " " ";" makeself_param_string "${script_output}")
-string(REGEX MATCH "cann.*\\.run" package_name "${makeself_param_string}")
 
 message(STATUS "script output: ${script_output}")
 message(STATUS "makeself: ${makeself_param_string}")
-message(STATUS "package: ${package_name}")
 
 execute_process(COMMAND bash ${MAKESELF_EXE}
   --header ${MAKESELF_HEADER_EXE}
@@ -100,7 +109,7 @@ endif()
 
 execute_process(
   COMMAND mkdir -p ${CPACK_PACKAGE_DIRECTORY}
-  COMMAND mv ${STAGING_DIR}/${package_name} ${CPACK_PACKAGE_DIRECTORY}/
-  COMMAND echo "build pkg success: ${CPACK_PACKAGE_DIRECTORY}/${package_name}"
+  COMMAND sh -c "cp ${STAGING_DIR}/*.run ${CPACK_PACKAGE_DIRECTORY}/"
+  COMMAND echo "build pkg success:${CPACK_PACKAGE_DIRECTORY}"
   WORKING_DIRECTORY ${STAGING_DIR}
 )

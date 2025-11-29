@@ -33,8 +33,8 @@ struct RmsNormCompute {
         auto temp = Atvoss::PlaceHolderTmpLike<1>(in1);
 
         return (temp = in1 * in1,
-                out = ReduceSum<Atvoss::Patterns::Pattern::AR>(temp),
-                out = Broadcast<Atvoss::Patterns::Pattern::AB>(out),
+                out = ReduceSum<Atvoss::Pattern::AR>(temp),
+                out = Broadcast<Atvoss::Pattern::AB>(out),
                 temp = Divs<WIDTH>(out),
                 out = Sqrt(temp),
                 temp = in1 / out,
