@@ -43,7 +43,8 @@ struct BlockPolicy {
     Shape tileShape{};
 };
 
-using TileShape = Atvoss::Shape<1, 32>;
+static constexpr uint32_t DEFAULT_SHAPE = 32;
+using TileShape = Atvoss::Shape<1, DEFAULT_SHAPE>;
 static constexpr Atvoss::EleWise::BlockPolicy<TileShape> blockPolicyDefault{190 * 1024, TileShape{}};
 
 /*!

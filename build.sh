@@ -154,7 +154,7 @@ usage() {
     esac
   fi
 
-  echo "build script for atcos repository"
+  echo "build script for atvoss repository"
   echo "Usage:"
   echo "    bash build.sh [-h] [-j[n]] [-v] [-u] [--pkg]"
   echo ""
