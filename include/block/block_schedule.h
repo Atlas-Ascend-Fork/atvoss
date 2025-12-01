@@ -11,8 +11,12 @@
 #ifndef Atvoss_INCLUDE_BLOCK_SCHEDULE_H_
 #define Atvoss_INCLUDE_BLOCK_SCHEDULE_H_
 #include "base_schedule.h"
-namespace Atvoss::Block {
+namespace Atvoss::EleWise {
 template <typename ExprMaker, const auto& Policy, typename Arguments>
-class DefaultSchedule : public BaseBlockSchedule<ExprMaker, Policy, Arguments> {};
+class DefaultSchedule : public BaseBlockSchedule<ExprMaker, Policy, Arguments, false> {};
+
+template <typename ExprMaker, const auto& Policy, typename Arguments>
+class DefaultScheduleWithTPipe : public BaseBlockSchedule<ExprMaker, Policy, Arguments, true> {};
+
 } // namespace Atvoss::Block
 #endif // Atvoss_INCLUDE_KERNEL_KERNEL_SCHEDULE_H_

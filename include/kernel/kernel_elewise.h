@@ -34,19 +34,17 @@ struct KernelPolicy {
     KernelPolicySegment segmentPolicy;    // Multi-core tiling strategy
 };
 
-
 static constexpr Atvoss::EleWise::KernelPolicy kernelPolicyDefault{48, KernelPolicySegment::UniformSegment};
-
 
 /*!
  * KernelBuilder: Calculate the tiling information, then determine the GM data that the current core needs to process based on the block ID,
  * and pass it to the block to complete the computation.
 */
-template <typename BlockOp, const auto &Policy = kernelPolicyDefault,   typename ScheduleCfg = KernelConfig,
-    class Schedule = Kernel::DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
+template <typename BlockOp, const auto &Policy = kernelPolicyDefault, typename ScheduleCfg = KernelConfig,
+    template <typename, const auto&, typename> class Schedule = DefaultKernelSchedule>
 class KernelBuilder {
 public:
-    using ScheduleClz = Schedule;
+    using ScheduleClz = Schedule<BlockOp, Policy, ScheduleCfg>;
     /*!
      * \brief Kernel layer execution function.
      * \param[in] cfg, Tiling information in kernel.
@@ -55,7 +53,7 @@ public:
     template <typename OpParam, typename... Args>
     __aicore__ inline void Run(OpParam& cfg, Args... args)
     {
-       Schedule schedule;
+       ScheduleClz schedule;
        schedule.Run(cfg, args...);
     }
 };
