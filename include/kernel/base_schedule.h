@@ -30,6 +30,7 @@ public:
     using TileShape = typename BlockTemplate::BlockTileShape;
     static constexpr uint32_t TILE_SHAPE_SIZE = TileShape::size::value;
     static constexpr uint32_t BASIC_BLOCK = BlockOp::ScheduleClz::BASIC_BLOCK;
+    static constexpr uint32_t ALIGN_TILE_SHAPE_SIZE = 2;
     /*!
      * \brief The constructor interface of KernelBuilder class.
      */
@@ -53,7 +54,7 @@ public:
             printf("[ERROR]: [Atvoss][Kernel] Shape info error \n");
             return false;
         }
-        if (TILE_SHAPE_SIZE != 1 && TILE_SHAPE_SIZE != 2) {
+        if (TILE_SHAPE_SIZE != 1 && TILE_SHAPE_SIZE != ALIGN_TILE_SHAPE_SIZE) {
             printf("[ERROR]: [Atvoss][Kernel] Tile shape size only support 1 or 2\n");
             return false;
         }
