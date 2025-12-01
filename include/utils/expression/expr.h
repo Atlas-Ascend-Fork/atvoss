@@ -15,23 +15,6 @@
 #include <typeinfo>
 #include <cxxabi.h>
 
-#if 1 //def HOST_DEBUG
-#include <typeinfo>
-#include <cstring>
-#include <cxxabi.h>
-
-std::string demangle(const char* mangled_name) {
-    int status;
-    char* demangled = abi::__cxa_demangle(mangled_name, nullptr, nullptr, &status);
-    if (status == 0) {
-        std::string result(demangled);
-        free(demangled); // 必须释放
-        return result;
-    }
-    return mangled_name; // 解析失败时返回原始字符串
-}
-#endif 
-
 #pragma region "argslist"
 //完成任意类型的数据存储
 template<class... Args>
