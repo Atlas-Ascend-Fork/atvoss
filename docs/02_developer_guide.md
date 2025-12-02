@@ -58,53 +58,58 @@ template <template <typename> class Tensor>
 
 #### 3.1.1.1 PlaceHolder
 - 功能说明
-描述输入输出信息。
+
+    描述输入输出信息。
 
 - 参数定义原型
-```cpp
-template <std::size_t N, typename T,  ParamUsage V = ParamUsage::in>
-    __host_aicore__ constexpr auto PlaceHolder()
-```
+
+    ```cpp
+    template <std::size_t N, typename T,  ParamUsage V = ParamUsage::in>
+        __host_aicore__ constexpr auto PlaceHolder()
+    ```
 - 模板参数
 
-| 参数名| 描述说明|
-| ------------ | ------------|
-| N | 输入输出的序号，`PlaceHolder`类的序号从1开始，依次加1递增，不能重复|
-| T | 数据类型， `PlaceHolder`若是Tensor类型， 固定使用`Tensor<T>`进行配置，若是Scalar类型，固定使用`T`进行配置，`T`为|
-| V | 输入/输出类型标识符, 支持设置的类型为：`ParamUsage::in`、`ParamUsage::out`、`ParamUsage::in_out`|
+    | 参数名| 描述说明|
+    | ------------ | ------------|
+    | N | 输入输出的序号，`PlaceHolder`类的序号从1开始，依次加1递增，不能重复|
+    | T | 数据类型， `PlaceHolder`若是Tensor类型， 固定使用`Tensor<T>`进行配置，若是Scalar类型，固定使用`T`进行配置，`T`为基础数据类型，如：float， half等。|
+    | V | 输入/输出类型标识符, 支持设置的类型为：`ParamUsage::in`、`ParamUsage::out`、`ParamUsage::in_out`|
 
 - 返回值说明
-返回一个`Expression<ExprTmpl::Param<N ,T, V>>`型的表达式模板
+
+    返回一个`Expression<ExprTmpl::Param<N ,T, V>>`型的表达式模板
 
 #### 3.1.1.2 PlaceHolderTmpLike
 
 - 功能说明
 
-描述临时Buffer的信息。
+    描述临时Buffer的信息。
 
 - 参数定义原型
-```cpp
-template <std::size_t N, typename L>
-    __host_aicore__ constexpr auto PlaceHolderTmpLike(ExprTmpl::Expression<L>) {
-    }
-```
+
+    ```cpp
+    template <std::size_t N, typename L>
+        __host_aicore__ constexpr auto PlaceHolderTmpLike(ExprTmpl::Expression<L>) {
+        }
+    ```
+
 - 模板参数
 
-| 参数名| 描述说明|
-| ------------ | ------------|
-| N | 临时Buffer的序号, `PlaceHolderTmpLike`类的序号从1开始，依次加1递增，不能重复|
-| L | 入参的`Expression`包含的模板参数，固定由入参类型推倒，用户无需关注|
+    | 参数名| 描述说明|
+    | ------------ | ------------|
+    | N | 临时Buffer的序号, `PlaceHolderTmpLike`类的序号从1开始，依次加1递增，不能重复|
+    | L | 入参的`Expression`包含的模板参数，固定由入参类型推倒，用户无需关注|
 
 - 参数说明
 
-| 参数名| 描述说明|
-| ------------ | ------------|
-| `Expression<L>` | 固定配置为某个`PlaceHolder`, 表征需要给本临时Buffer申请的内存的大小与该`PlaceHolder`申请的内存大小一样|
+    | 参数名| 描述说明|
+    | ------------ | ------------|
+    | `Expression<L>` | 固定配置为某个`PlaceHolder`, 表征需要给本临时Buffer申请的内存的大小与该`PlaceHolder`申请的内存大小一样|
 
 
 - 返回值说明
 
-返回一个`ExprTmpl::Expression<ExprTmpl::LocalVar<N, typename L::Type, L>>{}`型的表达式模板
+    返回一个`ExprTmpl::Expression<ExprTmpl::LocalVar<N, typename L::Type, L>>{}`型的表达式模板
 
 ### 3.1.2 定义计算表达式
 
@@ -115,29 +120,31 @@ template <std::size_t N, typename L>
 1个Tile层API有两个接口呈现方式，两者相互对应， 用户在计算图中使用API接口名来描述计算操作过程，Tile层内部则是调用实现接口完成实际的计算过程。
 
 - API接口名
-  是用户在计算图中调用时使用的接口名，例如`Sqrt()`接口。
-```cpp
-_2 = Sqrt(_1) // _1 是Sqrt()的输入，_2是输出
-```
+
+    是用户在计算图中调用时使用的接口名，例如`Sqrt()`接口。
+    ```cpp
+    _2 = Sqrt(_1) // _1 是Sqrt()的输入，_2是输出
+    ```
 
 - 实现接口名
-  是Tile层的真正执行计算时调用的接口定义。
+
+    是Tile层的真正执行计算时调用的接口定义。
 
 - 已支持的Tile层API列表
 
-| API接口名    | 实现接口名                                    | 备注                            |
-|:----------|:-----------------------------------------|:------------------------------|
-| +         | [AddAssign](#321-AddAssign)              | 按元素求和                         |
-| -         | [SubAssign](#322-SubAssign)              | 按元素求差                         |
-| *         | [MulAssign](#323-MulAssign)              | 按元素求积                         |
-| /         | [DivAssign](#324-DivAssign)              | 按元素求商                         |
-| Divs      | [DivsAssign](#325-DivsAssign)            | 矢量内每个元素与标量求积                  |
-| Exp       | [ExpAssign](#326-ExpAssign)              | 按元素取自然指数                      |
-| Sqrt      | [SqrtAssign](#327-SqrtAssign)            | 按元素做开方                        |
-| Power     | [PowerAssign](#328-PowerAssign)          | 实现按元素做幂运算功能，目前只支持平方           |
-| Broadcast | [BroadcastAssign](#329-BroadcastAssign)  | 将输入按照输出shape进行广播，目前只支持二维      |
-| ReduceSum | [ReduceSumAssign](#3210-ReduceSumAssign) | 对一个多维向量按照指定的维度进行数据累加，目前只支持二维  |
-| Cast      | [CastAssign](#3211-CastAssign)           | 根据源操作数和目的操作数Tensor的数据类型进行精度转换 |
+    | API接口名    | 实现接口名                                    | 备注                            |
+    |:----------|:-----------------------------------------|:------------------------------|
+    | +         | [AddAssign](#321-AddAssign)              | 按元素求和                         |
+    | -         | [SubAssign](#322-SubAssign)              | 按元素求差                         |
+    | *         | [MulAssign](#323-MulAssign)              | 按元素求积                         |
+    | /         | [DivAssign](#324-DivAssign)              | 按元素求商                         |
+    | Divs      | [DivsAssign](#325-DivsAssign)            | 矢量内每个元素与标量求积                  |
+    | Exp       | [ExpAssign](#326-ExpAssign)              | 按元素取自然指数                      |
+    | Sqrt      | [SqrtAssign](#327-SqrtAssign)            | 按元素做开方                        |
+    | Power     | [PowerAssign](#328-PowerAssign)          | 实现按元素做幂运算功能，目前只支持平方           |
+    | Broadcast | [BroadcastAssign](#329-BroadcastAssign)  | 将输入按照输出shape进行广播，目前只支持二维      |
+    | ReduceSum | [ReduceSumAssign](#3210-ReduceSumAssign) | 对一个多维向量按照指定的维度进行数据累加，目前只支持二维  |
+    | Cast      | [CastAssign](#3211-CastAssign)           | 根据源操作数和目的操作数Tensor的数据类型进行精度转换 |
 
 ### 3.2.1 AddAssign
 #### 3.2.1.1 功能说明
