@@ -71,13 +71,15 @@ static constexpr Atvoss::EleWise::KernelPolicy kernelPolicy {
 using BlockOp = Atvoss::EleWise::BlockBuilder<
     RmsNormCompute,
     blockPolicy,
-    Atvoss::EleWise::Config>;
+    Atvoss::EleWise::BlockConfig,
+    Atvoss::EleWise::DefaultBlockScheduleWithTPipe>
     
 // 选择Kernel模板类，使用BlockOp层模板封装Kernel层模板
 using KernelOp = Atvoss::EleWise::KernelBuilder<
     BlockOp,
     kernelPolicy,
-    Atvoss::EleWise::Config>;
+    Atvoss::EleWise::KernelConfig>;
+
 // 使用DeviceAdapter模板，使用KernelOp封装Device适配器
 using DeviceOp = Atvoss::DeviceAdapter<KernelOp>;
 ```

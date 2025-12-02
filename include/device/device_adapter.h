@@ -42,7 +42,6 @@ void CleanACL(aclrtStream &stream, aclrtContext &context, int32_t deviceId)
 template<class KernelOp, typename OpParam>
 __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x)
 {
-  AscendC::TPipe pipeIn;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     KernelOp op;
     op.Run(cfg, x);
@@ -50,7 +49,6 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x)
 template<class KernelOp, typename OpParam>
 __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y)
 {
-    AscendC::TPipe pipeIn;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     KernelOp op;
     op.Run(cfg, x, y);
@@ -59,7 +57,6 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y)
 template<class KernelOp, typename OpParam>
 __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_ADDR z)
 {
-  AscendC::TPipe pipeIn;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     KernelOp op;
     op.Run(cfg, x, y, z);
@@ -67,7 +64,6 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_AD
 template<class KernelOp, typename OpParam>
 __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR m)
 {
-    AscendC::TPipe pipeIn;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     KernelOp op;
     op.Run(cfg, x, y, z, m);
@@ -75,7 +71,6 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_AD
 template<class KernelOp, typename OpParam>
 __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR m, GM_ADDR n)
 {
-    AscendC::TPipe pipeIn;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     KernelOp op;
     op.Run(cfg, x, y, z, m, n);
@@ -83,7 +78,6 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_AD
 template<class KernelOp, typename OpParam>
 __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR a, GM_ADDR b, GM_ADDR c)
 {
-    AscendC::TPipe pipeIn;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     KernelOp op;
     op.Run(cfg, x, y, z, a, b, c);

@@ -615,16 +615,16 @@ Block层模板负责单个核的任务分解到多个Tile的数据搬运、Tile�
 ### 3.3.1 BlockBuilder模板
 ```cpp
 template <typename Compute, const auto& Policy = blockPolicyDefault, typename ScheduleCfg = BlockConfig,
-          class Schedule = Block::DefaultSchedule<Compute, Policy, ScheduleCfg>>
+          template <typename, const auto&, typename> class Schedule = DefaultBlockSchedule>
 class BlockBuilder {
 public:
     // 调度策略模板类
-    using ScheduleClz = Schedule;
+    using ScheduleClz = Schedule<Compute, Policy, ScheduleCfg>;
     // Block层执行函数，调用对应调度策略的执行函数
     template <typename ArgTup>
     __aicore__ inline void Run(ScheduleCfg& cfg, ArgTup& argTuple)
     {
-        Schedule schedule;
+        ScheduleClz schedule;
         schedule.Run(cfg, argTuple);
     }
 };
@@ -682,7 +682,7 @@ struct UbAssign {
 };
 ```
 #### 3.3.1.2.3 Schedule
-`Schedule`是计算任务的调度核心，它调用对应的切分策略来执行计算。在扩展性方面，用户可以通过继承`BaseBlockSchedule`基类可实现自定义策略；系统默认的执行策略为`DefaultSchedule`。
+`Schedule`是计算任务的调度核心，它调用对应的切分策略来执行计算。在扩展性方面，用户可以通过继承`BaseBlockSchedule`基类可实现自定义策略；系统默认的执行策略为`DefaultSchedule`，当用户需要使用`AscendC::TPipe`作为内存管理和同步时，需要使用`BlockScheduleWithTPipe`进行作为计算任务的调度。
 - 编译期根据[Policy](#33121-policy)参数配置，计算单个存活节点占用`UB`空间。
 ```cpp
 // 编译期获取单个存活节点占用UB空间大小
@@ -743,16 +743,16 @@ Kernel层承担来自Device层的分配的计算任务，需对任务进行分�
 
 ```cpp
 template <typename BlockOp, const auto &Policy = kernelPolicyDefault, typename ScheduleCfg = KernelConfig,
-    class Schedule = Kernel::DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
+    template <typename, const auto&, typename> class Schedule = DefaultKernelSchedule>
 class KernelBuilder {
 public:
     // 调度策略模板类
-    using ScheduleClz = Schedule;
+    using ScheduleClz = Schedule<BlockOp, Policy, ScheduleCfg>;
     //Kernel层执行函数 调用对应调度策略的执行函数
     template <typename OpParam, typename... Args>
     __aicore__ inline void Run(OpParam& cfg, Args... args)
     {
-       Schedule schedule;
+       ScheduleClz schedule;
        schedule.Run(cfg, args...);
     }
 };
@@ -762,7 +762,7 @@ public:
 `KernelBuilder`类定义如下：
 ```cpp
 template <typename BlockOp, const auto &Policy = kernelPolicyDefault, typename ScheduleCfg = KernelConfig,
-    class Schedule = Kernel::DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
+    template <typename, const auto&, typename> class Schedule = DefaultKernelSchedule>
 class KernelBuilder {
 public:
     ...
@@ -779,7 +779,7 @@ KernelBuilder模板对外提供四部分内容：
 | [Schedule](#34124-schedule)   | 采用不同的切分策略进行调度计算  | 
 - 对外提供的静态参数信息 
 ```cpp 
-using ScheduleClz = Schedule; // 提供调度策略供给上层调用
+using ScheduleClz = Schedule<BlockOp, Policy, ScheduleCfg>; // 提供调度策略供给上层调用
 ```
 - 默认模板构造函数
 ```cpp
