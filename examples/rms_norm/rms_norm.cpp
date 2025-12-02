@@ -61,7 +61,8 @@ struct RmsNormConfig {
     using BlockOp = Atvoss::EleWise::BlockBuilder<
         RmsNormCompute,
         blockPolicy,
-        Atvoss::EleWise::BlockConfig>;
+        Atvoss::EleWise::BlockConfig,
+        Atvoss::EleWise::BlockScheduleWithTPipe>;
 
     using KernelOp = Atvoss::EleWise::KernelBuilder<
         BlockOp,
