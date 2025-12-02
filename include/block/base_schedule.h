@@ -20,9 +20,9 @@
 #include "utils/layout/layout.h"
 #include "utils/layout/shape.h"
 
-namespace Atvoss::Block {
+namespace Atvoss::EleWise {
 
-template <typename Compute, const auto& Policy, typename ScheduleCfg>
+template <typename Compute, const auto& Policy, typename ScheduleCfg, bool useTPipe = false>
 class BaseBlockSchedule {
 public:
     using ExpressMaker = Compute;
@@ -249,11 +249,11 @@ private:
         AscendC::LocalTensor<DType> tensor;
         bufPoolCalc_.AllocTensor(tensor);
         if constexpr (std::is_same_v<ParamType, Atvoss::Layout::VariableRankExtents<1>>) {
-            Tensor<DType> blockTensorTail{ParamType::number - 1};
+            Block::Tensor<DType> blockTensorTail{ParamType::number - 1};
             blockTensorTail.SetUbTensor(tensor);
             return blockTensorTail;
         } else {
-            Tensor<DType> blockTensorTile{ParamType::number - 1};
+            Block::Tensor<DType> blockTensorTile{ParamType::number - 1};
             blockTensorTile.SetUbTensor(tensor);
             return blockTensorTile;
         }
@@ -493,9 +493,10 @@ private:
     }
 
 private:
-    Atvoss::LoopBuffer<AscendC::TPosition::VECIN, IN_PARAMS_COUNT, UB_TILE_SIZE> bufPoolIn_;
-    Atvoss::LoopBuffer<AscendC::TPosition::VECOUT, OUT_PARAMS_COUNT, UB_TILE_SIZE> bufPoolOut_;
-    Atvoss::LoopBuffer<AscendC::TPosition::VECCALC, LOCAL_VAR_COUNT, UB_TILE_SIZE> bufPoolCalc_;
+    AscendC::Std::conditional_t<useTPipe, AscendC::TPipe, void*> pipe_;
+    Atvoss::LoopBuffer<AscendC::TPosition::VECIN, IN_PARAMS_COUNT, UB_TILE_SIZE, useTPipe> bufPoolIn_;
+    Atvoss::LoopBuffer<AscendC::TPosition::VECOUT, OUT_PARAMS_COUNT, UB_TILE_SIZE, useTPipe> bufPoolOut_;
+    Atvoss::LoopBuffer<AscendC::TPosition::VECCALC, LOCAL_VAR_COUNT, UB_TILE_SIZE, useTPipe> bufPoolCalc_;
 };
 
 } // namespace Atvoss::Block

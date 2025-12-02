@@ -37,7 +37,7 @@ struct BufPoolCustom {
     uint64_t maxLen;
 };
 
-template<AscendC::TPosition src, AscendC::TPosition dst, int tileNum, int tileSize>
+template<AscendC::TPosition src, AscendC::TPosition dst, int tileNum, int tileSize, bool useTPipe>
 class LoopBufferEx {
 private:
     static_assert(tileSize % 1024 == 0, "[ERROR]: [Atvoss][LoopBuffer] Tile must be a multiple of 1024\n");
@@ -100,7 +100,9 @@ public:
         bufPool_.startAddr = baseAddr;
         bufPool_.maxAddr = baseAddr + POOL_LEN;
         bufPool_.maxLen = POOL_LEN;
-        GetTPipePtr()->InitBuffer(tbuf_, POOL_LEN);
+        if constexpr (useTPipe) {
+            GetTPipePtr()->InitBuffer(tbuf_, POOL_LEN);
+        }
         this->header  = 0;
 #pragma unroll
         for(int i=0; i<tileNum; i++) {
@@ -125,7 +127,9 @@ public:
 	        if( bufState[header].evtID >= 0 ){ 
 	            auto evtID = bufState[header].evtID;
 	            wait_flag((pipe_t)ToPipe(dst), (pipe_t)ToPipe(src), evtID);
-	            GetTPipePtr()->ReleaseEventID<ToRevEvent()>(evtID);
+	            if constexpr (useTPipe) {
+	                GetTPipePtr()->ReleaseEventID<ToRevEvent()>(evtID);
+	            }
 	            bufState[header].evtID = -1;
 	        }
 		}
@@ -153,7 +157,13 @@ public:
         }
         auto bufPos = static_cast<uint8_t>(reinterpret_cast<uintptr_t>(tensor.GetBufferHandle()));
 		if constexpr (ToRevEvent() != AscendC::HardEvent::V_V) {
-	        auto evtID = GetTPipePtr()->AllocEventID< ToRevEvent()>();
+		    auto evtID = 0;
+		    if constexpr (useTPipe) {
+		        evtID = GetTPipePtr()->AllocEventID<ToRevEvent()>();
+		    } else {
+		        eventId = eventId ^ 1;
+		        evtID = eventId;
+		    }
 	        bufState[bufPos].evtID = evtID;
 	        set_flag((pipe_t)ToPipe(dst), (pipe_t)ToPipe(src), evtID);
 		}
@@ -170,12 +180,16 @@ public:
 
     static __aicore__ inline void Sync(){
 		if constexpr (ToEvent() != AscendC::HardEvent::V_V) {
-            auto evtID = GetTPipePtr()->FetchEventID< ToEvent()>();
+		    auto evtID = 7;
+		    if constexpr (useTPipe) {
+		        evtID = GetTPipePtr()->FetchEventID< ToEvent()>();
+		    }
             set_flag((pipe_t)ToPipe(src), (pipe_t)ToPipe(dst), evtID);
             wait_flag((pipe_t)ToPipe(src), (pipe_t)ToPipe(dst), evtID);
 		}
     }
 private:
+    int8_t eventId = 6;
     BufPoolCustom bufPool_;
     AscendC::TBuf<AscendC::TPosition::VECCALC> tbuf_;
     static constexpr uint64_t POOL_LEN = tileSize * tileNum;
@@ -189,20 +203,20 @@ private:
     } bufState[tileNum];
 };
 
-template<AscendC::TPosition pos, int tileNum, int tileSize>
+template<AscendC::TPosition pos, int tileNum, int tileSize, bool useTPipe = false>
 class LoopBuffer{};
 
-template<int tileNum, int tileSize>
-class LoopBuffer<AscendC::TPosition::VECIN, tileNum, tileSize>
-    : public LoopBufferEx<AscendC::TPosition::VECIN, AscendC::TPosition::VECCALC, tileNum, tileSize> {
+template<int tileNum, int tileSize, bool useTPipe>
+class LoopBuffer<AscendC::TPosition::VECIN, tileNum, tileSize, useTPipe>
+    : public LoopBufferEx<AscendC::TPosition::VECIN, AscendC::TPosition::VECCALC, tileNum, tileSize, useTPipe> {
 };
-template<int tileNum, int tileSize>
-class LoopBuffer<AscendC::TPosition::VECOUT, tileNum, tileSize>
-    : public LoopBufferEx<AscendC::TPosition::VECCALC, AscendC::TPosition::VECOUT, tileNum, tileSize> {
+template<int tileNum, int tileSize, bool useTPipe>
+class LoopBuffer<AscendC::TPosition::VECOUT, tileNum, tileSize, useTPipe>
+    : public LoopBufferEx<AscendC::TPosition::VECCALC, AscendC::TPosition::VECOUT, tileNum, tileSize, useTPipe> {
 };
-template<int tileNum, int tileSize>
-class LoopBuffer<AscendC::TPosition::VECCALC, tileNum, tileSize>
-    : public LoopBufferEx<AscendC::TPosition::VECCALC, AscendC::TPosition::VECCALC, tileNum, tileSize> {
+template<int tileNum, int tileSize, bool useTPipe>
+class LoopBuffer<AscendC::TPosition::VECCALC, tileNum, tileSize, useTPipe>
+    : public LoopBufferEx<AscendC::TPosition::VECCALC, AscendC::TPosition::VECCALC, tileNum, tileSize, useTPipe> {
 };
 } //namespace Atvoss
 
