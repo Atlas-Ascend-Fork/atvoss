@@ -37,7 +37,7 @@ struct BufPoolCustom {
     uint64_t maxLen;
 };
 
-template<AscendC::TPosition src, AscendC::TPosition dst, int tileNum, int tileSize>
+template<AscendC::TPosition src, AscendC::TPosition dst, int tileNum, int tileSize, bool useTPipe>
 class LoopBufferEx {
 private:
     static_assert(tileSize % 1024 == 0, "[ERROR]: [Atvoss][LoopBuffer] Tile must be a multiple of 1024\n");
@@ -85,7 +85,7 @@ public:
 
     __aicore__ inline void DeInit() {
         for (uint8_t i = 0; i < tileNum; i++) {
-            auto evtID = bufState[i].evtID;
+            auto evtID = bufState_[i].evtID_;
             if (evtID >= 0) {
                 wait_flag((pipe_t)ToPipe(dst), (pipe_t)ToPipe(src), evtID);
             }
@@ -100,14 +100,16 @@ public:
         bufPool_.startAddr = baseAddr;
         bufPool_.maxAddr = baseAddr + POOL_LEN;
         bufPool_.maxLen = POOL_LEN;
-        GetTPipePtr()->InitBuffer(tbuf_, POOL_LEN);
-        this->header  = 0;
+        if constexpr (useTPipe) {
+            GetTPipePtr()->InitBuffer(tbuf_, POOL_LEN);
+        }
+        this->header_  = 0;
 #pragma unroll
         for(int i=0; i<tileNum; i++) {
 #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
-            bufState[i].state = 0;
+            bufState_[i].state_ = 0;
 #endif
-            bufState[i].evtID = -1;
+            bufState_[i].evtID_ = -1;
         }
     }
 
@@ -117,28 +119,30 @@ public:
             return;
         }
         AscendC::TBuffAddr addr;
-        addr.bufferAddr = bufPool_.startAddr + header * tileSize;
+        addr.bufferAddr = bufPool_.startAddr + header_ * tileSize;
         addr.logicPos =  (uint8_t)AscendC::TPosition::VECCALC;
-        addr.bufferHandle = (AscendC::TBufHandle)header; 
+        addr.bufferHandle = (AscendC::TBufHandle)header_; 
         addr.dataLen = tileSize;
 		if constexpr (ToRevEvent() != AscendC::HardEvent::V_V) {
-	        if( bufState[header].evtID >= 0 ){ 
-	            auto evtID = bufState[header].evtID;
+	        if( bufState_[header_].evtID_ >= 0 ){
+	            auto evtID = bufState_[header_].evtID_;
 	            wait_flag((pipe_t)ToPipe(dst), (pipe_t)ToPipe(src), evtID);
-	            GetTPipePtr()->ReleaseEventID<ToRevEvent()>(evtID);
-	            bufState[header].evtID = -1;
+	            if constexpr (useTPipe) {
+	                GetTPipePtr()->ReleaseEventID<ToRevEvent()>(evtID);
+	            }
+	            bufState_[header_].evtID_ = -1;
 	        }
 		}
 
 #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
-        ASCENDC_ASSERT(( bufState[header].state == 0),  { KERNEL_LOG(KERNEL_ERROR, "[ERROR]: [Atvoss][LoopBuffer] buffer must be free state."); });
-        bufState[header].state = 1;
+        ASCENDC_ASSERT(( bufState_[header_].state_ == 0),  { KERNEL_LOG(KERNEL_ERROR, "[ERROR]: [Atvoss][LoopBuffer] buffer must be free state."); });
+        bufState_[header_].state_ = 1;
         AscendC::LocalTensor<uint32_t> tmpTensor= tbuf_.Get<uint32_t>();
-        addr.absAddr = reinterpret_cast<uint8_t*>(tmpTensor.GetPhyAddr() + header * tileSize);
+        addr.absAddr = reinterpret_cast<uint8_t*>(tmpTensor.GetPhyAddr() + header_ * tileSize);
 #endif
 
-        if( ++header >= tileNum ) {
-            header = 0;
+        if( ++header_ >= tileNum ) {
+            header_ = 0;
         }
         tensor.SetAddr(addr);
 
@@ -153,15 +157,21 @@ public:
         }
         auto bufPos = static_cast<uint8_t>(reinterpret_cast<uintptr_t>(tensor.GetBufferHandle()));
 		if constexpr (ToRevEvent() != AscendC::HardEvent::V_V) {
-	        auto evtID = GetTPipePtr()->AllocEventID< ToRevEvent()>();
-	        bufState[bufPos].evtID = evtID;
+		    auto evtID = 0;
+		    if constexpr (useTPipe) {
+		        evtID = GetTPipePtr()->AllocEventID<ToRevEvent()>();
+		    } else {
+		        eventID_ = eventID_ ^ 1;
+		        evtID = eventID_;
+		    }
+	        bufState_[bufPos].evtID_ = evtID;
 	        set_flag((pipe_t)ToPipe(dst), (pipe_t)ToPipe(src), evtID);
 		}
 
 #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
         ASCENDC_ASSERT(( bufPos >= 0 && bufPos < tileNum),  { KERNEL_LOG(KERNEL_ERROR, ""); });
-        ASCENDC_ASSERT(( bufState[bufPos].state == 1),  { KERNEL_LOG(KERNEL_ERROR, "[ERROR]: [Atvoss][LoopBuffer] buffer must be alloc state."); });
-        bufState[bufPos].state = 0;
+        ASCENDC_ASSERT(( bufState_[bufPos].state_ == 1),  { KERNEL_LOG(KERNEL_ERROR, "[ERROR]: [Atvoss][LoopBuffer] buffer must be alloc state."); });
+        bufState_[bufPos].state_ = 0;
 #endif
         if constexpr( sizeof...(args) > 0) {
             FreeTensor(args...);
@@ -170,39 +180,42 @@ public:
 
     static __aicore__ inline void Sync(){
 		if constexpr (ToEvent() != AscendC::HardEvent::V_V) {
-            auto evtID = GetTPipePtr()->FetchEventID< ToEvent()>();
+		    auto evtID = 7;
+		    if constexpr (useTPipe) {
+		        evtID = GetTPipePtr()->FetchEventID< ToEvent()>();
+		    }
             set_flag((pipe_t)ToPipe(src), (pipe_t)ToPipe(dst), evtID);
             wait_flag((pipe_t)ToPipe(src), (pipe_t)ToPipe(dst), evtID);
 		}
     }
 private:
+    int8_t eventID_ = 6;
     BufPoolCustom bufPool_;
     AscendC::TBuf<AscendC::TPosition::VECCALC> tbuf_;
     static constexpr uint64_t POOL_LEN = tileSize * tileNum;
-    // uint64_t baseAddr;
-    uint8_t  header;
+    uint8_t  header_;
     struct BufState {
 #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
-        uint8_t state;
+        uint8_t state_;
 #endif
-        int8_t evtID;
-    } bufState[tileNum];
+        int8_t evtID_;
+    } bufState_[tileNum];
 };
 
-template<AscendC::TPosition pos, int tileNum, int tileSize>
+template<AscendC::TPosition pos, int tileNum, int tileSize, bool useTPipe = false>
 class LoopBuffer{};
 
-template<int tileNum, int tileSize>
-class LoopBuffer<AscendC::TPosition::VECIN, tileNum, tileSize>
-    : public LoopBufferEx<AscendC::TPosition::VECIN, AscendC::TPosition::VECCALC, tileNum, tileSize> {
+template<int tileNum, int tileSize, bool useTPipe>
+class LoopBuffer<AscendC::TPosition::VECIN, tileNum, tileSize, useTPipe>
+    : public LoopBufferEx<AscendC::TPosition::VECIN, AscendC::TPosition::VECCALC, tileNum, tileSize, useTPipe> {
 };
-template<int tileNum, int tileSize>
-class LoopBuffer<AscendC::TPosition::VECOUT, tileNum, tileSize>
-    : public LoopBufferEx<AscendC::TPosition::VECCALC, AscendC::TPosition::VECOUT, tileNum, tileSize> {
+template<int tileNum, int tileSize, bool useTPipe>
+class LoopBuffer<AscendC::TPosition::VECOUT, tileNum, tileSize, useTPipe>
+    : public LoopBufferEx<AscendC::TPosition::VECCALC, AscendC::TPosition::VECOUT, tileNum, tileSize, useTPipe> {
 };
-template<int tileNum, int tileSize>
-class LoopBuffer<AscendC::TPosition::VECCALC, tileNum, tileSize>
-    : public LoopBufferEx<AscendC::TPosition::VECCALC, AscendC::TPosition::VECCALC, tileNum, tileSize> {
+template<int tileNum, int tileSize, bool useTPipe>
+class LoopBuffer<AscendC::TPosition::VECCALC, tileNum, tileSize, useTPipe>
+    : public LoopBufferEx<AscendC::TPosition::VECCALC, AscendC::TPosition::VECCALC, tileNum, tileSize, useTPipe> {
 };
 } //namespace Atvoss
 

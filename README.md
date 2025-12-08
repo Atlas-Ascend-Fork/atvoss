@@ -39,6 +39,7 @@ ATVOSS代码目录结构如下：
 |[快速入门](./docs/01_quick_start.md)|快速体验项目的简易教程。|
 |[编程指南](./docs/02_developer_guide.md)|使用ATVOSS实现算子开发的教程。|
 |[分层设计](./docs/03_design.md)|介绍ATVOSS分层模型。|
+|[表达式模板原理](./docs/04_expression.md)|介绍ATVOSS表达式模板原理。|
 
 ## 📝相关信息
 

@@ -42,7 +42,6 @@ void CleanACL(aclrtStream &stream, aclrtContext &context, int32_t deviceId)
 template<class KernelOp, typename OpParam>
 __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x)
 {
-  AscendC::TPipe pipeIn;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     KernelOp op;
     op.Run(cfg, x);
@@ -50,7 +49,6 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x)
 template<class KernelOp, typename OpParam>
 __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y)
 {
-    AscendC::TPipe pipeIn;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     KernelOp op;
     op.Run(cfg, x, y);
@@ -59,7 +57,6 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y)
 template<class KernelOp, typename OpParam>
 __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_ADDR z)
 {
-  AscendC::TPipe pipeIn;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     KernelOp op;
     op.Run(cfg, x, y, z);
@@ -67,7 +64,6 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_AD
 template<class KernelOp, typename OpParam>
 __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR m)
 {
-    AscendC::TPipe pipeIn;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     KernelOp op;
     op.Run(cfg, x, y, z, m);
@@ -75,7 +71,6 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_AD
 template<class KernelOp, typename OpParam>
 __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR m, GM_ADDR n)
 {
-    AscendC::TPipe pipeIn;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     KernelOp op;
     op.Run(cfg, x, y, z, m, n);
@@ -83,7 +78,6 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_AD
 template<class KernelOp, typename OpParam>
 __global__ __aicore__ void KernelCustom(OpParam cfg, GM_ADDR x, GM_ADDR y, GM_ADDR z, GM_ADDR a, GM_ADDR b, GM_ADDR c)
 {
-    AscendC::TPipe pipeIn;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     KernelOp op;
     op.Run(cfg, x, y, z, a, b, c);
@@ -161,11 +155,11 @@ public:
     template <typename Args>
     int64_t Run(const Args& arguments)
     {
-        auto expr = ExprMaker{}.template Compute<Device::DeviceTensor>();
+        auto expr = ExprMaker{}.template Compute<DeviceTensor>();
         using Expr = typename decltype(expr)::Type;
-        using Params = Atvoss::ExprTmpl::Params_t<Expr>;
-        using InParams = Atvoss::ExprTmpl::InParams_t<Expr>;
-        using OutParams = Atvoss::ExprTmpl::OutParams_t<Expr>;
+        using Params = Atvoss::Params_t<Expr>;
+        using InParams = Atvoss::InParams_t<Expr>;
+        using OutParams = Atvoss::OutParams_t<Expr>;
 
         // 1. Init Resource
         InitializeACL(context_, stream_, deviceId_);
@@ -173,6 +167,12 @@ public:
         using InputTuple = std::decay_t<decltype(std::get<0>(arguments))>;
         if constexpr (std::tuple_size_v<InputTuple> > 0) {
             shapeInfo_ = std::get<0>(std::get<0>(arguments)).shape_vector();
+            for (auto dim : shapeInfo_) {
+                if (dim == 0) {
+                    printf("[ERROR]: [Atvoss][Device] Empty input tensor not supported (shape contains 0)!\n");
+                    return -1;
+                }
+            }
         } else {
             printf("[ERROR]: [Atvoss][Device] No input tensor, shape info obtaining failed!\n");
             return -1;
@@ -192,7 +192,7 @@ public:
         // 4. kernel launch
         auto convertArgs = ConvertArgs<Params>(params, argTuple);
 #if Atvoss_DEBUG_MODE == 2
-        for(auto i = 0; i < 20 ; i++) {
+        for(auto i = 0; i < 200; i++) { // 200 : profiling run times
              LaunchKernelWithDataTuple<KernelOp>(opParam.kernelParam.blockNum, stream_, opParam, convertArgs);
         }
 #else
@@ -281,7 +281,7 @@ private:
     constexpr auto ConvertOneArg(ParamTup& params, ArgTup& args)
     {
         constexpr auto pos =
-            Util::TMP::Find_v<Atvoss::ExprTmpl::CheckVarNum<Index + 1>::template Checker, Params>;
+            Util::TMP::Find_v<Atvoss::CheckVarNum<Index + 1>::template Checker, Params>;
         if constexpr (pos < Util::TMP::Size_v<Params>) {
             return std::get<pos>(params);
         } else {

@@ -57,7 +57,7 @@
     - k <= 4
     - Mi <= 10240，i <= k
 - Tile块的Shape(m, n)，要满足m * n <=10240
-- 目前只支持half、float、int32_t之间的类型转换，详见[AscendC文档](https://www.hiascend.com/document/detail/zh/canncommercial/83RC1/API/ascendcopapi/atlasascendc_api_07_0073.html)
+- 目前只支持half、float、int32_t之间的类型转换
 
 CastMode说明：  
 
@@ -76,7 +76,7 @@ enum class CastMode {
 };
 
 ```
-更多详细说明参考[AscendC文档](https://www.hiascend.com/document/detail/zh/canncommercial/83RC1/API/ascendcopapi/atlasascendc_api_07_0073.html)
+更多详细说明参考[AscendC API文档](https://www.hiascend.com/document/redirect/CannCommunityAscendCApi)中的Cast API介绍。
 
 
 ## 目录结构

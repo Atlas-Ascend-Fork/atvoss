@@ -21,7 +21,6 @@ namespace Atvoss::Tile::Eval {
 using Util::TMP::FindUnique_t;
 using Util::TMP::Size_v;
 
-using namespace Atvoss::ExprTmpl;
 
 template <typename T>
 struct Evaluator {
@@ -135,13 +134,12 @@ struct Evaluator<LocalVar<N, T, L>> {
 };
 
 // Partial specialization for Param
-template <std::size_t N, typename T, typename U, ParamUsage V>
-struct Evaluator<Param<N, T, U, V>> {
+template <std::size_t N, typename T, ParamUsage U>
+struct Evaluator<Param<N, T, U>> {
     using Type = T;
-    using layout = U;
 
     template <typename ArgTup, typename LocalVarTup>
-    __aicore__ decltype(auto) operator()(Param<N, T, U, V> /*unused*/, ArgTup& args, LocalVarTup& /*localVars*/) const
+    __aicore__ decltype(auto) operator()(Param<N, T, U> /*unused*/, ArgTup& args, LocalVarTup& /*localVars*/) const
     {
         static_assert(N > 0, "[ERROR]: [Atvoss][Tile] Param number starts from 1");
         constexpr auto index = N - 1;
@@ -149,7 +147,7 @@ struct Evaluator<Param<N, T, U, V>> {
         if constexpr (std::is_same_v<T, NthType> || std::is_same_v<T&, NthType> || std::is_same_v<T&&, NthType>) {
             return AscendC::Std::get<index>(args);
         } else {
-            static_assert(V == ParamUsage::in,
+            static_assert(U == ParamUsage::in,
                           "[ERROR]: [Atvoss][Tile] Only in-parameters allow implicit type conversions");
             return static_cast<T>(AscendC::Std::get<index>(args));
         }
@@ -272,8 +270,8 @@ static constexpr __aicore__ auto getShape(Arguments&... args)
         }
     } else {  // User-specified tile size must be validated to ensure it is smaller than the UB space occupied by a single element.
         using DstShape = Shape_t<T>;
-        using DstShape0Type = typename tuple_element<0, DstShape>::type;
-        using DstShape1Type = typename tuple_element<1, DstShape>::type;
+        using DstShape0Type = typename AscendC::Std::tuple_element<0, DstShape>::type;
+        using DstShape1Type = typename AscendC::Std::tuple_element<1, DstShape>::type;
         static_assert((DstShape0Type::value > 0 && DstShape1Type::value > 0),
                       "[ERROR]: [Atvoss][Tile] Shape dim must not be zero");
         if constexpr (op == Operation::Unary) {

@@ -12,7 +12,7 @@
 #define BASE_SCHEDULE_H
 #include <functional>
 #include "common/compile_info.h"
-namespace Atvoss::Kernel {
+namespace Atvoss::EleWise {
 
 /*!
  * KernelBuilder: Calculate the tiling information, then determine the GM data that the current core needs to process based on the block ID,
@@ -26,7 +26,7 @@ public:
     using BlockTemplate = BlockOp;
     static constexpr auto EXPRESSION = ExprMaker{}.template Compute<AscendC::GlobalTensor>();
     using Expr = typename decltype(EXPRESSION)::Type;
-    using Params = Atvoss::ExprTmpl::Params_t<Expr>;
+    using Params = Atvoss::Params_t<Expr>;
     using TileShape = typename BlockTemplate::BlockTileShape;
     static constexpr uint32_t TILE_SHAPE_SIZE = TileShape::size::value;
     static constexpr uint32_t BASIC_BLOCK = BlockOp::ScheduleClz::BASIC_BLOCK;
@@ -36,7 +36,6 @@ public:
      */
     __aicore__ inline BaseKernelSchedule()
     {
-        blockId_ = AscendC::GetBlockIdx();
     };
     /*!
      * \brief Kernel layer execution function.
@@ -98,7 +97,6 @@ public:
         auto argTuple = AscendC::Std::forward_as_tuple(AscendC::Std::forward<Args>(args)...);
         BlockOp blockOp{};
         uint32_t actualNum = CalCurCoreEleCnt(cfg.kernelParam);
-        totalEleNumCurCore_ = actualNum;
         configBlock.totalElemCnt = actualNum;
         auto params = PrepareParams<Params>(cfg.kernelParam, argTuple);
         auto convertArgs = ConvertArgs<Params>(params, argTuple);
@@ -117,10 +115,10 @@ private:
     {
         uint32_t blockNum = cfg.blockNum;
         uint32_t actualNum = cfg.unitNum * cfg.unitNumPerCore;
-        if(blockId_ < cfg.moreUnitCoreNum){
+        if(AscendC::GetBlockIdx() < cfg.moreUnitCoreNum){
             actualNum += cfg.unitNum;
         }
-        if(blockId_ == blockNum - 1){
+        if(AscendC::GetBlockIdx() == blockNum - 1){
             actualNum += cfg.tailNum;
         }
         return actualNum;
@@ -142,7 +140,7 @@ private:
         auto gm_ptr = reinterpret_cast<__gm__ uint8_t*>(ptr);
         gm_ptr = gm_ptr + sizeof(DTypeTmp) * offset;
         AscendC::GlobalTensor<DTypeTmp> curCoreTensor;
-        curCoreTensor.SetGlobalBuffer(reinterpret_cast<__gm__ DTypeTmp*>(gm_ptr),totalEleNumCurCore_);
+        curCoreTensor.SetGlobalBuffer(reinterpret_cast<__gm__ DTypeTmp*>(gm_ptr));
         return curCoreTensor;
     }
 
@@ -150,7 +148,7 @@ private:
     __aicore__ inline constexpr auto ConvertOneArg(ParamTup& params, ArgTup& args)
     {
         constexpr auto pos =
-            Util::TMP::Find_v<Atvoss::ExprTmpl::CheckVarNum<Index + 1>::template Checker, Params>;
+            Util::TMP::Find_v<Atvoss::CheckVarNum<Index + 1>::template Checker, Params>;
         if constexpr (pos < Util::TMP::Size_v<Params>) {
             return AscendC::Std::get<pos>(params);
         } else {
@@ -174,14 +172,12 @@ private:
 
     __aicore__ inline auto CalGMOffset(ScheduleCfg& config)
     {
-        if(blockId_ < config.moreUnitCoreNum){
-            return blockId_ * (config.unitNumPerCore * config.unitNum + config.unitNum);
+        if(AscendC::GetBlockIdx() < config.moreUnitCoreNum){
+            return AscendC::GetBlockIdx() * (config.unitNumPerCore * config.unitNum + config.unitNum);
         }
-        return config.unitNumPerCore * config.unitNum * blockId_ + config.moreUnitCoreNum * config.unitNum;
+        return config.unitNumPerCore * config.unitNum * AscendC::GetBlockIdx() + config.moreUnitCoreNum * config.unitNum;
     }
-    uint32_t blockId_;
-    uint32_t totalEleNumCurCore_;
 };
 
-} // namespace Atvoss::Kernel
+} // namespace Atvoss::EleWise
 #endif

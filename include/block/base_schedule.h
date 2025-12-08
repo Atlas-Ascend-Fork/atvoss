@@ -15,14 +15,12 @@
 #include <type_traits>
 #include "block/block_tensor.h"
 #include "block/block_tail_tensor.h"
-#include "common/tuple_tool.h"
 #include "utils/buf_pool/loopbuf.h"
 #include "utils/layout/layout.h"
-#include "utils/layout/shape.h"
 
-namespace Atvoss::Block {
+namespace Atvoss::EleWise {
 
-template <typename Compute, const auto& Policy, typename ScheduleCfg>
+template <typename Compute, const auto& Policy, typename ScheduleCfg, bool useTPipe = false>
 class BaseBlockSchedule {
 public:
     using ExpressMaker = Compute;
@@ -30,13 +28,13 @@ public:
     using BlockPolicy = typename std::remove_reference<decltype(Policy)>::type;
     using TileShape = typename BlockPolicy::TileShape;
     template <typename T>
-    using blockTensorFake = Atvoss::Block::Tensor<T, Atvoss::Layout::Layout<Atvoss::Layout::FixedRankExtents<1, 1, 1>>>;
+    using blockTensorFake = Atvoss::EleWise::BlockTensor<T, Atvoss::Layout::Layout<Atvoss::Layout::FixedRankExtents<1, 1, 1>>>;
     static constexpr auto EXPRESSION_FAKE = Compute{}.template Compute<blockTensorFake>();
     using ExprFake = typename decltype(EXPRESSION_FAKE)::Type;
-    using Params = Atvoss::ExprTmpl::Params_t<ExprFake>;
-    using InParams = Atvoss::ExprTmpl::InParams_t<ExprFake>;
-    using OutParams = Atvoss::ExprTmpl::OutParams_t<ExprFake>;
-    using LocalVars = Atvoss::ExprTmpl::LocalVars_t<ExprFake>;
+    using Params = Atvoss::Params_t<ExprFake>;
+    using InParams = Atvoss::InParams_t<ExprFake>;
+    using OutParams = Atvoss::OutParams_t<ExprFake>;
+    using LocalVars = Atvoss::LocalVars_t<ExprFake>;
     static constexpr uint32_t IN_PARAMS_COUNT = Util::TMP::Size_v<InParams> + 1;
     static constexpr uint32_t OUT_PARAMS_COUNT = Util::TMP::Size_v<OutParams> + 1;
     static constexpr uint32_t LOCAL_VAR_COUNT = Util::TMP::Size_v<LocalVars>;
@@ -90,7 +88,7 @@ public:
 
     // number of elements in Tile calculation
     static constexpr uint32_t BASIC_BLOCK =
-        Atvoss::Tile::GetTotal<0, typename std::remove_reference<decltype(Policy)>::type>(1, 1);
+        Atvoss::EleWise::GetTotal<0, typename std::remove_reference<decltype(Policy)>::type>(1, 1);
 
     /*!
      * \brief Default constructor
@@ -162,21 +160,21 @@ public:
         return 1;
     }
 
-    template <typename T> // Tile Tensor
-    using BlockTensorTile = Atvoss::Block::Tensor<
+    template <typename T> // Tile BlockTensor
+    using BlockTensorTile = Atvoss::EleWise::BlockTensor<
         T, Atvoss::Layout::Layout<Atvoss::Layout::FixedRankExtents<BASIC_BLOCK, GetLayoutAxis0(), GetLayoutAxis1()>>>;
     static constexpr auto EXPRESSION_TILE = Compute{}.template Compute<BlockTensorTile>();
     using ExprTile = typename decltype(EXPRESSION_TILE)::Type;
-    using ParamsTile = Atvoss::ExprTmpl::Params_t<ExprTile>;
-    using LocalVarsTile = Atvoss::ExprTmpl::LocalVars_t<ExprTile>;
+    using ParamsTile = Atvoss::Params_t<ExprTile>;
+    using LocalVarsTile = Atvoss::LocalVars_t<ExprTile>;
 
-    template <typename T> // Tail Tensor
+    template <typename T> // Tail BlockTensor
     using BlockTensorTail =
-        Atvoss::Block::TailTensor<T, Atvoss::Layout::TailLayout<Atvoss::Layout::VariableRankExtents<1>>>;
+        Atvoss::EleWise::TailBlockTensor<T, Atvoss::Layout::TailLayout<Atvoss::Layout::VariableRankExtents<1>>>;
     static constexpr auto EXPRESSION_TAIL = Compute{}.template Compute<BlockTensorTail>();
     using ExprTail = typename decltype(EXPRESSION_TAIL)::Type;
-    using ParamsTail = Atvoss::ExprTmpl::Params_t<ExprTail>;
-    using LocalVarsTail = Atvoss::ExprTmpl::LocalVars_t<ExprTail>;
+    using ParamsTail = Atvoss::Params_t<ExprTail>;
+    using LocalVarsTail = Atvoss::LocalVars_t<ExprTail>;
 
 private:
     template <typename ArgTup>
@@ -191,7 +189,7 @@ private:
             blockTensorsTile = CopyBlockIn<ParamsTile, true>(blockTensorsTile, i * BASIC_BLOCK, BASIC_BLOCK);
             blockTensorsTile = CopyBlockIn<ParamsTile, false>(blockTensorsTile, i * BASIC_BLOCK, BASIC_BLOCK);
             bufPoolIn_.Sync();
-            Tile::Evaluate<ExprTile>(blockTensorsTile, blockLocalVars);
+            Evaluate<ExprTile>(blockTensorsTile, blockLocalVars);
             bufPoolOut_.Sync();
             FreeBlockTensors<ParamsTile, true>(blockTensorsTile);
             CopyBlockOut<ParamsTile>(blockTensorsTile, i * BASIC_BLOCK, BASIC_BLOCK);
@@ -214,9 +212,9 @@ private:
             bufPoolIn_.Sync();
             if constexpr (ShapeSize::value == 2) {
                 using DstShape1Type = typename ShapeT::template get_type<1>;
-                Tile::Evaluate<ExprTile>(blockTensorsTail, blockLocalVarsTail, cfg.tileCnt, DstShape1Type::value);
+                Evaluate<ExprTile>(blockTensorsTail, blockLocalVarsTail, cfg.tileCnt, DstShape1Type::value);
             } else {
-                Tile::Evaluate<ExprTile>(blockTensorsTail, blockLocalVarsTail, cfg.tileCnt);
+                Evaluate<ExprTile>(blockTensorsTail, blockLocalVarsTail, cfg.tileCnt);
             }
             bufPoolOut_.Sync();
             FreeBlockTensors<ParamsTail, true>(blockTensorsTail);
@@ -249,11 +247,11 @@ private:
         AscendC::LocalTensor<DType> tensor;
         bufPoolCalc_.AllocTensor(tensor);
         if constexpr (std::is_same_v<ParamType, Atvoss::Layout::VariableRankExtents<1>>) {
-            Tensor<DType> blockTensorTail{ParamType::number - 1};
+            BlockTensor<DType> blockTensorTail{ParamType::number - 1};
             blockTensorTail.SetUbTensor(tensor);
             return blockTensorTail;
         } else {
-            Tensor<DType> blockTensorTile{ParamType::number - 1};
+            BlockTensor<DType> blockTensorTile{ParamType::number - 1};
             blockTensorTile.SetUbTensor(tensor);
             return blockTensorTile;
         }
@@ -274,7 +272,7 @@ private:
     template <typename Params, size_t Index, typename ParamTup, typename ArgTup>
     __aicore__ inline constexpr auto ConvertOneArg(ParamTup& params, ArgTup& args)
     {
-        constexpr auto pos = Util::TMP::Find_v<Atvoss::ExprTmpl::CheckVarNum<Index + 1>::template Checker, Params>;
+        constexpr auto pos = Util::TMP::Find_v<Atvoss::CheckVarNum<Index + 1>::template Checker, Params>;
         if constexpr (pos < Util::TMP::Size_v<Params>) {
             return AscendC::Std::get<pos>(params);
         } else {
@@ -373,7 +371,7 @@ private:
     {
         return AscendC::Std::make_tuple(
             ConstructCopyBlockIn<
-                Util::TMP::FindUnique_t<Atvoss::ExprTmpl::CheckVarNum<Ints + 1>::template Checker, Params>,
+                Util::TMP::FindUnique_t<Atvoss::CheckVarNum<Ints + 1>::template Checker, Params>,
                 isCopyInput>(args, pos, copyLen)...);
     }
 
@@ -401,7 +399,7 @@ private:
     {
         return AscendC::Std::make_tuple(
             ConstructCopyBlockOut<
-                Util::TMP::FindUnique_t<Atvoss::ExprTmpl::CheckVarNum<Ints + 1>::template Checker, Params>>(
+                Util::TMP::FindUnique_t<Atvoss::CheckVarNum<Ints + 1>::template Checker, Params>>(
                 args, pos, copyLen)...);
     }
 
@@ -425,7 +423,7 @@ private:
     {
         return AscendC::Std::make_tuple(
             ConstructMakeBlockTensor2LocalTensors<
-                Util::TMP::FindUnique_t<Atvoss::ExprTmpl::CheckVarNum<Ints + 1>::template Checker, Params>>(args)...);
+                Util::TMP::FindUnique_t<Atvoss::CheckVarNum<Ints + 1>::template Checker, Params>>(args)...);
     }
 
     template <typename Params, typename ArgTup>
@@ -493,9 +491,10 @@ private:
     }
 
 private:
-    Atvoss::LoopBuffer<AscendC::TPosition::VECIN, IN_PARAMS_COUNT, UB_TILE_SIZE> bufPoolIn_;
-    Atvoss::LoopBuffer<AscendC::TPosition::VECOUT, OUT_PARAMS_COUNT, UB_TILE_SIZE> bufPoolOut_;
-    Atvoss::LoopBuffer<AscendC::TPosition::VECCALC, LOCAL_VAR_COUNT, UB_TILE_SIZE> bufPoolCalc_;
+    AscendC::Std::conditional_t<useTPipe, AscendC::TPipe, void*> pipe_;
+    Atvoss::LoopBuffer<AscendC::TPosition::VECIN, IN_PARAMS_COUNT, UB_TILE_SIZE, useTPipe> bufPoolIn_;
+    Atvoss::LoopBuffer<AscendC::TPosition::VECOUT, OUT_PARAMS_COUNT, UB_TILE_SIZE, useTPipe> bufPoolOut_;
+    Atvoss::LoopBuffer<AscendC::TPosition::VECCALC, LOCAL_VAR_COUNT, UB_TILE_SIZE, useTPipe> bufPoolCalc_;
 };
 
 } // namespace Atvoss::Block

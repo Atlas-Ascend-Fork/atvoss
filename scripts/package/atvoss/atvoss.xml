@@ -35,7 +35,6 @@
         <path value="share"/>
         <path value="share/info"/>
         <path value="$(TARGET_ENV)/ascendc"/>
-        <path value="$(TARGET_ENV)/ascendc/act"/>
         <path value="$(TARGET_ENV)/include"/>
         <path value="$(TARGET_ENV)/include/atvoss"/>
     </dir_info>
@@ -51,6 +50,6 @@
     </file_info>
 
     <file_info value="atvoss_include" copy_type="delivery" src_path="" dst_path="atvoss" install_path="$(TARGET_ENV)/include/atvoss" install_type="all">
-        <file value="include" install_softlink="$(TARGET_ENV)/ascendc/act/include" install_mod="550" entity="true"/>
+        <file value="include" install_mod="550" entity="true"/>
     </file_info>
 </config>

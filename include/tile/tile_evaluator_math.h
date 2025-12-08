@@ -29,7 +29,6 @@ __aicore__ auto Add(const T &src1, const U &src2) {
     return src1 + src2;
 }
 
-
 /*!
  * \brief Add calculation based on the expression
  * \param[in] args, Input LocalTensor & output LocalTensor
