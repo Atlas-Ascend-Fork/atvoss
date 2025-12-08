@@ -12,7 +12,6 @@
 #define Atvoss_DEV_TILE_ASCENDC_MATH_H
 #include "lib/math/power.h"
 
-using namespace AscendC::Std;
 namespace Atvoss::Tile::Eval {
 
 /*!

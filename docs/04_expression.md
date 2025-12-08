@@ -203,7 +203,7 @@ struct OpAssign : BinaryOp<T, U> {
 ```
 
 
-#### 3.2.4 表达序列
+### 3.2.4 表达序列
 为了表达过程式的操作，支持使用`,`运算符表达操作序列。基本的运算符重载如下：
 ```cpp
 template <typename T, typename U>

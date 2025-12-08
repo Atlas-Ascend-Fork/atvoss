@@ -18,21 +18,18 @@
 #include <utility>
 #include <vector>
 #include "utility.h"
-#include "../patterns.h"
+#include "utils/patterns.h"
 
 #if __has_include(<type_traits>) || __has_include(<tuple>) 
 #else 
 namespace std = AscendC::std;
 #endif 
 namespace Atvoss {
-    enum class ParamUsage {
-        in,
-        out,
-        in_out,
-    };
-}
-
-namespace Atvoss::ExprTmpl {
+enum class ParamUsage {
+    in,
+    out,
+    in_out,
+};
 
 template <typename T, typename = void>
 struct HasDataTrait {
@@ -77,7 +74,6 @@ struct LocalVar {
     static_assert(!std::is_reference_v<T>,  "[ERROR]: [Atvoss][Expression] A LocalVar must not be a reference");
     using Type = T;
     using Like = L;
-    using layout = typename L::layout;
     static constexpr std::size_t number = N;
     static constexpr bool hasData = false;
 
@@ -96,12 +92,11 @@ struct IsLocalVar<LocalVar<N, T, L>> : std::true_type {};
 template <typename T>
 inline constexpr bool IsLocalVar_v = IsLocalVar<T>::value;
 
-template <std::size_t N, typename T, typename U, ParamUsage V = ParamUsage::in>
+template <std::size_t N, typename T, ParamUsage U = ParamUsage::in>
 struct Param {
     using Type = T;
     static constexpr std::size_t number = N;
-    using layout = U;
-    static constexpr ParamUsage usage = V;
+    static constexpr ParamUsage usage = U;
     static constexpr bool hasData = false;
 
     template <typename W>
@@ -113,8 +108,8 @@ struct Param {
 template <typename T>
 struct IsParam : std::false_type {};
 
-template <std::size_t N, typename T, typename U, ParamUsage V>
-struct IsParam<Param<N, T, U, V>> : std::true_type {};
+template <std::size_t N, typename T, ParamUsage U>
+struct IsParam<Param<N, T, U>> : std::true_type {};
 
 template <typename T>
 inline constexpr bool IsParam_v = IsParam<T>::value;
@@ -346,25 +341,24 @@ __host_aicore__ constexpr auto operator,(Expression<T> t, Expression<U> u)
 {
     return Expression<OpAndThen<T, U>>{{t.data, u.data}};
 }
+
+template <std::size_t N, typename L>
+__host_aicore__ constexpr auto PlaceHolderTmpLike(Expression<L> /*unused*/) {
+    static_assert(IsParam_v<L>, "[ERROR]: [Atvoss][Expression] A LocalVar can only be like a Param");
+    return Expression<LocalVar<N, typename L::Type, L>>{};
+}
+
+template <std::size_t N, typename T, ParamUsage U = ParamUsage::in>
+__host_aicore__ constexpr auto PlaceHolder()
+{
+    return Expression<Param<N, T, U>>{};
+}
+
 /*! 
  * Maker: Base class to express that a class is a maker of calculation expression template 
  */
 class Maker {};
 
-} // namespace Atvoss::ExprTmpl
-
-namespace Atvoss{
-    template <std::size_t N, typename L>
-    __host_aicore__ constexpr auto PlaceHolderTmpLike(ExprTmpl::Expression<L> /*unused*/) {
-        static_assert(ExprTmpl::IsParam_v<L>, "[ERROR]: [Atvoss][Expression] A LocalVar can only be like a Param");
-        return ExprTmpl::Expression<ExprTmpl::LocalVar<N, typename L::Type, L>>{};
-    }
-
-    template <std::size_t N, typename T,  ParamUsage V = ParamUsage::in, typename U= AscendC::Std::tuple<>>
-    __host_aicore__ constexpr auto PlaceHolder()
-    {
-        return ExprTmpl::Expression<ExprTmpl::Param<N, T, U, V>>{};
-    }
-};
+} // namespace Atvoss
 
 #endif //Atvoss_DEV_COMMON_H

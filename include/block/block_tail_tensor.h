@@ -14,17 +14,17 @@
 #include "tile/tile_operator.h"
 #include "utils/layout/layout.h"
 
-namespace Atvoss::Block {
+namespace Atvoss::EleWise {
 
 template <typename T, typename L = Atvoss::Layout::TailLayout<Atvoss::Layout::VariableRankExtents<1>>>
-class TailTensor {
+class TailBlockTensor {
 public:
     using PrimType = T;
     using LayoutType = L;
 
-    __aicore__ inline TailTensor() = default;
+    __aicore__ inline TailBlockTensor() = default;
 
-    __aicore__ inline TailTensor(AscendC::GlobalTensor<T> gmTensor, LayoutType layout,
+    __aicore__ inline TailBlockTensor(AscendC::GlobalTensor<T> gmTensor, LayoutType layout,
                              ParamUsage usage = Atvoss::ParamUsage::in, int index = 0)
     {
         SetGmTensor(gmTensor);
@@ -33,7 +33,7 @@ public:
         layout_ = layout;
     }
 
-    __aicore__ inline TailTensor(int index = 0)
+    __aicore__ inline TailBlockTensor(int index = 0)
     {
         index_ = index;
     }
@@ -43,37 +43,27 @@ public:
         size_ = size;
     }
 
-    __aicore__ inline uint64_t
-
-    GetSize() const
+    __aicore__ inline uint64_t GetSize() const
     {
         return size_;
     }
 
-    __aicore__ inline uint64_t
-
-    GetCurGmOffset() const
+    __aicore__ inline uint64_t GetCurGmOffset() const
     {
         return curGmOffset_;
     }
 
-    __aicore__ inline AscendC::LocalTensor<T>&
-
-    GetUbTensor()
+    __aicore__ inline AscendC::LocalTensor<T>& GetUbTensor()
     {
         return ubTensor_;
     }
 
-    __aicore__ inline AscendC::GlobalTensor<T>
-
-    GetGmTensor() const
+    __aicore__ inline AscendC::GlobalTensor<T> GetGmTensor() const
     {
         return gmTensor_;
     }
 
-    __aicore__ inline ParamUsage
-
-    GetParamUsage() const
+    __aicore__ inline ParamUsage GetParamUsage() const
     {
         return usage_;
     }

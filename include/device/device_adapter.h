@@ -155,11 +155,11 @@ public:
     template <typename Args>
     int64_t Run(const Args& arguments)
     {
-        auto expr = ExprMaker{}.template Compute<Device::DeviceTensor>();
+        auto expr = ExprMaker{}.template Compute<DeviceTensor>();
         using Expr = typename decltype(expr)::Type;
-        using Params = Atvoss::ExprTmpl::Params_t<Expr>;
-        using InParams = Atvoss::ExprTmpl::InParams_t<Expr>;
-        using OutParams = Atvoss::ExprTmpl::OutParams_t<Expr>;
+        using Params = Atvoss::Params_t<Expr>;
+        using InParams = Atvoss::InParams_t<Expr>;
+        using OutParams = Atvoss::OutParams_t<Expr>;
 
         // 1. Init Resource
         InitializeACL(context_, stream_, deviceId_);
@@ -281,7 +281,7 @@ private:
     constexpr auto ConvertOneArg(ParamTup& params, ArgTup& args)
     {
         constexpr auto pos =
-            Util::TMP::Find_v<Atvoss::ExprTmpl::CheckVarNum<Index + 1>::template Checker, Params>;
+            Util::TMP::Find_v<Atvoss::CheckVarNum<Index + 1>::template Checker, Params>;
         if constexpr (pos < Util::TMP::Size_v<Params>) {
             return std::get<pos>(params);
         } else {

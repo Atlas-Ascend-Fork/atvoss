@@ -13,7 +13,7 @@
 
 #include "tile_evaluator.h"
 
-namespace Atvoss::Tile {
+namespace Atvoss::EleWise {
 
 /*!
 * \brief Perform calculation based on the expression.
@@ -23,7 +23,7 @@ namespace Atvoss::Tile {
 */
 template<typename Expr, typename ArgTup, typename LocalTuple, typename... Arguments>
 __aicore__  inline void Evaluate(ArgTup &args, LocalTuple &localVar, Arguments&... arguments) {
-   Eval::Evaluator<Expr>{}(Expr{}, args, localVar, arguments...);
+   Atvoss::Tile::Eval::Evaluator<Expr>{}(Expr{}, args, localVar, arguments...);
 }
 
 /*!
@@ -35,7 +35,7 @@ __aicore__  inline void Evaluate(ArgTup &args, LocalTuple &localVar, Arguments&.
 template<size_t N, typename T>
 static constexpr __aicore__  inline int32_t GetTotal(uint32_t eleCntInTensor = 1, int defaultSize = 1) {
    using shape = typename T::TileShape;
-   return Tile::Eval::GetTotal < N, shape > (eleCntInTensor, defaultSize);
+   return Atvoss::Tile::Eval::GetTotal < N, shape > (eleCntInTensor, defaultSize);
 }
 
 } // namespace Atvoss::Tile

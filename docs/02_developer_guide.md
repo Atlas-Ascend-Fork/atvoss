@@ -64,7 +64,7 @@ template <template <typename> class Tensor>
 - 参数定义原型
 
     ```cpp
-    template <std::size_t N, typename T,  ParamUsage V = ParamUsage::in>
+    template <std::size_t N, typename T, ParamUsage V = ParamUsage::in>
         __host_aicore__ constexpr auto PlaceHolder()
     ```
 - 模板参数
@@ -77,7 +77,7 @@ template <template <typename> class Tensor>
 
 - 返回值说明
 
-    返回一个`Expression<ExprTmpl::Param<N ,T, V>>`型的表达式模板
+    返回一个`Expression<Param<N ,T, V>>`型的表达式模板
 
 #### 3.1.1.2 PlaceHolderTmpLike
 
@@ -89,7 +89,7 @@ template <template <typename> class Tensor>
 
     ```cpp
     template <std::size_t N, typename L>
-        __host_aicore__ constexpr auto PlaceHolderTmpLike(ExprTmpl::Expression<L>) {
+        __host_aicore__ constexpr auto PlaceHolderTmpLike(Expression<L>) {
         }
     ```
 
@@ -109,7 +109,7 @@ template <template <typename> class Tensor>
 
 - 返回值说明
 
-    返回一个`ExprTmpl::Expression<ExprTmpl::LocalVar<N, typename L::Type, L>>{}`型的表达式模板
+    返回一个`Expression<LocalVar<N, typename L::Type, L>>{}`型的表达式模板
 
 ### 3.1.2 定义计算表达式
 
@@ -718,7 +718,8 @@ __aicore__ inline void Run(Arguments &cfg, ArgTup &argTuple);
 - 函数功能说明：通过Block需要处理的总元素个数（`cfg.totalElemCnt`）计算Tile整块数量与尾块元素个数，申请输入、输出、临时变量映射的`AscendC::LocalTensor`的UB空间，循环处理`Tile`整块元素，一次性处理`Tile`尾块元素。
 ```cpp
 template <typename ArgTup>
-__aicore__ inline void Run(Arguments& cfg, ArgTup& argTuple) {
+__aicore__ inline void Run(ScheduleCfg& cfg, ArgTup& argTuple) 
+{
     // 动态计算单个block需要处理的tile整块数量
     cfg.wholeLoop = cfg.totalElemCnt / BASIC_BLOCK;
     // 动态计算单个block需要处理tile尾块中元素个数
@@ -1043,12 +1044,12 @@ struct Evaluator<OpAssign<T, OpAdd<U, V>>> {
                                LocalVarTup &localVars,
                                Arguments&... arguments) const {
         using Dtype = Dtype_t<T>;
-        uint32_t count = getShape<T, Operation::Unary>(arguments...);
-        return AddAssign<Dtype>(
-                Evaluator<T>{}(op.GetLhs(), args, localVars),
-                Evaluator<U>{}(op.GetRhs().GetLhs(), args, localVars),
-                Evaluator<V>{}(op.GetRhs().GetRhs(), args, localVars),
-                count);
+        OperationShape operationShape = GetShape<Operation::Unary>(args);
+        return AddAssign<OperationShape, Dtype>(
+                Evaluator<T>{}(op.GetLhs(), args, localVars).GetUbTensor(),
+                Evaluator<U>{}(op.GetRhs().GetLhs(), args, localVars).GetUbTensor(),
+                Evaluator<V>{}(op.GetRhs().GetRhs(), args, localVars).GetUbTensor(),
+                operationShape);
     }
 };
 ```
