@@ -13,37 +13,37 @@
 
 #include "common.h"
 
-namespace Atvoss::ExprTmpl {
-    template<Atvoss::Pattern pattern, typename T>
+namespace Atvoss {
+    template<Pattern pattern, typename T>
     struct OpReduceSum : UnaryOp<T> {
         OpReduceSum() = default;
 
         constexpr OpReduceSum(T t) : UnaryOp<T>(t) {}
     };
 
-    template<Atvoss::Pattern pattern, typename T>
+    template<Pattern pattern, typename T>
     __host_aicore__ constexpr auto ReduceSum(Expression<T> lhs) {
         return Expression<OpReduceSum<pattern, T>>{{lhs.data}};
     }
 
-    template<Atvoss::Pattern pattern, typename T>
+    template<Pattern pattern, typename T>
     __host_aicore__ constexpr auto ReduceSum(T &&lhs) {
         return Expression<OpReduceSum<pattern, T>>{{std::forward<T>(lhs)}};
     }
 
-    template<Atvoss::Pattern pattern, typename T>
+    template<Pattern pattern, typename T>
     struct OpBroadcast : UnaryOp<T> {
         OpBroadcast() = default;
 
         constexpr OpBroadcast(T t) : UnaryOp<T>(t) {}
     };
 
-    template<Atvoss::Pattern pattern, typename T>
+    template<Pattern pattern, typename T>
     __host_aicore__ constexpr auto Broadcast(Expression<T> lhs) {
         return Expression<OpBroadcast<pattern, T>>{{lhs.data}};
     }
 
-    template<Atvoss::Pattern pattern, typename T>
+    template<Pattern pattern, typename T>
     __host_aicore__ constexpr auto Broadcast(T &&lhs) {
         return Expression<OpBroadcast<pattern, T>>{{std::forward<T>(lhs)}};
     }

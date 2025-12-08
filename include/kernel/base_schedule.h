@@ -26,7 +26,7 @@ public:
     using BlockTemplate = BlockOp;
     static constexpr auto EXPRESSION = ExprMaker{}.template Compute<AscendC::GlobalTensor>();
     using Expr = typename decltype(EXPRESSION)::Type;
-    using Params = Atvoss::ExprTmpl::Params_t<Expr>;
+    using Params = Atvoss::Params_t<Expr>;
     using TileShape = typename BlockTemplate::BlockTileShape;
     static constexpr uint32_t TILE_SHAPE_SIZE = TileShape::size::value;
     static constexpr uint32_t BASIC_BLOCK = BlockOp::ScheduleClz::BASIC_BLOCK;
@@ -148,7 +148,7 @@ private:
     __aicore__ inline constexpr auto ConvertOneArg(ParamTup& params, ArgTup& args)
     {
         constexpr auto pos =
-            Util::TMP::Find_v<Atvoss::ExprTmpl::CheckVarNum<Index + 1>::template Checker, Params>;
+            Util::TMP::Find_v<Atvoss::CheckVarNum<Index + 1>::template Checker, Params>;
         if constexpr (pos < Util::TMP::Size_v<Params>) {
             return AscendC::Std::get<pos>(params);
         } else {
@@ -179,5 +179,5 @@ private:
     }
 };
 
-} // namespace Atvoss::Kernel
+} // namespace Atvoss::EleWise
 #endif

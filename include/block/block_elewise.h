@@ -11,13 +11,6 @@
 #ifndef BLOCK_ELE_WISE_H
 #define BLOCK_ELE_WISE_H
 
-#include <functional>
-#include <type_traits>
-#include "block/block_tensor.h"
-#include "block/block_tail_tensor.h"
-#include "common/tuple_tool.h"
-#include "utils/buf_pool/loopbuf.h"
-#include "utils/layout/layout.h"
 #include "utils/layout/shape.h"
 #include "block_schedule.h"
 namespace Atvoss::EleWise {

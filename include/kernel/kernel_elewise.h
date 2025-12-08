@@ -10,8 +10,6 @@
 
 #ifndef KERNEL_ELE_WISE_H
 #define KERNEL_ELE_WISE_H
-#include <functional>
-#include "common/compile_info.h"
 #include "kernel_schedule.h"
 namespace Atvoss::EleWise {
 
@@ -34,7 +32,7 @@ struct KernelPolicy {
     KernelPolicySegment segmentPolicy;    // Multi-core tiling strategy
 };
 
-static constexpr Atvoss::EleWise::KernelPolicy kernelPolicyDefault{48, KernelPolicySegment::UniformSegment};
+static constexpr KernelPolicy kernelPolicyDefault{48, KernelPolicySegment::UniformSegment};
 
 /*!
  * KernelBuilder: Calculate the tiling information, then determine the GM data that the current core needs to process based on the block ID,
@@ -58,5 +56,5 @@ public:
     }
 };
 
-} // namespace Atvoss::Kernel
+} // namespace Atvoss::EleWise
 #endif

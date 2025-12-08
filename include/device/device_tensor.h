@@ -12,7 +12,7 @@
 #include <numeric>
 #include "acl/acl.h"
 #include "utils/tensor.h"
-namespace Atvoss::Device {
+namespace Atvoss {
 
 template <typename T>
 class DeviceTensor {

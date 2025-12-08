@@ -10,7 +10,6 @@
 
 #ifndef __Atvoss_TILE_OPERATOR_H__
 #define __Atvoss_TILE_OPERATOR_H__
-#include "tile_evaluator_common.h"
 
 namespace Atvoss::Tile {
 

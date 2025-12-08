@@ -14,7 +14,7 @@
 
 #include "common.h"
 
-namespace Atvoss::ExprTmpl {
+namespace Atvoss {
 // Disallow dangerous expressions like (Expression{2}, 3)
     template<typename T, typename U>
     __host_aicore__ constexpr auto operator,(Expression<T> t, U &&u) = delete;

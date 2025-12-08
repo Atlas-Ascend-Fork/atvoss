@@ -52,7 +52,7 @@ using TileShape = Atvoss::Shape<HEIGHT, WIDTH>;
 
 | 表达式元素| 功能描述|
 | ------------ | ------------ |
-| `PlaceHolder` | 定义输入输出参数信息，传入的模板参数为<序号，Type，layout，输入输出标识>|
+| `PlaceHolder` | 定义输入输出参数信息，传入的模板参数为<序号，Type，输入输出标识>|
 | `PlaceHolderTmpLike` | 定义计算时需要使用的临时buffer|
 | 返回值 | 使用Tile层API描述计算过程，1个Tile层的API操作实现一次计算过程，每个计算过程是按“,”隔开|
 
