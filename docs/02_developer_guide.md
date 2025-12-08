@@ -11,7 +11,7 @@ ATVOSS针对昇腾AI处理器的Vector计算的多核并行计算过程，提供
 <br><img src="./images/architecture.png" width="50%" height="50%" style="margin: 20px 0;"><br>
 # 2. 公共基础工具
 ## 2.1 表达式模板
-ATVOSS使用表达式模板进行计算流的描述，表达式模板是C++利用运算符重载、类型计算来实现延迟计算的技巧。表达式模板的基本要点是在形成使用运算符或进行函数调用时，在Kernel/Block/Tile层使用表达式模板，只是萃取表达式包含的计算操作信息，直到最后Tile层计算的时候，才会进行实际的计算操作。详细的表达式模板实现，可从[Expression表达式模板](../include/utils/expression/expression.h)进入阅读代码。
+ATVOSS使用表达式模板进行计算流的描述，表达式模板是C++利用运算符重载、类型计算来实现延迟计算的技巧。表达式模板的基本要点是在形成使用运算符或进行函数调用时，在Kernel/Block/Tile层使用表达式模板，只是萃取表达式包含的计算操作信息，直到最后Tile层计算的时候，才会进行实际的计算操作。详细的表达式模板实现，可从[Expression表达式模板](../include/utils/expression/expression.h)进入阅读代码，或者查看对应资料文档[Expression表达式模板资料](./04_expression.md)。
 
 # 3. 基于ATVOSS的算子开发
 ## 3.1 实现自定义计算表达式
@@ -622,16 +622,16 @@ Block层模板负责单个核的任务分解到多个Tile的数据搬运、Tile�
 ### 3.3.1 BlockBuilder模板
 ```cpp
 template <typename Compute, const auto& Policy = blockPolicyDefault, typename ScheduleCfg = BlockConfig,
-          class Schedule = Block::DefaultSchedule<Compute, Policy, ScheduleCfg>>
+          template <typename, const auto&, typename> class Schedule = DefaultBlockSchedule>
 class BlockBuilder {
 public:
     // 调度策略模板类
-    using ScheduleClz = Schedule;
+    using ScheduleClz = Schedule<Compute, Policy, ScheduleCfg>;
     // Block层执行函数，调用对应调度策略的执行函数
     template <typename ArgTup>
     __aicore__ inline void Run(ScheduleCfg& cfg, ArgTup& argTuple)
     {
-        Schedule schedule;
+        ScheduleClz schedule;
         schedule.Run(cfg, argTuple);
     }
 };
@@ -689,7 +689,7 @@ struct UbAssign {
 };
 ```
 #### 3.3.1.2.3 Schedule
-`Schedule`是计算任务的调度核心，它调用对应的切分策略来执行计算。在扩展性方面，用户可以通过继承`BaseBlockSchedule`基类可实现自定义策略；系统默认的执行策略为`DefaultSchedule`。
+`Schedule`是计算任务的调度核心，它调用对应的切分策略来执行计算。在扩展性方面，用户可以通过继承`BaseBlockSchedule`基类可实现自定义策略；系统默认的执行策略为`DefaultSchedule`，当用户需要使用`AscendC::TPipe`作为内存管理和同步时，需要使用`BlockScheduleWithTPipe`进行作为计算任务的调度。
 - 编译期根据[Policy](#33121-policy)参数配置，计算单个存活节点占用`UB`空间。
 ```cpp
 // 编译期获取单个存活节点占用UB空间大小
@@ -750,16 +750,16 @@ Kernel层承担来自Device层的分配的计算任务，需对任务进行分�
 
 ```cpp
 template <typename BlockOp, const auto &Policy = kernelPolicyDefault, typename ScheduleCfg = KernelConfig,
-    class Schedule = Kernel::DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
+    template <typename, const auto&, typename> class Schedule = DefaultKernelSchedule>
 class KernelBuilder {
 public:
     // 调度策略模板类
-    using ScheduleClz = Schedule;
+    using ScheduleClz = Schedule<BlockOp, Policy, ScheduleCfg>;
     //Kernel层执行函数 调用对应调度策略的执行函数
     template <typename OpParam, typename... Args>
     __aicore__ inline void Run(OpParam& cfg, Args... args)
     {
-       Schedule schedule;
+       ScheduleClz schedule;
        schedule.Run(cfg, args...);
     }
 };
@@ -769,7 +769,7 @@ public:
 `KernelBuilder`类定义如下：
 ```cpp
 template <typename BlockOp, const auto &Policy = kernelPolicyDefault, typename ScheduleCfg = KernelConfig,
-    class Schedule = Kernel::DefaultSchedule<BlockOp, Policy, ScheduleCfg>>
+    template <typename, const auto&, typename> class Schedule = DefaultKernelSchedule>
 class KernelBuilder {
 public:
     ...
@@ -786,7 +786,7 @@ KernelBuilder模板对外提供四部分内容：
 | [Schedule](#34124-schedule)   | 采用不同的切分策略进行调度计算  | 
 - 对外提供的静态参数信息 
 ```cpp 
-using ScheduleClz = Schedule; // 提供调度策略供给上层调用
+using ScheduleClz = Schedule<BlockOp, Policy, ScheduleCfg>; // 提供调度策略供给上层调用
 ```
 - 默认模板构造函数
 ```cpp
@@ -924,10 +924,14 @@ int64_t Run(const Args& arguments)
   ```cpp
   template<size_t N>
   Tensor(T* dataPtr, uint32_t (&inputShape)[N]) : dataPtr_(dataPtr)
+
+  template<size_t N>
+  Tensor(T* dataPtr, uint32_t (&inputShape)[N], uint32_t dims) : dataPtr_(dataPtr), dims_(dims)
   ```
 
-  - `dataPtr`: 指向实际数据的指针
-  - `inputShape`: 定义张量形状的定长数组，最多支持8维
+  - `dataPtr`: 必选输入，指向实际数据的指针
+  - `inputShape`: 必选输入，定义张量形状的定长数组，最多支持8维
+  - `dims`: 可选输入，定义张量形状的维度数，不指定时通过必选输入`inputShape`获取，最多支持8维
 
   示例：
 

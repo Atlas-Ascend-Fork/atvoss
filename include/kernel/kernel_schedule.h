@@ -11,8 +11,8 @@
 #ifndef Atvoss_INCLUDE_KERNEL_KERNEL_SCHEDULE_H_
 #define Atvoss_INCLUDE_KERNEL_KERNEL_SCHEDULE_H_
 #include "base_schedule.h"
-namespace Atvoss::Kernel {
-template <typename BlockOp, const auto& Policy, typename Arguments>
-class DefaultSchedule :public BaseKernelSchedule<BlockOp,Policy,Arguments>{};
-}      // namespace Atvoss::Kernel
+namespace Atvoss::EleWise {
+template <typename BlockOp, const auto& Policy, typename ScheduleCfg>
+class DefaultKernelSchedule : public BaseKernelSchedule<BlockOp, Policy, ScheduleCfg> {};
+} // namespace Atvoss::EleWise
 #endif // Atvoss_INCLUDE_KERNEL_KERNEL_SCHEDULE_H_

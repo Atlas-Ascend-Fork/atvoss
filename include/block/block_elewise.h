@@ -52,19 +52,19 @@ static constexpr Atvoss::EleWise::BlockPolicy<TileShape> blockPolicyDefault{190 
  * computation.
  */
 template <typename Compute, const auto& Policy = blockPolicyDefault, typename ScheduleCfg = BlockConfig,
-          class Schedule = Block::DefaultSchedule<Compute, Policy, ScheduleCfg>>
+          template <typename, const auto&, typename> class Schedule = DefaultBlockSchedule>
 class BlockBuilder {
 public:
-    using ScheduleClz = Schedule;
+    using ScheduleClz = Schedule<Compute, Policy, ScheduleCfg>;
     using BlockTileShape = typename ScheduleClz::TileShape;
     template <typename ArgTup>
     __aicore__ inline void Run(ScheduleCfg& cfg, ArgTup& argTuple)
     {
-        Schedule schedule;
+        ScheduleClz schedule;
         schedule.Run(cfg, argTuple);
     }
 };
 
-} // namespace Atvoss::Block
+} // namespace Atvoss::EleWise
 
 #endif

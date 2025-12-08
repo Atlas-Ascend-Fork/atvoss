@@ -46,7 +46,7 @@ struct InputCollector {
     template<typename... NewInputs>
     constexpr auto AddInputs(NewInputs&... newInputs) const {
         auto newTuple = std::tuple_cat(inputs, std::forward_as_tuple(newInputs...));
-        using NewInputsTuple = ConcatTuplesT<InputsTuple, std::tuple<NewInputs&...>>;
+        using NewInputsTuple = ConcatTuplesT<InputsTuple, std::tuple<NewInputs& ...>>;
         return InputCollector<NewInputsTuple>{newTuple};
     }
 };
@@ -58,7 +58,7 @@ struct OutputCollector {
     template<typename... NewOutputs>
     constexpr auto AddOutputs(NewOutputs&... newOutputs) const {
         auto newTuple = std::tuple_cat(outputs, std::forward_as_tuple(newOutputs...));
-        using NewOutputsTuple = ConcatTuplesT<OutputsTuple, std::tuple<NewOutputs&...>>;
+        using NewOutputsTuple = ConcatTuplesT<OutputsTuple, std::tuple<NewOutputs& ...>>;
         return OutputCollector<NewOutputsTuple>{newTuple};
     }
 };
@@ -124,7 +124,7 @@ struct ArgumentsBuilder {
     template<typename... InitialInputs>
     constexpr auto input(InitialInputs&... inputs) const {
         auto initialInputs = std::forward_as_tuple(inputs...);
-        auto inputCollector = InputCollector<std::tuple<InitialInputs&...>>{initialInputs};
+        auto inputCollector = InputCollector<std::tuple<InitialInputs& ...>>{initialInputs};
         auto outputCollector = OutputCollector<std::tuple<>>{};
         auto attrCollector = AttrCollector<std::tuple<>>{};
         
@@ -139,7 +139,7 @@ struct ArgumentsBuilder {
     constexpr auto output(InitialOutputs&... outputs) const {
         auto initialOutputs = std::forward_as_tuple(outputs...);
         auto inputCollector = InputCollector<std::tuple<>>{};
-        auto outputCollector = OutputCollector<std::tuple<InitialOutputs&...>>{initialOutputs};
+        auto outputCollector = OutputCollector<std::tuple<InitialOutputs& ...>>{initialOutputs};
         auto attrCollector = AttrCollector<std::tuple<>>{};
         
         return ArgumentsBuilderImpl{

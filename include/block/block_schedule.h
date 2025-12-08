@@ -11,8 +11,18 @@
 #ifndef Atvoss_INCLUDE_BLOCK_SCHEDULE_H_
 #define Atvoss_INCLUDE_BLOCK_SCHEDULE_H_
 #include "base_schedule.h"
-namespace Atvoss::Block {
-template <typename ExprMaker, const auto& Policy, typename Arguments>
-class DefaultSchedule : public BaseBlockSchedule<ExprMaker, Policy, Arguments> {};
-} // namespace Atvoss::Block
+namespace Atvoss::EleWise {
+
+#if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+template <typename Compute, const auto& Policy, typename ScheduleCfg>
+class DefaultBlockSchedule : public BaseBlockSchedule<Compute, Policy, ScheduleCfg, true> {};
+#else
+template <typename Compute, const auto& Policy, typename ScheduleCfg>
+class DefaultBlockSchedule : public BaseBlockSchedule<Compute, Policy, ScheduleCfg, false> {};
+#endif
+
+template <typename Compute, const auto& Policy, typename ScheduleCfg>
+class BlockScheduleWithTPipe : public BaseBlockSchedule<Compute, Policy, ScheduleCfg, true> {};
+
+} // namespace Atvoss::EleWise
 #endif // Atvoss_INCLUDE_KERNEL_KERNEL_SCHEDULE_H_
