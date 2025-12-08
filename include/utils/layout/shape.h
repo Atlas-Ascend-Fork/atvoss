@@ -15,12 +15,12 @@ namespace Atvoss {
 template <int... a>
 class Shape {
 public:
-    using Types = std::tuple<Int<a>...>;
+    using Types = std::tuple<AscendC::Std::Int<a>...>;
 
     template <size_t N>
     using get_type = typename std::tuple_element_t<N, Types>;
 
-    using size = Int<sizeof...(a)>;
+    using size = AscendC::Std::Int<sizeof...(a)>;
 };
 
 } // namespace Atvoss

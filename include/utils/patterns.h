@@ -11,24 +11,21 @@
 #ifndef Atvoss_DEV_PATTERNS_H
 #define Atvoss_DEV_PATTERNS_H
 namespace Atvoss {
-    enum class Pattern {
-        AR,
-        RA,
-        AB,
-        BA
-    };
-
+enum class Pattern {
+    AR,
+    RA,
+    AB,
+    BA
 };
 
-namespace Atvoss {
-    enum class CastMode {
-        CAST_NONE = 0,
-        CAST_RINT,
-        CAST_FLOOR,
-        CAST_CEIL,
-        CAST_ROUND,
-        CAST_TRUNC,
-        CAST_ODD
-    };
+enum class CastMode {
+    CAST_NONE = 0,
+    CAST_RINT,
+    CAST_FLOOR,
+    CAST_CEIL,
+    CAST_ROUND,
+    CAST_TRUNC,
+    CAST_ODD
+};
 }
 #endif //Atvoss_DEV_PATTERNS_H

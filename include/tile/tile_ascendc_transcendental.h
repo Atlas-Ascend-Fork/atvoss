@@ -11,9 +11,6 @@
 #ifndef Atvoss_DEV_TILE_ASCENDC_TRANSCENDENTAL_H
 #define Atvoss_DEV_TILE_ASCENDC_TRANSCENDENTAL_H
 
-#include "tile_evaluator_common.h"
-
-using namespace AscendC::Std;
 namespace Atvoss::Tile::Eval {
 
 /*!
@@ -21,15 +18,15 @@ namespace Atvoss::Tile::Eval {
  * \param[in] src, Input LocalTensor
  * \param[out] dst, Output LocalTensor
  */
-template <typename OperationShape, Atvoss::Pattern pattern, typename T>
+template <typename OperationShape, Pattern pattern, typename T>
 __aicore__ inline void BroadcastAssign(AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src,
                                        OperationShape& operationShape)
 {
     uint32_t dstShape[] = {operationShape.axis0, operationShape.axis1};
-    if constexpr (pattern == Atvoss::Pattern::AB) {
+    if constexpr (pattern == Pattern::AB) {
         uint32_t srcShape_[] = {operationShape.axis0, 1};
         AscendC::Broadcast<T, 2, 1>(dst, src, dstShape, srcShape_);
-    } else if constexpr (pattern == Atvoss::Pattern::BA) {
+    } else if constexpr (pattern == Pattern::BA) {
         uint32_t srcShape_[] = {1, operationShape.axis1};
         AscendC::Broadcast<T, 2, 0>(dst, src, dstShape, srcShape_);
     } else {
