@@ -9,6 +9,7 @@ ATVOSS针对昇腾AI处理器的Vector计算的多核并行计算过程，提供
 - Tile层：对Ascend C基础API进行封装，提供更大Tile块的搬运、计算等能力。
 - Basic层：使用Ascend C基础API能力完成数据搬运计算等基础操作。
 <br><img src="./images/architecture.png" width="50%" height="50%" style="margin: 20px 0;"><br>
+
 # 2. 公共基础工具
 ## 2.1 表达式模板
 ATVOSS使用表达式模板进行计算流的描述，表达式模板是C++利用运算符重载、类型计算来实现延迟计算的技巧。表达式模板的基本要点是在形成使用运算符或进行函数调用时，在Kernel/Block/Tile层使用表达式模板，只是萃取表达式包含的计算操作信息，直到最后Tile层计算的时候，才会进行实际的计算操作。详细的表达式模板实现，可从[Expression表达式模板](../include/utils/expression/expression.h)进入阅读代码，或者查看对应资料文档[Expression表达式模板资料](./04_expression.md)。
@@ -77,7 +78,7 @@ template <template <typename> class Tensor>
 
 - 返回值说明
 
-    返回一个`Expression<Param<N ,T, V>>`型的表达式模板
+    返回一个`Expression<Param<N ,T, V>>`型的表达式模板。
 
 #### 3.1.1.2 PlaceHolderTmpLike
 
@@ -97,19 +98,19 @@ template <template <typename> class Tensor>
 
     | 参数名| 描述说明|
     | ------------ | ------------|
-    | N | 临时Buffer的序号, `PlaceHolderTmpLike`类的序号从1开始，依次加1递增，不能重复|
-    | L | 入参的`Expression`包含的模板参数，固定由入参类型推倒，用户无需关注|
+    | N | 临时Buffer的序号, `PlaceHolderTmpLike`类的序号从1开始，依次加1递增，不能重复。|
+    | L | 入参的`Expression`包含的模板参数，固定由入参类型推倒，用户无需关注。|
 
 - 参数说明
 
     | 参数名| 描述说明|
     | ------------ | ------------|
-    | `Expression<L>` | 固定配置为某个`PlaceHolder`, 表征需要给本临时Buffer申请的内存的大小与该`PlaceHolder`申请的内存大小一样|
+    | `Expression<L>` | 固定配置为某个`PlaceHolder`, 表征需要给本临时Buffer申请的内存的大小与该`PlaceHolder`申请的内存大小一样。|
 
 
 - 返回值说明
 
-    返回一个`Expression<LocalVar<N, typename L::Type, L>>{}`型的表达式模板
+    返回一个`Expression<LocalVar<N, typename L::Type, L>>{}`型的表达式模板。
 
 ### 3.1.2 定义计算表达式
 
@@ -212,6 +213,7 @@ __aicore__ inline void SubAssign(AscendC::LocalTensor<T>& dst, const AscendC::Lo
 | dst            | 输出    | 目的操作数        |
 | src0、src1      | 输入    | 源操作数         |
 | operationShape | 输入    | 需要计算数据长度的结构体 |
+
 #### 3.2.2.5 表达式调用示例
 ```c++
 using TileShape = Atvoss::Shape<WIDTH>;
