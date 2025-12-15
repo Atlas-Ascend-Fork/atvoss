@@ -78,7 +78,7 @@ if [[ " $TEST_CASE_LIST " == *" ${TEST_NAME} "* ]]; then
         exit 1
     fi
     if [ "$RUN_MODE" = "profiling" ]; then
-        msprof --ai-core=on --ascendcl=on --model-execution=on --runtime-api=on --task-time=on --application=$TEST_NAME --output=./
+        msprof --ai-core=on --ascendcl=on --runtime-api=on --task-time=on --application=$TEST_NAME --output=./
     else
         ./$TEST_NAME
     fi
