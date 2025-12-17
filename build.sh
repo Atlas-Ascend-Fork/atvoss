@@ -8,7 +8,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-
+ 
 set -e
 UT_TARGETS=("atvoss_ascend910b_ut")
 SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93")
