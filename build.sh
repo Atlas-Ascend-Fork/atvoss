@@ -16,7 +16,6 @@ SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93")
 # 所有支持的短选项
 SUPPORTED_SHORT_OPTS="hj:vcu-:"
 
-# 所有支持的长选项
 SUPPORTED_LONG_OPTS=(
   "help" "verbose" "pkg" "clean" "cann_3rd_lib_path" "utest" "noexec" "cov" "asan" "cann_3rd_lib_path"
   "run_example" "build-type"
