@@ -59,6 +59,7 @@ struct CastConfig {
 
 int main()
 {
+    cout << 'cann' << endl;
     using Config = CastConfig<half, float>;
     std::vector<half> v1(32*32, 1.5F);
     std::vector<float> v2(32*32);
