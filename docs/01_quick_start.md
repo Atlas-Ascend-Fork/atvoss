@@ -85,31 +85,8 @@ ATVOSS支持源码编译，进行源码编译前，首先确保系统满足以�
 ```bash
 git clone https://gitcode.com/cann/atvoss.git
 ```
-## 编译安装
-
-1. 编译
-
-   ATVOSS仓提供一键式编译安装能力，进入本开源仓代码根目录，执行如下命令：
-
-   ```bash
-   bash build.sh --pkg
-   ```
-
-   编译完成后会在`build_out`目录下生成cann-atvoss-\<cann_version\>-linux-\<arch\>.run软件包。
-
-2. 安装
-
-   在开源仓根目录下执行下列命令，根据设置的环境变量路径，将编译生成的run包安装到CANN包的装包路径，同时会覆盖原CANN包中的ATVOSS内容。
-
-   ```bash
-   # 设置CANN开发套件包环境变量，以root用户默认路径为例，如已设置，则可忽略该操作
-   source ${install_path}/latest/bin/setenv.bash
-   # 切换到run包生成路径下
-   cd build_out
-   # 安装run包
-   ./cann-atvoss-<cann_version>-linux-<arch>.run --full --quiet --install-path={$install_path}
-   ```
-   其中${install_path}详见[环境准备](#环境准备)章节说明
+用户可直接通过导入源码路径下的include路径中对外头文件（include/atvoss.h）使能模板库能力。
+在算子开发之前，可以通过如下UT测试验证和样例验证，确保当前环境是否OK。
 
 ## UT测试（可选）
 
