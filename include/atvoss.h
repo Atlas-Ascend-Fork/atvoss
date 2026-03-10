@@ -8,11 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef Atvoss_H
-#define Atvoss_H
-#include "utils/expression/expression.h"
-#include "tile/tile_elewise.h"
-#include "block/block_elewise.h"
-#include "kernel/kernel_elewise.h"
-#include "device/device_adapter.h"
+#ifndef ATVOSS_H
+#define ATVOSS_H
+#include "kernel_basic_intf.h"
+#include "elewise/tile/tile_evaluate.h"
+#include "elewise/block/builder.h"
+#include "elewise/kernel/builder.h"
+#include "elewise/device/device_adapter.h"
 #endif
