@@ -8,8 +8,12 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef Atvoss_INCLUDE_UTILS_SHAPE_H_
-#define Atvoss_INCLUDE_UTILS_SHAPE_H_
+#ifndef ATVOSS_INCLUDE_UTILS_SHAPE_H_
+#define ATVOSS_INCLUDE_UTILS_SHAPE_H_
+
+#include <tuple>
+#include "kernel_operator.h"
+
 namespace Atvoss {
 
 template <int... a>
@@ -25,4 +29,4 @@ public:
 
 } // namespace Atvoss
 
-#endif // Atvoss_INCLUDE_UTILS_SHAPE_H_
+#endif // ATVOSS_INCLUDE_UTILS_SHAPE_H_
