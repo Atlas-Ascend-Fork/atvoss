@@ -26,8 +26,8 @@ eg1：
     queIn.FreeTensor(c);
  */
 
-#ifndef _LOOP_BUFFER_POOL_H_
-#define _LOOP_BUFFER_POOL_H_
+#ifndef ATVOSS_LOOP_BUFFER_POOL_H
+#define ATVOSS_LOOP_BUFFER_POOL_H
 
 namespace Atvoss {
 
@@ -88,6 +88,7 @@ public:
             auto evtID = bufState_[i].evtID_;
             if (evtID >= 0) {
                 wait_flag((pipe_t)ToPipe(dst), (pipe_t)ToPipe(src), evtID);
+
             }
         }
     }
@@ -104,7 +105,6 @@ public:
             GetTPipePtr()->InitBuffer(tbuf_, POOL_LEN);
         }
         this->header_  = 0;
-#pragma unroll
         for(int i=0; i<tileNum; i++) {
 #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
             bufState_[i].state_ = 0;
@@ -121,7 +121,7 @@ public:
         AscendC::TBuffAddr addr;
         addr.bufferAddr = bufPool_.startAddr + header_ * tileSize;
         addr.logicPos =  (uint8_t)AscendC::TPosition::VECCALC;
-        addr.bufferHandle = (AscendC::TBufHandle)header_; 
+        addr.bufferHandle = (AscendC::TBufHandle)header_;
         addr.dataLen = tileSize;
 		if constexpr (ToRevEvent() != AscendC::HardEvent::V_V) {
 	        if( bufState_[header_].evtID_ >= 0 ){
@@ -145,17 +145,16 @@ public:
             header_ = 0;
         }
         tensor.SetAddr(addr);
-
         if constexpr( sizeof...(args) > 0) {
             AllocTensor(args...);
         }
     }
     template <typename T, class... Args>
     __aicore__ inline void FreeTensor(T& tensor, Args... args){
+        auto bufPos = static_cast<uint8_t>(reinterpret_cast<uintptr_t>(tensor.GetBufferHandle()));
         if constexpr (tileNum == 0) {
             return;
         }
-        auto bufPos = static_cast<uint8_t>(reinterpret_cast<uintptr_t>(tensor.GetBufferHandle()));
 		if constexpr (ToRevEvent() != AscendC::HardEvent::V_V) {
 		    auto evtID = 0;
 		    if constexpr (useTPipe) {
@@ -166,6 +165,7 @@ public:
 		    }
 	        bufState_[bufPos].evtID_ = evtID;
 	        set_flag((pipe_t)ToPipe(dst), (pipe_t)ToPipe(src), evtID);
+
 		}
 
 #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
@@ -219,4 +219,4 @@ class LoopBuffer<AscendC::TPosition::VECCALC, tileNum, tileSize, useTPipe>
 };
 } //namespace Atvoss
 
-#endif //_LOOP_BUFFER_POOL_H_
+#endif //ATVOSS_LOOP_BUFFER_POOL_H

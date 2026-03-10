@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef Atvoss_DEV_PATTERNS_H
-#define Atvoss_DEV_PATTERNS_H
+#ifndef ATVOSS_DEV_PATTERNS_H
+#define ATVOSS_DEV_PATTERNS_H
 namespace Atvoss {
 enum class Pattern {
     AR,
@@ -27,5 +27,16 @@ enum class CastMode {
     CAST_TRUNC,
     CAST_ODD
 };
+
+enum class MemMngPolicy : uint8_t {
+    MANUAL = 0,
+    AUTO
+};
+
+enum class MemLevel: uint8_t {
+    LEVEL_0 = 0,
+    LEVEL_1,
+    LEVEL_2
+};
 }
-#endif //Atvoss_DEV_PATTERNS_H
+#endif //ATVOSS_DEV_PATTERNS_H

@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef Atvoss_EXAMPLE_COMMON_H
-#define Atvoss_EXAMPLE_COMMON_H
+#ifndef ATVOSS_EXAMPLE_COMMON_H
+#define ATVOSS_EXAMPLE_COMMON_H
 #include "acl/acl.h"
 
 namespace {
@@ -19,6 +19,15 @@ namespace {
         if (__ret != ACL_ERROR_NONE) {                                                      \
             std::cerr << __FILE__ << ":" << __LINE__ << " aclError:" << __ret << std::endl; \
         }                                                                                   \
+    } while (0)
+
+#define CHECK_ACL_RET(call) \
+    do { \
+        aclError __ret = (call); \
+        if (__ret != ACL_ERROR_NONE) { \
+            std::cerr << __FILE__ << ":" << __LINE__ << " aclError:" << __ret << std::endl; \
+            return;\
+        } \
     } while (0)
 
 static constexpr float REL_TOL = 1e-3f;
@@ -46,6 +55,22 @@ bool VerifyResults(const std::vector<T> &golden, const std::vector<T> &output)
     }
     return true;
 }
+
+template <typename F>
+struct AclResourceGuard {
+    F f;
+    ~AclResourceGuard()
+    {
+        f();
+    }
+};
+
+template <typename F>
+AclResourceGuard<F> ReleaseSource(F&& f)
+{
+    return AclResourceGuard<F>{std::forward<F>(f)};
+}
+
 }  // namespace
 
 #endif

@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef Atvoss_LAYOUT_H
-#define Atvoss_LAYOUT_H
+#ifndef ATVOSS_LAYOUT_H
+#define ATVOSS_LAYOUT_H
 
 namespace Atvoss::Layout {
 
@@ -62,4 +62,4 @@ private:
     OperationShape binaryShape_;
 };
 }  // namespace Atvoss::Layout
-#endif  //Atvoss_LAYOUT_H
+#endif  //ATVOSS_LAYOUT_H
