@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef Atvoss_LAYOUT_H
-#define Atvoss_LAYOUT_H
+#ifndef ATVOSS_LAYOUT_H
+#define ATVOSS_LAYOUT_H
 
 namespace Atvoss::Layout {
 
@@ -32,8 +32,7 @@ public:
 };
 
 template <size_t N>
-struct VariableRankExtents {
-};
+struct VariableRankExtents {};
 
 template <typename Shape = VariableRankExtents<1>, typename Stride = Shape>
 class TailLayout {
@@ -42,7 +41,8 @@ public:
     using StrideType = Stride;
     __aicore__ inline TailLayout() = default;
 
-    __aicore__ inline TailLayout(uint32_t tailCnt, uint32_t axis0, uint32_t axis1){
+    __aicore__ inline TailLayout(uint32_t tailCnt, uint32_t axis0, uint32_t axis1)
+    {
         unaryShape_ = OperationShape{tailCnt};
         binaryShape_ = OperationShape{axis0, axis1};
     }
@@ -61,5 +61,5 @@ private:
     OperationShape unaryShape_;
     OperationShape binaryShape_;
 };
-}  // namespace Atvoss::Layout
-#endif  //Atvoss_LAYOUT_H
+} // namespace Atvoss::Layout
+#endif // ATVOSS_LAYOUT_H
