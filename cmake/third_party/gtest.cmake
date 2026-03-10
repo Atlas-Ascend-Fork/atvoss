@@ -1,4 +1,18 @@
-# -----------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# ----------------------------------------------------------------------------
+
+if (NOT CANN_3RD_LIB_PATH)
+    set(CANN_3RD_LIB_PATH ${CMAKE_SOURCE_DIR}/third_party)
+endif ()
+
+# ----------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
@@ -6,13 +20,9 @@
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
-# -----------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 include_guard(GLOBAL)
-
-if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
-endif()
 
 unset(gtest_FOUND CACHE)
 unset(GTEST_INCLUDE CACHE)
@@ -63,7 +73,7 @@ find_package_handle_standard_args(gtest
         GTEST_MAIN_STATIC_LIBRARY
         GMOCK_STATIC_LIBRARY
         GMOCK_MAIN_STATIC_LIBRARY
-        )
+)
 message("gtest found:${gtest_FOUND}")
 
 if(gtest_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
@@ -84,12 +94,11 @@ else()
             -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_PATH}
             -DCMAKE_INSTALL_LIBDIR=lib
             -DBUILD_SHARED_LIBS=OFF
-            TLS_VERIFY_OFF
             <SOURCE_DIR>
             BUILD_COMMAND $(MAKE)
             INSTALL_COMMAND $(MAKE) install
             EXCLUDE_FROM_ALL TRUE
-            )
+    )
 endif()
 
 set(GTEST_INCLUDE ${GTEST_INSTALL_PATH}/include)
@@ -104,7 +113,7 @@ add_library(gtest_main STATIC IMPORTED)
 add_dependencies(gtest_main third_party_gtest)
 
 if (NOT EXISTS ${GTEST_INSTALL_PATH}/include)
-  file(MAKE_DIRECTORY "${GTEST_INSTALL_PATH}/include")
+    file(MAKE_DIRECTORY "${GTEST_INSTALL_PATH}/include")
 endif ()
 
 set_target_properties(gtest PROPERTIES
@@ -118,4 +127,4 @@ set_target_properties(gmock PROPERTIES
 set_target_properties(gtest_main PROPERTIES
         IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib/libgtest_main.a
         INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include)
-  
+
