@@ -8,35 +8,39 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef Atvoss_TUPLE_UTIL_H
-#define Atvoss_TUPLE_UTIL_H
+#ifndef ATVOSS_TUPLE_UTIL_H
+#define ATVOSS_TUPLE_UTIL_H
 
 namespace Atvoss {
-template<class T>
-struct ArgSize { constexpr static int arg = 0;};
+template <class T>
+struct ArgSize {
+    constexpr static int arg = 0;
+};
 
-template<class... Args>
-struct ArgSize<AscendC::Std::tuple<Args...>> { constexpr static int arg = sizeof...(Args); };
+template <class... Args>
+struct ArgSize<AscendC::Std::tuple<Args...>> {
+    constexpr static int arg = sizeof...(Args);
+};
 
-namespace TupleUtils{
-template<typename T>
-__aicore__ void CalOneEleOffset(T& tensor, uint32_t offset)
+namespace TupleUtils {
+template <typename T>
+__aicore__ inline void CalOneEleOffset(T& tensor, uint32_t offset)
 {
     tensor = tensor[offset];
 }
 
-template<typename T,std::size_t...Ints>
-__aicore__ void CalOffsetImpl(T& argTuple, uint32_t offset, AscendC::Std::index_sequence<Ints...>)
+template <typename T, std::size_t... Ints>
+__aicore__ inline void CalOffsetImpl(T& argTuple, uint32_t offset, AscendC::Std::index_sequence<Ints...>)
 {
-    (CalOneEleOffset(AscendC::Std::get<Ints>(argTuple),offset), ...);
+    (CalOneEleOffset(AscendC::Std::get<Ints>(argTuple), offset), ...);
 }
 
-template<typename T>
-__aicore__ void CalOffset(T& argTuple, uint32_t offset)
+template <typename T>
+__aicore__ inline void CalOffset(T& argTuple, uint32_t offset)
 {
     constexpr uint32_t tupeSize = ArgSize<T>::arg;
     CalOffsetImpl(argTuple, offset, AscendC::Std::make_index_sequence<tupeSize>{});
 }
-}
-}
+} // namespace TupleUtils
+} // namespace Atvoss
 #endif

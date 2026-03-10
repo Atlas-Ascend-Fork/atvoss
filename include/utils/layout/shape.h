@@ -8,21 +8,24 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef Atvoss_INCLUDE_UTILS_SHAPE_H_
-#define Atvoss_INCLUDE_UTILS_SHAPE_H_
+#ifndef ATVOSS_INCLUDE_UTILS_SHAPE_H_
+#define ATVOSS_INCLUDE_UTILS_SHAPE_H_
+
+#include <tuple>
+
 namespace Atvoss {
 
 template <int... a>
 class Shape {
 public:
-    using Types = std::tuple<AscendC::Std::Int<a>...>;
+    using Types = std::tuple<std::integral_constant<size_t, a>...>;
 
     template <size_t N>
     using get_type = typename std::tuple_element_t<N, Types>;
 
-    using size = AscendC::Std::Int<sizeof...(a)>;
+    using size = std::integral_constant<size_t, sizeof...(a)>;
 };
 
 } // namespace Atvoss
 
-#endif // Atvoss_INCLUDE_UTILS_SHAPE_H_
+#endif // ATVOSS_INCLUDE_UTILS_SHAPE_H_

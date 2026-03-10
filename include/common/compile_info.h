@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef Atvoss_COMPILE_INFO_H
-#define Atvoss_COMPILE_INFO_H
+#ifndef ATVOSS_COMPILE_INFO_H
+#define ATVOSS_COMPILE_INFO_H
 #include "tiling/platform/platform_ascendc.h"
 #include <map>
 namespace Atvoss {
@@ -52,7 +52,9 @@ inline OpCompileInfo GetOpCompileInfo()
         }
         return compileInfo;
     }
-    printf("[ERROR]: [Atvoss][Common] Current framework does not support this current device. Please check chip version.\n");
+    printf(
+        "[ERROR]: [Atvoss][Common] Current framework does not support this current device. Please check chip "
+        "version.\n");
     return {0, 0, 0, 0};
 }
 } // namespace Atvoss
