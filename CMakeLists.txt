@@ -9,66 +9,23 @@
 # -----------------------------------------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.16)
-set(PKG_NAME atvoss)
+set(PKG_NAME ATVOSS)
 project(${PKG_NAME} VERSION 1.0.0)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
-include(CMakePrintHelpers)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  message(STATUS "compile project with library")
-  option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build atvoss with cann pkg" ON)
-else()
-  message(STATUS "compile project with src")
-  option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build atvoss with cann source" OFF)
+include(cmake/third_party/gtest.cmake)
+include(cmake/CMakeASCEND.cmake)
+
+if(NOT DEFINED SOC OR NOT SOC)
+    message(WARNING "SOC is not defined, use default value \"a2\"")
+    set(SOC a2)
 endif()
 
-if(UNIX)
-  set(SYSTEM_PREFIX ${CMAKE_SYSTEM_PROCESSOR}-linux)
-endif()
 set(ATVOSS_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-
-# 外部传参
-option(ENABLE_ASAN "Enable asan" OFF)
-option(ENABLE_TEST "Enable test" OFF)
-option(ENABLE_UT_EXEC "Enable exec ut" OFF)
-option(ENABLE_PACKAGE "Enable build package" OFF)
-
-if(ENABLE_TEST)
-  set(COMPILE_OP_MODE "-O0 -g")
-endif()
-
-# Cmake Compile配置
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "c++17 is needed for this project")
-include(cmake/dependencies.cmake)
-include(cmake/variables.cmake)
-include(cmake/intf_pub_linux.cmake)
-
-message(STATUS "Variables in ${CMAKE_PROJECT_NAME} project:")
-cmake_print_variables(CMAKE_SOURCE_DIR)
-cmake_print_variables(PROJECT_SOURCE_DIR)
-cmake_print_variables(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-cmake_print_variables(CANN_3RD_LIB_PATH)
-cmake_print_variables(CANN_3RD_PKG_PATH)
-cmake_print_variables(ENABLE_PACKAGE)
-cmake_print_variables(ENABLE_TEST)
-cmake_print_variables(ENABLE_UT_EXEC)
-cmake_print_variables(ENABLE_COVERAGE)
-cmake_print_variables(ENABLE_ASAN)
-
-if(ENABLE_TEST)
-  add_subdirectory(test)
-endif()
-
-install(DIRECTORY include
-  DESTINATION atvoss/
-)
-
-if(NOT BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-  install(DIRECTORY include
-    DESTINATION lib/asc/atvoss/
-  )
-endif()
-
-if(ENABLE_PACKAGE)
-  include(cmake/package.cmake)
-endif()
+add_subdirectory(examples)
+add_subdirectory(tests)
