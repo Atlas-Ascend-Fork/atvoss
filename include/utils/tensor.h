@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef Atvoss_DEV_TENSOR_H
-#define Atvoss_DEV_TENSOR_H
+#ifndef ATVOSS_DEV_TENSOR_H
+#define ATVOSS_DEV_TENSOR_H
 
 #include <algorithm>
 #include <stdexcept>
@@ -19,11 +19,11 @@
 namespace Atvoss {
 constexpr size_t MAX_DIMS = 8;
 
-template<typename T>
+template <typename T>
 class Tensor {
 public:
-    template<size_t N>
-    Tensor(T* dataPtr, uint32_t (&inputShape)[N]) : dataPtr_(dataPtr)
+    template <size_t N>
+    Tensor(T* dataPtr, uint64_t (&inputShape)[N]) : dataPtr_(dataPtr)
     {
         static_assert(N <= MAX_DIMS, "Shape dimension exceeds maximum allowed");
         static_assert(N > 0, "Shape dimension must be greater than 0");
@@ -31,40 +31,47 @@ public:
         std::copy(inputShape, inputShape + dims_, shape_);
     }
 
-    template<size_t N>
-    Tensor(T* dataPtr, uint32_t (&inputShape)[N], uint32_t dims) : dataPtr_(dataPtr), dims_(dims)
+    Tensor(T* dataPtr, uint64_t* inputShape, size_t dims) : dataPtr_(dataPtr), dims_(dims)
     {
-        static_assert(N <= MAX_DIMS, "Shape dimension exceeds maximum allowed");
-        static_assert(N > 0, "Shape dimension must be greater than 0");
+        std::copy(inputShape, inputShape + dims_, shape_);
+    }
+
+    Tensor(T* dataPtr, int64_t* inputShape, size_t dims) : dataPtr_(dataPtr), dims_(dims)
+    {
         std::copy(inputShape, inputShape + dims_, shape_);
     }
 
     ~Tensor() = default;
 
     // Get data point
-    T* data() const {
+    T* data() const
+    {
         return static_cast<T*>(dataPtr_);
     }
 
     // Get shape info
-    const uint32_t* shape() const {
+    const uint64_t* shape() const
+    {
         return shape_;
     }
 
     // Get vector corresponding to the shape
-    std::vector<uint32_t> shape_vector() const {
-        return std::vector<uint32_t>(shape_, shape_ + dims_);
+    std::vector<uint64_t> shape_vector() const
+    {
+        return std::vector<uint64_t>(shape_, shape_ + dims_);
     }
 
     // Fet dims of shape
-    size_t dims() const {
+    size_t dims() const
+    {
         return dims_;
     }
+    using IsTensor = void;
 
 private:
-    uint32_t shape_[MAX_DIMS] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint64_t shape_[MAX_DIMS] = {0, 0, 0, 0, 0, 0, 0, 0};
     void* dataPtr_ = nullptr;
     size_t dims_ = 0;
 };
-}
-#endif // Atvoss_DEV_TENSOR_H
+} // namespace Atvoss
+#endif // ATVOSS_DEV_TENSOR_H
