@@ -6,9 +6,8 @@
 - 调用方式：Kernel直调
 
 
-## 样例支持AI处理器型号
-- Ascend 910C
-- Ascend 910B
+## 样例支持的产品
+- Ascend 950PR/Ascend 950DT
 
 
 ## 算子描述
@@ -36,21 +35,21 @@
     </tr></thead>
   <tbody>
     <tr>
-      <td>x</td>
+      <td>in1</td>
       <td>输入</td>
       <td>表示进行归一化计算的输入。公式中的`x`。</td>
       <td>float</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>gamma</td>
+      <td>in2</td>
       <td>输入</td>
       <td>表示进行归一化计算的缩放因子（权重），公式中的`g`。</td>
       <td>float</td>
       <td>ND</td>
     </tr>
     <tr>
-      <td>y</td>
+      <td>out</td>
       <td>输出</td>
       <td>表示进行归一化后的最终输出，公式中的`RmsNorm(x)`。</td>
       <td>float</td>
@@ -59,7 +58,7 @@
   </tbody></table>
 规格说明：  
 
-- 当前只支持二维输入，
+- 当前只支持二维输入
 - 总的输入Shape(M, N)要满足：
     - M < 8160，N <= 7168
     - N需要32元素对齐
@@ -68,13 +67,21 @@
 
 ## 目录结构
 
-| 文件名                                                         | 描述                                     |
-| ------------------------------------------------------------ | ------------------------------------------ |
-| [rms_norm.cpp](./rms_norm.cpp) | RmsNorm算子代码实现以及调用样例               |
+| 文件名                    | 描述               |
+|------------------------|------------------|
+| [rms_norm.cpp](./rms_norm.cpp) | RmsNorm样例算子代码实现 |
+| [CMakeLists.txt](./CMakeLists.txt) | RmsNorm样例算子的编译构建文件 |
+| [README.md](./README.md) | RmsNorm样例算子的说明文档 |
 
-## 算子运行
+## RmsNorm样例算子的编译和运行
+- 编译
+在代码仓根目录下执行：
+```bash
+bash scripts/build.sh -DSOC=ascend950 rms_norm
+```
+- 运行
 在代码仓目录下执行：
 ```bash
-cd ./examples
-bash run_examples.sh rms_norm
+output/bin/rms_norm --help // 查看帮助
+output/bin/rms_norm --shape=16,32 // 运行样例
 ```
