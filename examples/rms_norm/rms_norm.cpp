@@ -23,7 +23,7 @@
 
 static constexpr int32_t HEIGHT = 1;
 static constexpr int32_t WIDTH = 32;
-static constexpr int32_t MAX_DIM = 8;
+static constexpr int32_t MAX_DIM = 2;
 
 template <typename T1, typename T2, typename T3>
 struct RmsNormConfig {
@@ -46,16 +46,27 @@ struct RmsNormConfig {
         }
     };
 
-    static constexpr Atvoss::Ele::DefaultBlockPolicy<TileShape> blockPolicy{TileShape{}};
-    static constexpr Atvoss::Ele::DefaultKernelPolicy kernelPolicy{Atvoss::Ele::DefaultSegmentPolicy::UniformSegment};
+    static constexpr Atvoss::Ele::DefaultBlockPolicy<TileShape> blockPolicy {
+        TileShape{}
+    };
+    static constexpr Atvoss::Ele::DefaultKernelPolicy kernelPolicy {
+        Atvoss::Ele::DefaultSegmentPolicy::UniformSegment
+    };
 
     using ArchTag = Atvoss::Arch::DAV_3510;
-    using BlockOp = Atvoss::Ele::BlockBuilder<RmsNormCompute, ArchTag, blockPolicy, Atvoss::Ele::DefaultBlockConfig>;
+    using BlockOp = Atvoss::Ele::BlockBuilder<
+        RmsNormCompute,
+        ArchTag,
+        blockPolicy,
+        Atvoss::Ele::DefaultBlockConfig>;
 
-    using KernelOp = Atvoss::Ele::KernelBuilder<BlockOp, kernelPolicy>;
+    using KernelOp = Atvoss::Ele::KernelBuilder<
+        BlockOp,
+        kernelPolicy>;
 
     using DeviceOp = Atvoss::DeviceAdapter<KernelOp>;
 };
+
 
 struct Options {
     // 存储解析后的值
@@ -64,7 +75,8 @@ struct Options {
 
     // 默认构造：不解析，只设默认值
     Options() : shape({}), help(false)
-    {}
+    {
+    }
 
     // 解析函数
     void parse(int argc, char const* argv[])
@@ -87,10 +99,10 @@ struct Options {
                   << "\n"
                   << "Options:\n"
                   << "  --help                      Print this message\n"
-                  << "  --shape=M,N,O,...           Tensor dimensions (e.g., --shape=4,3,224,224)\n"
+                  << "  --shape=M,N,...           Tensor dimensions (e.g., --shape=512,32)\n"
                   << "\n"
                   << "Example:\n"
-                  << "  " << progName << " --shape=512,3 \n";
+                  << "  " << progName << " --shape=512,32 \n";
     }
 
     // 打印当前配置
@@ -116,7 +128,7 @@ private:
     void validate(const char* progName)
     {
         if (help) {
-            return; // 帮助不需要验证
+            return;  // 帮助不需要验证
         }
 
         if (shape.empty()) {
@@ -125,7 +137,7 @@ private:
             exit(1);
         }
         if (shape.size() > MAX_DIM) {
-            std::cerr << "[ERROR] Input shape max dim is 8, current shape dim is: " << shape.size() << "\n";
+            std::cerr << "[ERROR] Input shape max dim is 2, current shape dim is: " << shape.size() << "\n";
             PrintUsage(progName);
             exit(1);
         }
