@@ -320,7 +320,7 @@ build/test_muls
 ### 5.4 执行命令
 
 ```bash
-# 查看帮助
+# 执行算子用例
 ./build/test_muls
 ```
 
