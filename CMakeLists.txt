@@ -22,8 +22,8 @@ include(cmake/third_party/gtest.cmake)
 include(cmake/CMakeASCEND.cmake)
 
 if(NOT DEFINED SOC OR NOT SOC)
-    message(WARNING "SOC is not defined, use default value \"a2\"")
-    set(SOC a2)
+    message(WARNING "SOC is not defined, use default value \"ascend950\"")
+    set(SOC ascend950)
 endif()
 
 set(ATVOSS_DIR ${CMAKE_CURRENT_SOURCE_DIR})

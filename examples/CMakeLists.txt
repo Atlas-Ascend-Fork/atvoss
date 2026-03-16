@@ -14,13 +14,11 @@ set(ATVOSS_EXAMPLES_COMMON_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/common)
 add_custom_target(atvoss_examples)
 
 # arch specific compile options
-if(SOC STREQUAL "a2" OR SOC STREQUAL "a3")
-    set(NPU_ARCH dav-2201)
-elseif(SOC STREQUAL "ascend950")
+if(SOC STREQUAL "ascend950")
     set(NPU_ARCH dav-3510)
 else()
     message(FATAL_ERROR
-        "SOC only supports a2/a3/ascend950, but get ${SOC}"
+        "SOC only supports ascend950, but get ${SOC}"
     )
     set(NPU_ARCH)
 endif()
