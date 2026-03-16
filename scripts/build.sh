@@ -45,7 +45,7 @@ function show_help() {
     echo -e "${GREEN}Usage:${NC} $0 [options] [--host_ut|device_ut|--example|--st] [target_name]"
     echo -e "\n${BLUE}Options:${NC}"
     echo "  --clean         Clean build directories"
-    echo "  -DSOC  NPU arch. Only supports a2/a3/ascend950."
+    echo "  -DSOC  NPU arch. Only supports ascend950."
     echo "  -D<option>      Additional CMake options"
     echo -e "\n${BLUE}Modes (mutually exclusive):${NC}"
     echo "  --host_ut [name]     Build unit test(s) in host/ (default: host_ut)"
