@@ -243,7 +243,7 @@ fi
 # ----------------------------
 # st 仿真运行
 # ----------------------------
-if [[ "$MODE" == "st" ]]; then
+if [[ "$MODE" == "st" && ! -n "$TARGET_NAME" ]]; then
     ST_TEST_LIST=(
         "test_block_cast12"
         "test_tile_rms_norm_14"

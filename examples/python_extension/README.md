@@ -11,7 +11,7 @@
 在开始之前，请确保完成以下准备工作：
 
 1. **基础环境搭建**  
-   请参考 [环境部署指南](../../docs/01_quick_start.md) 完成 Ascend CANN、驱动及开发工具链的安装。
+   请参考 [环境部署指南](../../docs/quick_start.md) 完成 Ascend CANN、驱动及开发工具链的安装。
 
 2. **PyTorch 依赖**  
    安装兼容的 PyTorch 及 torch_npu 包，版本要求如下：
