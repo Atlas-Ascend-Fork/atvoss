@@ -28,9 +28,8 @@ ATVOSS代码目录结构如下：
 - [环境准备](./docs/quick_start.md#环境准备)：安装软件包之前，需要完成搭建基础环境，包括第三方依赖等；基础环境搭建后需要完成社区版CANN软件包安装、环境变量配置等。
 - [源码下载](./docs/quick_start.md#源码下载)：本项目源码下载。
 - [编译执行 ](./docs/quick_start.md#编译执行)：环境准备好后，可对源码修改编译生成可执行的文件。
-- [UT测试](./docs/quick_start.md#UT测试(可选))：基于项目根目录的build.sh脚本，可执行UT用例，快速验证功能。
-- [ST测试](./docs/quick_start.md#ST测试(可选))：基于项目根目录的build.sh脚本，可执行ST用例，快速验证功能。
-- [样例运行验证](./docs/quick_start.md#样例运行验证)：基础样例的编译、执行。
+- [UT测试](./docs/quick_start.md#UT测试（可选）)：基于项目根目录的build.sh脚本，可执行UT用例，快速验证功能。
+- [ST测试](./docs/quick_start.md#ST测试（可选）)：基于项目根目录的build.sh脚本，可执行ST用例，快速验证功能。
 
 ## 📖文档介绍
 
