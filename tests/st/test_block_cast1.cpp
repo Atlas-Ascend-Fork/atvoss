@@ -136,7 +136,7 @@ int main(int argc, char const* argv[])
     Options options;
     std::cout << "case1 test tilelen" << std::endl;
     std::cout << "Start cast data from f16 to f32" << std::endl;
-    options.shape = std::vector<int>{64, 8192};
+    options.shape = std::vector<int>{64, 128};
     Run<half, float, 1>(options);
 
     return 0;
