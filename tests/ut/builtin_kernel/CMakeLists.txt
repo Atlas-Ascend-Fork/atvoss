@@ -18,9 +18,10 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 find_package(tikicpulib REQUIRED)
 message(STATUS "tikicpulib dir:${tikicpulib_DIR}")
 
-set(soc_version "ascend910_9599")
+set(soc_version "ascend950pr_9599")
 if(NOT TARGET tikicpulib::${soc_version})
-    set(soc_version "ascend950pr_9599")
+    message(STATUS "tikicpulib::${soc_version} not exit")
+    return()
 endif ()
 message(STATUS "soc_version:${soc_version}")
 
