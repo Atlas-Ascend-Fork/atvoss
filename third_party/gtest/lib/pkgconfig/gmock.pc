@@ -1,0 +1,10 @@
+libdir=/home/zhouqilong/code/atvoss/third_party/gtest/lib
+includedir=/home/zhouqilong/code/atvoss/third_party/gtest/include
+
+Name: gmock
+Description: GoogleMock (without main() function)
+Version: 1.14.0
+URL: https://github.com/google/googletest
+Requires: gtest = 1.14.0
+Libs: -L${libdir} -lgmock 
+Cflags: -I${includedir} -DGTEST_HAS_PTHREAD=1
