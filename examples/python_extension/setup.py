@@ -107,7 +107,7 @@ class CMakeBuildCommand(Command):
         logging.info(f"Using Torch NPU path: {torch_npu_path}")
 
         # Get NPU_ARCH from environment variable or set default
-        npu_arch = os.environ.get('NPU_ARCH', 'ascend910b')
+        npu_arch = os.environ.get('NPU_ARCH', 'ascend950')
         logging.info(f"Using NPU_ARCH: {npu_arch}")
 
         # Build the CMake project

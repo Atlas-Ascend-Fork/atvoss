@@ -44,6 +44,7 @@ TORCH_LIBRARY_IMPL(EXTENSION_MODULE_NAME, Meta, m)
 }
 
 static constexpr int32_t TILE_SIZE = 32;
+static constexpr int32_t SHAPE_SIZE = 2;
 
 template <typename T>
 struct AbsConfig {
@@ -76,12 +77,11 @@ struct AbsConfig {
 torch::Tensor abs_npu(const torch::Tensor& x)
 {
     auto y = abs_meta(x);
-    uint32_t shape[2] = {};
+    uint64_t shape[SHAPE_SIZE] = {};
     std::copy(x.sizes().begin(), x.sizes().end(), shape);
 
-    Atvoss::Tensor<float> t1(x.data_ptr<float>(), shape);
-    Atvoss::Tensor<float> t2(y.data_ptr<float>(), shape);
-
+    Atvoss::Tensor<float> t1(x.data_ptr<float>(), shape, SHAPE_SIZE);
+ 	Atvoss::Tensor<float> t2(y.data_ptr<float>(), shape, SHAPE_SIZE);
     auto arguments = Atvoss::ArgumentsBuilder{}.inputOutput(t1, t2).build();
     using Config = AbsConfig<float>;
     auto stream = c10_npu::getCurrentNPUStream().stream(false);
