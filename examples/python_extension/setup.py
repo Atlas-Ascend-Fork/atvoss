@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
-# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@ import os
 import shutil
 import subprocess
 import logging
+import sys
 from setuptools import setup, find_packages, Distribution, Command
 from wheel.bdist_wheel import bdist_wheel
 
@@ -21,6 +22,8 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 PACKAGE_NAME = "ascend_ops"
 VERSION = "1.0.0"
 DESCRIPTION = "Example of PyTorch C++ and Ascend extensions"
+py_version = sys.version_info
+version_number_short = f"cp{py_version.major}{py_version.minor}"
 
 
 class CleanCommand(Command):
@@ -68,7 +71,7 @@ class ABI3Wheel(bdist_wheel):
     """
     def get_tag(self):
         python, abi, plat = super().get_tag()
-        python = "cp38"
+        python = version_number_short
         abi = "abi3"
         return python, abi, plat
 
@@ -107,7 +110,7 @@ class CMakeBuildCommand(Command):
         logging.info(f"Using Torch NPU path: {torch_npu_path}")
 
         # Get NPU_ARCH from environment variable or set default
-        npu_arch = os.environ.get('NPU_ARCH', 'ascend910b')
+        npu_arch = os.environ.get('NPU_ARCH', 'ascend950')
         logging.info(f"Using NPU_ARCH: {npu_arch}")
 
         # Build the CMake project
