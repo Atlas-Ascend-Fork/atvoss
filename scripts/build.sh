@@ -28,7 +28,7 @@ CMAKE_SOURCE_DIR=$(realpath "$SCRIPT_DIR/..")
 BUILD_DIR="$CMAKE_SOURCE_DIR/build"
 OUTPUT_DIR="$CMAKE_SOURCE_DIR/output"
 
-MODE=""          # "host_ut", "device_ut", "example", "st", or "legacy"
+MODE=""          # "host_ut", "example", "st", or "legacy"
 TARGET_NAME=""
 CMAKE_BUILD_TYPE="Release"
 declare -a CMAKE_OPTIONS=()
@@ -42,14 +42,13 @@ echo -e "  / ___ \| |   \ V /| |_| |___) |__) |"
 echo -e " /_/   \_\_|    \_/  \___/|____/____/ "
 
 function show_help() {
-    echo -e "${GREEN}Usage:${NC} $0 [options] [--host_ut|device_ut|--example|--st] [target_name]"
+    echo -e "${GREEN}Usage:${NC} $0 [options] [--host_ut|--example|--st] [target_name]"
     echo -e "\n${BLUE}Options:${NC}"
     echo "  --clean         Clean build directories"
     echo "  -DSOC  NPU arch. Only supports ascend950."
     echo "  -D<option>      Additional CMake options"
     echo -e "\n${BLUE}Modes (mutually exclusive):${NC}"
     echo "  --host_ut [name]     Build unit test(s) in host/ (default: host_ut)"
-    echo "  --device_ut [name]     Build unit test(s) in host/ (default: device_ut)"
     echo "  --example [name] Build example(s) (default: atvoss_examples)"
     echo "  --st [name]     Build system test (default: st)"
     echo -e "\n${BLUE}Legacy mode:${NC}"
@@ -80,9 +79,9 @@ while [[ $# -gt 0 ]]; do
             CMAKE_OPTIONS+=("$1")
             shift
             ;;
-        --host_ut|--device_ut|--example|--st)
+        --host_ut|--example|--st)
             if [[ -n "$MODE" ]]; then
-                echo -e "${ERROR}Error: Only one mode (--host_ut/device_ut/--example/--st) allowed.${NC}" >&2
+                echo -e "${ERROR}Error: Only one mode (--host_ut/--example/--st) allowed.${NC}" >&2
                 exit 1
             fi
             MODE="${1#--}"
@@ -132,9 +131,6 @@ CMAKE_TARGET=""
 case "$MODE" in
     host_ut)
         CMAKE_TARGET=${TARGET_NAME:-host_ut}
-        ;;
-    device_ut)
-        CMAKE_TARGET=${TARGET_NAME:-device_ut}
         ;;
     example)
         CMAKE_TARGET=${TARGET_NAME:-atvoss_examples}

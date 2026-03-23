@@ -31,7 +31,7 @@ __inline__ __attribute__((always_inline)) __aicore__ void InitTilingData(
 {
     constexpr uint64_t all_bytes = sizeof(T);
 #if defined(ASCENDC_CPU_DEBUG) || (defined(__DAV_CUBE__) && __NPU_ARCH__ == 2201) || \
-    (defined(__DAV_CUBE__) && __NPU_ARCH__ == 3101) || defined(__GET_CODE_CHANNEL__)
+    (defined(__DAV_CUBE__) && __NPU_ARCH__ == 3510) || defined(__GET_CODE_CHANNEL__)
 #if defined(__DAV_C100__) || defined(ASCENDC_CPU_DEBUG)
     constexpr uint32_t judge_bytes = all_bytes > 15 ? all_bytes - 15 : 0;
     uint32_t i = 0;
@@ -62,7 +62,7 @@ __inline__ __attribute__((always_inline)) __aicore__ void InitTilingData(
     copy_data_align64((uint8_t*)tilingdata, (__gm__ uint8_t*)p_tilingdata, all_bytes);
 #endif
 #else
-#if __NPU_ARCH__ == 3101 && defined(__ASCENDC_ENABLE_VEC_TAIL_TILING_COPY__)
+#if __NPU_ARCH__ == 3510 && defined(__ASCENDC_ENABLE_VEC_TAIL_TILING_COPY__)
     constexpr uint32_t DC_PRLOAD_LOOP = (all_bytes) / 512;
     for (uint64_t loop_dc = 0; loop_dc < DC_PRLOAD_LOOP; loop_dc++) {
         uint64_t offset = loop_dc * 512;
@@ -91,7 +91,7 @@ __inline__ __attribute__((always_inline)) __aicore__ void InitTilingData(
 #else
     __ubuf__ uint8_t* tilingdata_in_ub = (__ubuf__ uint8_t*)get_imm(0);
     constexpr uint32_t len_burst = (all_bytes + 31) / 32;
-#if __NPU_ARCH__ == 3101 || __NPU_ARCH__ == 5102
+#if __NPU_ARCH__ == 3510 || __NPU_ARCH__ == 5102
     copy_gm_to_ubuf_align_v2(
         (__ubuf__ uint8_t*)tilingdata_in_ub, (__gm__ uint8_t*)p_tilingdata, 0, 1, len_burst * 32, 0, 0, false, 0, 0, 0);
     constexpr uint32_t DC_PRLOAD_LOOP = (all_bytes) / 512;
