@@ -15,7 +15,7 @@
 #include "expression/expr_template.h"
 #include "operators/tensor_expression.h"
 
-namespace Atvoss::Ele::Tile {
+namespace Atvoss::Tile {
 
 using namespace Atvoss;
 
@@ -279,6 +279,6 @@ public:
     constexpr static bool isCopyInOp = IsSpecializationOf_v<OpCopyIn, Operation>;
 };
 
-} // namespace Atvoss::Ele::Tile
+} // namespace Atvoss::Tile
 
 #endif // ATVOSS_GRAPH_BIND_H

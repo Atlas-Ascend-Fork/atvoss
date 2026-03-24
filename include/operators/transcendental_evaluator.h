@@ -53,9 +53,6 @@ __aicore__ inline void ReduceSumAssign(
     } else {
     }
 }
-} // namespace Atvoss::Tile
-
-namespace Atvoss::Ele::Tile {
 
 /*!
  * \brief Broadcast calculation based on the expression
@@ -100,6 +97,6 @@ struct Evaluator<OpAssign<T, OpReduceSum<pattern, U>>> {
             Evaluator<U>{}(op.GetRhs().GetData(), context).GetUbTensor(), operationShape);
     }
 };
-} // namespace Atvoss::Ele::Tile
+} // namespace Atvoss::Tile
 
 #endif // ATVOSS_TILE_ASCENDC_MATH_H

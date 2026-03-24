@@ -56,10 +56,6 @@ __aicore__ inline void CopyOut(AscendC::GlobalTensor<T> dst, AscendC::LocalTenso
     AscendC::DataCopyPad(dst, src, copyParams);
 }
 
-} // namespace Atvoss::Tile
-
-namespace Atvoss::Ele::Tile {
-
 // Partial specialization for CopyIn(E)
 template <typename T>
 struct Evaluator<OpCopyIn<T>> {
@@ -69,16 +65,15 @@ struct Evaluator<OpCopyIn<T>> {
     __aicore__ inline auto operator()(const OpCopyIn<T>& op, Context& context) const
     {
         auto& obj = Evaluator<T>{}(op.GetData(), context);
-        uint32_t bufferId = Atvoss::Ele::Tile::GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(
-            context.pingPong);
+        uint32_t bufferId = GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(context.pingPong);
         // AscendC::printf("OpCopyIn, IN[%u]-[%u] context.pingPong: %u\n", T::number, bufferId, context.pingPong);
-#if defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102)
+#if _ATVOSS_ARCH35_
         AscendC::Mutex::Lock<PIPE_MTE2>(bufferId);
 #else
         AscendC::PipeBarrier<PIPE_ALL>();
 #endif
         obj.CopyIn(context.gmOffset, context.elementNum);
-#if defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102)
+#if _ATVOSS_ARCH35_
         AscendC::Mutex::Unlock<PIPE_MTE2>(bufferId);
         AscendC::Mutex::Lock<PIPE_V>(bufferId);
 #else
@@ -95,10 +90,9 @@ struct Evaluator<OpCopyOut<T>> {
     template <typename Context>
     __aicore__ inline auto operator()(const OpCopyOut<T>& op, Context& context) const
     {
-        uint32_t bufferId = Atvoss::Ele::Tile::GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(
-            context.pingPong);
+        uint32_t bufferId = GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(context.pingPong);
         // AscendC::printf("OpCopyIn, IN[%u]-[%u] context.pingPong: %u\n", T::number, bufferId, context.pingPong);
-#if defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102)
+#if _ATVOSS_ARCH35_
         AscendC::Mutex::Unlock<PIPE_V>(bufferId);
         AscendC::Mutex::Lock<PIPE_MTE3>(bufferId);
 #else
@@ -106,7 +100,7 @@ struct Evaluator<OpCopyOut<T>> {
 #endif
         auto& obj = Evaluator<T>{}(op.GetData(), context);
         obj.CopyOut(context.gmOffset, context.elementNum);
-#if defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102)
+#if _ATVOSS_ARCH35_
         AscendC::Mutex::Unlock<PIPE_MTE3>(bufferId);
 #else
         AscendC::PipeBarrier<PIPE_ALL>();
@@ -146,12 +140,11 @@ struct Evaluator<OpAlloc<T>> {
 
             if constexpr (!HasUsage<T>{}) { // tmp param
                 uint32_t tmpId =
-                    Atvoss::Ele::Tile::GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::LOCAL_VAR>(
-                        context.pingPong);
+                    GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::LOCAL_VAR>(context.pingPong);
                 // AscendC::printf("OpAlloc, LOCAL_VAR[%u]-[%u] context.pingPong: %u\n", T::number, tmpId,
                 // context.pingPong);
                 context.bufPools.AllocTensor(obj.GetUbTensor(), tmpId);
-#if defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102)
+#if _ATVOSS_ARCH35_
                 AscendC::Mutex::Lock<PIPE_V>(tmpId);
 #else
                 AscendC::PipeBarrier<PIPE_ALL>();
@@ -161,16 +154,14 @@ struct Evaluator<OpAlloc<T>> {
                 HasUsage<T>{} && T::usage == Atvoss::ParamUsage::IN ||
                 T::usage == Atvoss::ParamUsage::IN_OUT) { // in param: need copy in
                 uint32_t inId =
-                    Atvoss::Ele::Tile::GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(
-                        context.pingPong);
+                    GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(context.pingPong);
                 context.bufPools.AllocTensor(obj.GetUbTensor(), inId);
                 return;
             } else if constexpr (HasUsage<T>{} && T::usage == Atvoss::ParamUsage::OUT) { // out param
                 uint32_t outId =
-                    Atvoss::Ele::Tile::GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(
-                        context.pingPong);
+                    GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(context.pingPong);
                 context.bufPools.AllocTensor(obj.GetUbTensor(), outId);
-#if defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102)
+#if _ATVOSS_ARCH35_
                 AscendC::Mutex::Lock<PIPE_V>(outId);
 #else
                 AscendC::PipeBarrier<PIPE_ALL>();
@@ -192,20 +183,18 @@ struct Evaluator<OpFree<T>> {
         auto& obj = Evaluator<T>{}(op.GetData(), context);
         if constexpr (!HasUsage<T>{}) { // tmp param
             uint32_t tmpId =
-                Atvoss::Ele::Tile::GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::LOCAL_VAR>(
-                    context.pingPong);
+                GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::LOCAL_VAR>(context.pingPong);
             // AscendC::printf("OpFree, LOCAL_VAR[%u]-[%u] context.pingPong: %u\n", T::number, tmpId, context.pingPong);
-#if defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102)
+#if _ATVOSS_ARCH35_
             AscendC::Mutex::Unlock<PIPE_V>(tmpId);
 #else
             AscendC::PipeBarrier<PIPE_ALL>();
 #endif
             return;
         } else if constexpr (HasUsage<T>{} && T::usage == Atvoss::ParamUsage::IN) { // in param
-            uint32_t inId = Atvoss::Ele::Tile::GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(
-                context.pingPong);
+            uint32_t inId = GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(context.pingPong);
             // AscendC::printf("OpFree, IN[%u]-[%u] context.pingPong: %u\n", T::number, inId, context.pingPong);
-#if defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102)
+#if _ATVOSS_ARCH35_
             AscendC::Mutex::Unlock<PIPE_V>(inId);
 #else
             AscendC::PipeBarrier<PIPE_ALL>();
@@ -215,5 +204,5 @@ struct Evaluator<OpFree<T>> {
     }
 };
 
-} // namespace Atvoss::Ele::Tile
+} // namespace Atvoss::Tile
 #endif // ATVOSS_TILE_DATA_H

@@ -11,6 +11,12 @@
 #ifndef ATVOSS_COMMON_ARCH_H
 #define ATVOSS_COMMON_ARCH_H
 
+#if (defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102))
+#define _ATVOSS_ARCH35_ 1
+#else
+#define _ATVOSS_ARCH35_ 0
+#endif
+
 namespace Atvoss::Arch {
 
 struct DAV_3510 {

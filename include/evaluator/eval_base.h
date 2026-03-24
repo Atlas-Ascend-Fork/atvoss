@@ -14,7 +14,7 @@
 #include "common/type_def.h"
 #include "expression/expr_template.h"
 
-namespace Atvoss::Ele::Tile {
+namespace Atvoss::Tile {
 
 template <typename T>
 using Dtype_t = typename T::Type::PrimType;
@@ -91,8 +91,7 @@ struct Evaluator<OpAndThen<T, U>> {
     {
         // operator, evaluates sequentially
         AscendC::PipeBarrier<PIPE_V>();
-        return Atvoss::Ele::Tile::Evaluator<T>{}(op.GetLhs(), context),
-               Atvoss::Ele::Tile::Evaluator<U>{}(op.GetRhs(), context);
+        return Atvoss::Tile::Evaluator<T>{}(op.GetLhs(), context), Atvoss::Tile::Evaluator<U>{}(op.GetRhs(), context);
     }
 };
 
@@ -108,5 +107,5 @@ __aicore__ inline void Assign(T& dst, const U& src)
     dst = src;
 }
 
-} // namespace Atvoss::Ele::Tile
+} // namespace Atvoss::Tile
 #endif // ATVOSS_TILE_EVALUATOR_BASE_H
