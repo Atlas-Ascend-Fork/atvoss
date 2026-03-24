@@ -13,7 +13,7 @@
 
 #include "graph/bind.h"
 
-namespace Atvoss::Ele::Tile {
+namespace Atvoss::Tile {
 
 using Atvoss::Util::Append_t;
 using Atvoss::Util::Concatenate_t;
@@ -273,6 +273,6 @@ public:
     }
 };
 
-} // namespace Atvoss::Ele::Tile
+} // namespace Atvoss::Tile
 
 #endif // ATVOSS_GRAPH_NODE_H

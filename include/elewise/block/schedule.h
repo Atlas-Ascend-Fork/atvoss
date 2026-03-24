@@ -45,15 +45,15 @@ public:
     using ArchTag = ArchTagCfg;
     using TileShape = typename BlockPolicy::TileShape;
     // number of elements in Tile calculation
-    static constexpr uint32_t BASIC_BLOCK = Atvoss::Ele::Tile::GetTotalElement<0, BlockPolicy>(1, 1);
+    static constexpr uint32_t BASIC_BLOCK = Atvoss::Tile::GetTotalElement<0, BlockPolicy>(1, 1);
 
 private:
     // alignment of constants
     static constexpr uint32_t ALIGNMENT = 32;
 
     /* ----------------Prepare param ---------------- */
-    using ShapeT = Atvoss::Ele::Tile::Shape_t<typename std::remove_reference<decltype(Policy)>::type>;
-    using ShapeSize = Atvoss::Ele::Tile::ShapeSize<ShapeT>;
+    using ShapeT = Atvoss::Tile::Shape_t<typename std::remove_reference<decltype(Policy)>::type>;
+    using ShapeSize = Atvoss::Tile::ShapeSize<ShapeT>;
 
     static constexpr uint32_t GetLayoutAxis0()
     {
@@ -80,7 +80,7 @@ private:
     using BlockTensorTile = Atvoss::Ele::BlockTensor<
         T, Atvoss::Layout::Layout<Atvoss::Layout::FixedRankExtents<BASIC_BLOCK, GetLayoutAxis0(), GetLayoutAxis1()>>>;
     static constexpr auto computeRes = ToLinearizerExpr(Compute{}.template Compute<BlockTensorTile>());
-    static constexpr auto optimizedCompute = Tile::PreProcessComputeExpr<Policy.memPolicy>(computeRes);
+    static constexpr auto optimizedCompute = Atvoss::Tile::PreProcessComputeExpr<Policy.memPolicy>(computeRes);
     using ComputeInfoT = decltype(optimizedCompute);
     using ExprTile = typename ComputeInfoT::Expr;
     using EleWiseDag = typename ComputeInfoT::Dag;

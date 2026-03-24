@@ -15,7 +15,7 @@
 #include "utils/patterns.h"
 #include "graph/dag.h"
 
-namespace Atvoss::Ele::Tile {
+namespace Atvoss::Tile {
 enum class AutoOpOnDemand : uint8_t
 {
     no,
@@ -97,5 +97,5 @@ __host_aicore__ constexpr auto PreProcessComputeExpr(const Expression<T>& expr)
     using LastExpression = typename BuildExpression<decltype(result4)>::Type;
     return ComputeInfo<LastExpression, DagX>{};
 };
-} // namespace Atvoss::Ele::Tile
+} // namespace Atvoss::Tile
 #endif // COMPUTE_PREPROCESS_H

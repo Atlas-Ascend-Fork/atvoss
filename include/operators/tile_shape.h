@@ -18,7 +18,7 @@
 #define atvoss_std std
 #endif
 
-namespace Atvoss::Ele::Tile {
+namespace Atvoss::Tile {
 
 enum class Operation
 {
@@ -125,5 +125,5 @@ __aicore__ inline static constexpr auto GetShape(ArgTup& args)
 }
 #endif
 
-} // namespace Atvoss::Ele::Tile
+} // namespace Atvoss::Tile
 #endif

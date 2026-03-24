@@ -11,6 +11,7 @@
 #ifndef ATVOSS_TILE_ASCENDC_MATH_H
 #define ATVOSS_TILE_ASCENDC_MATH_H
 #include "lib/math/power.h"
+#include "common/arch.h"
 #include "tile_shape.h"
 
 namespace Atvoss::Tile {
@@ -56,7 +57,7 @@ __aicore__ inline void SubAssign(
     AscendC::Sub(dst, src0, src1, operationShape.axis0);
 }
 
-#if defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102)
+#if _ATVOSS_ARCH35_
 /*!
  * \brief dst[i] = src[i] - scalar
  * \param[in] src, Input LocalTensor
@@ -125,7 +126,7 @@ __aicore__ inline void DivAssign(
     AscendC::Div(dst, src0, src1, operationShape.axis0);
 }
 
-#if defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102)
+#if _ATVOSS_ARCH35_
 /*!
  * \brief dst[i] = src[i] / scalar
  * \param[in] src, Input LocalTensor
@@ -239,9 +240,6 @@ __aicore__ inline void CastAssign(
         AscendC::Cast(dst, src, AscendC::RoundMode::CAST_ODD, operationShape.axis0);
     }
 }
-} // namespace Atvoss::Tile
-
-namespace Atvoss::Ele::Tile {
 
 using OperationShape = Atvoss::Layout::OperationShape;
 
@@ -318,7 +316,7 @@ struct Evaluator<OpAssign<T, OpSub<U, V>>> {
     {
         using Dtype = Dtype_t<T>;
         OperationShape operationShape = GetShape<Operation::Unary>(context.argsTensors);
-#if defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102)
+#if _ATVOSS_ARCH35_
         static_assert(
             !std::is_scalar_v<typename U::Type> || !std::is_scalar_v<typename V::Type>,
             "OpSub's inputs not accepts all scalar types");
@@ -400,7 +398,7 @@ struct Evaluator<OpAssign<T, OpDiv<U, V>>> {
     {
         using Dtype = Dtype_t<T>;
         OperationShape operationShape = GetShape<Operation::Unary>(context.argsTensors);
-#if defined(__DAV_C310__) || defined(__DAV_310R6__) || (__NPU_ARCH__ == 5102)
+#if _ATVOSS_ARCH35_
         static_assert(
             !std::is_scalar_v<typename U::Type> || !std::is_scalar_v<typename V::Type>,
             "OpDiv's inputs not accepts all scalar types");
@@ -561,6 +559,6 @@ struct Evaluator<OpAssign<T, OpCast<castMode, R, U>>> {
     }
 };
 
-} // namespace Atvoss::Ele::Tile
+} // namespace Atvoss::Tile
 
 #endif // ATVOSS_TILE_ASCENDC_MATH_H
