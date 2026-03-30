@@ -13,7 +13,7 @@
 
 #include "utils/layout/layout.h"
 #include "utils/patterns.h"
-#include "graph/dag.h"
+#include "elewise/graph/dag.h"
 
 namespace Atvoss::Tile {
 enum class AutoOpOnDemand : uint8_t

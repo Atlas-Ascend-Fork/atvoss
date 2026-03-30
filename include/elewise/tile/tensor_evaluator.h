@@ -12,8 +12,8 @@
 #define ATVOSS_TILE_EVA_DATA_H
 #include "evaluator/eval_base.h"
 #include "utils/layout/layout.h"
-#include "graph/buffer.h"
 #include "operators/tile_shape.h"
+#include "elewise/graph/buffer.h"
 
 namespace Atvoss::Tile {
 

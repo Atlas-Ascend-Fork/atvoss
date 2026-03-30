@@ -11,7 +11,7 @@
 #ifndef ATVOSS_GRAPH_NODE_H
 #define ATVOSS_GRAPH_NODE_H
 
-#include "graph/bind.h"
+#include "bind.h"
 
 namespace Atvoss::Tile {
 

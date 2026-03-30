@@ -12,7 +12,7 @@
 #define ATVOSS_GRAPH_BUFFER_H
 
 #include "utils/utility.h"
-#include "graph/bind.h"
+#include "bind.h"
 
 namespace Atvoss::Tile {
 
