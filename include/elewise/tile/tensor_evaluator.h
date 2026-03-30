@@ -12,8 +12,8 @@
 #define ATVOSS_TILE_EVA_DATA_H
 #include "evaluator/eval_base.h"
 #include "utils/layout/layout.h"
-#include "graph/buffer.h"
 #include "operators/tile_shape.h"
+#include "elewise/graph/buffer.h"
 
 namespace Atvoss::Tile {
 
@@ -65,7 +65,9 @@ struct Evaluator<OpCopyIn<T>> {
     __aicore__ inline auto operator()(const OpCopyIn<T>& op, Context& context) const
     {
         auto& obj = Evaluator<T>{}(op.GetData(), context);
-        uint32_t bufferId = GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(context.pingPong);
+        uint32_t bufferId =
+            Atvoss::Ele::Tile::GetBufferId<typename Context::BuffMaps, T::number, Atvoss::Ele::Tile::BufType::PARAM>(
+                context.pingPong);
         // AscendC::printf("OpCopyIn, IN[%u]-[%u] context.pingPong: %u\n", T::number, bufferId, context.pingPong);
 #if _ATVOSS_ARCH35_
         AscendC::Mutex::Lock<PIPE_MTE2>(bufferId);
@@ -90,7 +92,9 @@ struct Evaluator<OpCopyOut<T>> {
     template <typename Context>
     __aicore__ inline auto operator()(const OpCopyOut<T>& op, Context& context) const
     {
-        uint32_t bufferId = GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(context.pingPong);
+        uint32_t bufferId =
+            Atvoss::Ele::Tile::GetBufferId<typename Context::BuffMaps, T::number, Atvoss::Ele::Tile::BufType::PARAM>(
+                context.pingPong);
         // AscendC::printf("OpCopyIn, IN[%u]-[%u] context.pingPong: %u\n", T::number, bufferId, context.pingPong);
 #if _ATVOSS_ARCH35_
         AscendC::Mutex::Unlock<PIPE_V>(bufferId);
@@ -139,8 +143,8 @@ struct Evaluator<OpAlloc<T>> {
             auto& obj = Evaluator<T>{}(op.GetData(), context);
 
             if constexpr (!HasUsage<T>{}) { // tmp param
-                uint32_t tmpId =
-                    GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::LOCAL_VAR>(context.pingPong);
+                uint32_t tmpId = Atvoss::Ele::Tile::GetBufferId<
+                    typename Context::BuffMaps, T::number, Atvoss::Ele::Tile::BufType::LOCAL_VAR>(context.pingPong);
                 // AscendC::printf("OpAlloc, LOCAL_VAR[%u]-[%u] context.pingPong: %u\n", T::number, tmpId,
                 // context.pingPong);
                 context.bufPools.AllocTensor(obj.GetUbTensor(), tmpId);
@@ -153,13 +157,13 @@ struct Evaluator<OpAlloc<T>> {
             } else if constexpr (
                 HasUsage<T>{} && T::usage == Atvoss::ParamUsage::IN ||
                 T::usage == Atvoss::ParamUsage::IN_OUT) { // in param: need copy in
-                uint32_t inId =
-                    GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(context.pingPong);
+                uint32_t inId = Atvoss::Ele::Tile::GetBufferId<
+                    typename Context::BuffMaps, T::number, Atvoss::Ele::Tile::BufType::PARAM>(context.pingPong);
                 context.bufPools.AllocTensor(obj.GetUbTensor(), inId);
                 return;
             } else if constexpr (HasUsage<T>{} && T::usage == Atvoss::ParamUsage::OUT) { // out param
-                uint32_t outId =
-                    GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(context.pingPong);
+                uint32_t outId = Atvoss::Ele::Tile::GetBufferId<
+                    typename Context::BuffMaps, T::number, Atvoss::Ele::Tile::BufType::PARAM>(context.pingPong);
                 context.bufPools.AllocTensor(obj.GetUbTensor(), outId);
 #if _ATVOSS_ARCH35_
                 AscendC::Mutex::Lock<PIPE_V>(outId);
@@ -182,8 +186,8 @@ struct Evaluator<OpFree<T>> {
     {
         auto& obj = Evaluator<T>{}(op.GetData(), context);
         if constexpr (!HasUsage<T>{}) { // tmp param
-            uint32_t tmpId =
-                GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::LOCAL_VAR>(context.pingPong);
+            uint32_t tmpId = Atvoss::Ele::Tile::GetBufferId<
+                typename Context::BuffMaps, T::number, Atvoss::Ele::Tile::BufType::LOCAL_VAR>(context.pingPong);
             // AscendC::printf("OpFree, LOCAL_VAR[%u]-[%u] context.pingPong: %u\n", T::number, tmpId, context.pingPong);
 #if _ATVOSS_ARCH35_
             AscendC::Mutex::Unlock<PIPE_V>(tmpId);
@@ -192,7 +196,8 @@ struct Evaluator<OpFree<T>> {
 #endif
             return;
         } else if constexpr (HasUsage<T>{} && T::usage == Atvoss::ParamUsage::IN) { // in param
-            uint32_t inId = GetBufferId<typename Context::BuffMaps, T::number, Tile::BufType::PARAM>(context.pingPong);
+            uint32_t inId = Atvoss::Ele::Tile::GetBufferId<
+                typename Context::BuffMaps, T::number, Atvoss::Ele::Tile::BufType::PARAM>(context.pingPong);
             // AscendC::printf("OpFree, IN[%u]-[%u] context.pingPong: %u\n", T::number, inId, context.pingPong);
 #if _ATVOSS_ARCH35_
             AscendC::Mutex::Unlock<PIPE_V>(inId);

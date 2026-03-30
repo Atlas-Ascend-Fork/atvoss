@@ -13,7 +13,8 @@
 
 #include "utils/layout/layout.h"
 #include "utils/patterns.h"
-#include "graph/dag.h"
+#include "utils/utility.h"
+#include "elewise/graph/dag.h"
 
 namespace Atvoss::Tile {
 enum class AutoOpOnDemand : uint8_t
@@ -25,6 +26,7 @@ enum class AutoOpOnDemand : uint8_t
 using Atvoss::Util::Get_t;
 using Atvoss::Util::Reverse_t;
 using Atvoss::Util::Set_t;
+using Atvoss::Util::Size_v;
 
 struct AllocInserter {
     template <typename T, typename ExprList>
