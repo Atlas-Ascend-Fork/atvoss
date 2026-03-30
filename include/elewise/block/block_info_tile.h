@@ -10,9 +10,6 @@
 
 #ifndef ATVOSS_BLOCK_TENSOR_H
 #define ATVOSS_BLOCK_TENSOR_H
-#if !defined(__ATVOSS_HOST_ONLY__)
-#include "operators/tensor_evaluator.h"
-#endif
 
 #include "utils/layout/layout.h"
 

@@ -18,9 +18,9 @@
 #include "elewise/tile/tile_evaluate.h"
 #endif
 
+#include "elewise/graph/buffer.h"
 #include "utils/layout/layout.h"
 #include "common/type_def.h"
-#include "graph/buffer.h"
 #include "graph/expr_linearizer.h"
 #include "graph/compute_preproc.h"
 #include "operators/tile_shape.h"

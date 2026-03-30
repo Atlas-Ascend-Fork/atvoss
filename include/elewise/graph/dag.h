@@ -11,9 +11,9 @@
 #ifndef ATVOSS_GRAPH_DAG_H
 #define ATVOSS_GRAPH_DAG_H
 
-#include "graph/bind.h"
-#include "graph/node.h"
-#include "graph/buffer.h"
+#include "bind.h"
+#include "node.h"
+#include "buffer.h"
 
 namespace Atvoss::Tile {
 
