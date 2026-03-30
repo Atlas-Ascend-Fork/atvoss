@@ -11,9 +11,9 @@
 #ifndef ATVOSS_GRAPH_NODE_H
 #define ATVOSS_GRAPH_NODE_H
 
-#include "graph/bind.h"
+#include "bind.h"
 
-namespace Atvoss::Tile {
+namespace Atvoss::Ele::Tile {
 
 using Atvoss::Util::Append_t;
 using Atvoss::Util::Concatenate_t;
@@ -273,6 +273,6 @@ public:
     }
 };
 
-} // namespace Atvoss::Tile
+} // namespace Atvoss::Ele::Tile
 
 #endif // ATVOSS_GRAPH_NODE_H

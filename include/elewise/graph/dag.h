@@ -11,11 +11,11 @@
 #ifndef ATVOSS_GRAPH_DAG_H
 #define ATVOSS_GRAPH_DAG_H
 
-#include "graph/bind.h"
-#include "graph/node.h"
-#include "graph/buffer.h"
+#include "bind.h"
+#include "node.h"
+#include "buffer.h"
 
-namespace Atvoss::Tile {
+namespace Atvoss::Ele::Tile {
 
 using Atvoss::Util::Append_t;
 using Atvoss::Util::Concatenate_t;
@@ -601,5 +601,5 @@ public:
     using LocalVarUseList = Map_t<FirstAndLastUseFinder<ExprListWithCopyX>::template Type, AllLocalVars>;
 };
 
-} // namespace Atvoss::Tile
+} // namespace Atvoss::Ele::Tile
 #endif // ATVOSS_GRAPH_DAG_H

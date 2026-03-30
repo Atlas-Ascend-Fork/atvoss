@@ -12,9 +12,9 @@
 #define ATVOSS_GRAPH_BUFFER_H
 
 #include "utils/utility.h"
-#include "graph/bind.h"
+#include "bind.h"
 
-namespace Atvoss::Tile {
+namespace Atvoss::Ele::Tile {
 
 using Atvoss::Util::Any_v;
 using Atvoss::Util::Append_t;
@@ -644,5 +644,5 @@ static constexpr const int32_t* const* GenerateBufferIdOrder()
     }
 }
 
-} // namespace Atvoss::Tile
+} // namespace Atvoss::Ele::Tile
 #endif // ATVOSS_GRAPH_BUFFER_H
