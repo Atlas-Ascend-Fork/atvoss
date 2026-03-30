@@ -19,8 +19,8 @@
 #include "graph/compute_preproc.h"
 #include "evaluator/eval_base.h"
 #include "operators/math_evaluator.h"
-#include "operators/tensor_evaluator.h"
 #include "operators/transcendental_evaluator.h"
+#include "tensor_evaluator.h"
 
 namespace Atvoss::Ele::Tile {
 
