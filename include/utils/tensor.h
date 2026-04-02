@@ -33,11 +33,17 @@ public:
 
     Tensor(T* dataPtr, uint64_t* inputShape, size_t dims) : dataPtr_(dataPtr), dims_(dims)
     {
+        if (dims <= 0 || dims > MAX_DIMS) {
+            throw std::runtime_error("input shape dimension is invalid, less than 0 or more than 8");
+        }
         std::copy(inputShape, inputShape + dims_, shape_);
     }
 
     Tensor(T* dataPtr, int64_t* inputShape, size_t dims) : dataPtr_(dataPtr), dims_(dims)
     {
+        if (dims <= 0 || dims > MAX_DIMS) {
+            throw std::runtime_error("input shape dimension is invalid, less than 0 or more than 8");
+        }
         std::copy(inputShape, inputShape + dims_, shape_);
     }
 
