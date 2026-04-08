@@ -8,27 +8,27 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_TILING_H
-#define ATVOSS_TILING_H
+#ifndef ATVOSS_ELEWISE_TILING_H
+#define ATVOSS_ELEWISE_TILING_H
 
-namespace Atvoss {
+namespace Atvoss::Ele {
 
 template <typename KernelOp, typename Args>
 bool CalculateTiling(const Args& args, typename KernelOp::ScheduleCfgClz& cfg)
 {
     using BlockOp = typename KernelOp::ScheduleClz::BlockTemplate;
     if (!KernelOp::ScheduleClz::MakeScheduleConfig(args, cfg.kernelParam)) {
-        printf("[ERROR]: [Atvoss][Device] MakeScheduleConfig for kernel failed!\n");
+        printf("[ERROR]: [Atvoss][Ele][Device] MakeScheduleConfig for kernel failed!\n");
         return false;
     }
 
     if (!BlockOp::ScheduleClz::MakeScheduleConfig(args, cfg.kernelParam, cfg.blockParam)) {
-        printf("[ERROR]: [Atvoss][Device] MakeScheduleConfig for block failed!\n");
+        printf("[ERROR]: [Atvoss][Ele][Device] MakeScheduleConfig for block failed!\n");
         return false;
     }
     return true;
 }
 
-} // namespace Atvoss
+} // namespace Atvoss::Ele
 
-#endif // ATVOSS_TILING_H
+#endif // ATVOSS_ELEWISE_TILING_H
