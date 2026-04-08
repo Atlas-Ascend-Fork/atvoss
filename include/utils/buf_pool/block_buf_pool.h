@@ -12,7 +12,7 @@
 
 namespace Atvoss {
 
-template <int TILE_NUM, int TILE_SIZE>
+template <int TILE_NUM, int TILE_SIZE = 1024 * 1024>
 class BlockBufferEx {
 private:
     static_assert(TILE_SIZE % 32 == 0, "[ERROR]: [Atvoss][LoopBuffer] Tile size must be a multiple of 32\n");
@@ -20,13 +20,14 @@ private:
 
 public:
     static constexpr uint64_t BLOCK_LEN = TILE_SIZE;
-    __aicore__ inline BlockBufferEx()
+    __aicore__ inline BlockBufferEx() : actualTileSize_(TILE_SIZE)
     {}
     __aicore__ inline ~BlockBufferEx()
     {}
 
-    __aicore__ inline void Init()
+    __aicore__ inline void Init(uint32_t actualTileSize = TILE_SIZE)
     {
+        actualTileSize_ = actualTileSize;
         GetTPipePtr()->InitBuffer(tbuf_, TILE_SIZE * TILE_NUM);
         tensorPool_ = tbuf_.Get<uint8_t>();
     }
@@ -34,12 +35,13 @@ public:
     template <typename T>
     __aicore__ inline void AllocTensor(AscendC::LocalTensor<T>& inTensor, uint32_t bufferId)
     {
-        inTensor = tensorPool_[bufferId * BLOCK_LEN].template ReinterpretCast<T>();
+        inTensor = tensorPool_[bufferId * actualTileSize_].template ReinterpretCast<T>();
     }
 
 private:
     AscendC::TBuf<AscendC::TPosition::VECCALC> tbuf_;
     AscendC::LocalTensor<uint8_t> tensorPool_;
+    uint32_t actualTileSize_;   // 运行时实际使用的buf大小
 };
 } // namespace Atvoss
 
