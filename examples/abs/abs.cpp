@@ -41,7 +41,7 @@ struct AbsConfig {
 
     using KernelOp = Atvoss::Ele::KernelBuilder<BlockOp, kernelPolicy>;
 
-    using DeviceOp = Atvoss::DeviceAdapter<KernelOp>;
+    using DeviceOp = Atvoss::Ele::DeviceAdapter<KernelOp>;
 };
 
 struct Options {
