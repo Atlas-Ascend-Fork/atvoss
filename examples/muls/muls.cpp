@@ -64,8 +64,8 @@ struct MulsConfig {
     using KernelOpPromtIn = Atvoss::Ele::KernelBuilder<
         BlockOpPromtIn, kernelPolicy, Atvoss::Ele::DefaultKernelConfig, Atvoss::Ele::DefaultKernelSchedule>;
 
-    using DeviceOp = Atvoss::DeviceAdapter<KernelOp>;
-    using DeviceOpPromtIn = Atvoss::DeviceAdapter<KernelOpPromtIn>;
+    using DeviceOp = Atvoss::Ele::DeviceAdapter<KernelOp>;
+    using DeviceOpPromtIn = Atvoss::Ele::DeviceAdapter<KernelOpPromtIn>;
 };
 
 struct Options {
