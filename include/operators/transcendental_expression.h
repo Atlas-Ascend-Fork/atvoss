@@ -15,26 +15,6 @@
 
 namespace Atvoss {
 template <Pattern pattern, typename T>
-struct OpReduceSum : UnaryOp<T> {
-    OpReduceSum() = default;
-
-    constexpr OpReduceSum(T t) : UnaryOp<T>(t)
-    {}
-};
-
-template <Pattern pattern, typename T>
-__host_aicore__ constexpr auto ReduceSum(Expression<T> lhs)
-{
-    return Expression<OpReduceSum<pattern, T>>{{lhs.data}};
-}
-
-template <Pattern pattern, typename T>
-__host_aicore__ constexpr auto ReduceSum(T&& lhs)
-{
-    return Expression<OpReduceSum<pattern, T>>{{std::forward<T>(lhs)}};
-}
-
-template <Pattern pattern, typename T>
 struct OpBroadcast : UnaryOp<T> {
     OpBroadcast() = default;
 
