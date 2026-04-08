@@ -99,6 +99,7 @@ foreach(EXAMPLE
     abs
     rms_norm
     muls
+    reduce_sum
 )
     add_subdirectory(${EXAMPLE})
 endforeach()
