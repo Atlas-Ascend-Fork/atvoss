@@ -15,6 +15,7 @@
 #include <type_traits>
 #include <vector>
 #include "utils/utility.h"
+#include "utils/tensor/tensor.h"
 
 namespace Atvoss {
 
