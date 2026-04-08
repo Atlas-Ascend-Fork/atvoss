@@ -19,27 +19,35 @@ private:
     static_assert(TILE_NUM > 0, "[ERROR]: [Atvoss][LoopBuffer] Tile number must bigger than 0\n");
 
 public:
-    static constexpr uint64_t BLOCK_LEN = TILE_SIZE;
-    __aicore__ inline BlockBufferEx()
+    __aicore__ inline BlockBufferEx() : actualBufSize_(TILE_SIZE)
     {}
     __aicore__ inline ~BlockBufferEx()
     {}
 
     __aicore__ inline void Init()
     {
+        actualBufSize_ = TILE_SIZE;
         GetTPipePtr()->InitBuffer(tbuf_, TILE_SIZE * TILE_NUM);
+        tensorPool_ = tbuf_.Get<uint8_t>();
+    }
+
+    __aicore__ inline void Init(uint32_t actualBufSize)
+    {
+        actualBufSize_ = actualBufSize;
+        GetTPipePtr()->InitBuffer(tbuf_, actualBufSize_);
         tensorPool_ = tbuf_.Get<uint8_t>();
     }
 
     template <typename T>
     __aicore__ inline void AllocTensor(AscendC::LocalTensor<T>& inTensor, uint32_t bufferId)
     {
-        inTensor = tensorPool_[bufferId * BLOCK_LEN].template ReinterpretCast<T>();
+        inTensor = tensorPool_[bufferId * actualBufSize_].template ReinterpretCast<T>();
     }
 
 private:
     AscendC::TBuf<AscendC::TPosition::VECCALC> tbuf_;
     AscendC::LocalTensor<uint8_t> tensorPool_;
+    uint32_t actualBufSize_;   // 运行时实际使用的buf大小
 };
 } // namespace Atvoss
 
