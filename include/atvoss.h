@@ -15,4 +15,8 @@
 #include "elewise/block/builder.h"
 #include "elewise/kernel/builder.h"
 #include "elewise/device/device_adapter.h"
+#include "reduce/tile/tile_evaluate.h"
+#include "reduce/block/builder.h"
+#include "reduce/kernel/builder.h"
+#include "reduce/device/device_adapter.h"
 #endif
