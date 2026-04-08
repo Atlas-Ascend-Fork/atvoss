@@ -14,12 +14,14 @@
 #include "operators/tensor_expression.h"
 #include "operators/math_expression.h"
 #include "operators/transcendental_expression.h"
+#include "operators/reduce_expression.h"
 
 #include "operators/tile_shape.h"
 #include "graph/compute_preproc.h"
 #include "evaluator/eval_base.h"
 #include "operators/math_evaluator.h"
 #include "operators/transcendental_evaluator.h"
+#include "operators/reduce_evaluator.h"
 #include "tensor_evaluator.h"
 
 namespace Atvoss::Ele::Tile {
