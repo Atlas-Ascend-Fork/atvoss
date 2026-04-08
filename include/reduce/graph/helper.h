@@ -57,7 +57,7 @@ template <typename T, typename = void>
 struct IsReduceOp : std::false_type {};
 
 template <typename T>
-struct IsReduceOp<T, std::enable_if_t<std::is_base_of_v<ReduceOp<typename T::DataType>, T>>> : std::true_type {};
+struct IsReduceOp<T, std::void_t<typename T::IsReduceOp>> : std::true_type {};
 
 template <typename T>
 struct ContainsReduceOp : IsReduceOp<T> {};

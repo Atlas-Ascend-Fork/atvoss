@@ -20,6 +20,14 @@ struct ContextData {
     uint64_t gmOffset;
     uint64_t elementNum;
     uint32_t pingPong;
+    // CopyIn ARAR→AARR 转置参数
+    uint64_t segCount = 1;   // A维度分段数 (TileA=ubFactorA)
+    uint64_t segSize = 0;    // 每段元素数   (TileR=ubFactorR)
+    uint64_t srcStride = 0;  // GM中段间stride (cfg.srcStride[A_split_axis])
+    uint64_t dstStride = 0;  // UB中段间stride (segSize, AARR连续布局)
+    // Reduce pattern
+    int32_t patternID = 0;      // ReduceSchLoopInfo::patternID
+    int32_t innerPatternID = 0; // ReduceSchLoopInfo::innerPatternID
 
     using BuffMaps = BuffIdMap;
 };

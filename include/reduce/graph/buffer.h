@@ -426,7 +426,7 @@ template <typename ExprList, typename ReduceOpList = TypeList<>, bool IsBinaryAc
 struct BufferIdGenerator {
 private:
     static constexpr bool IsSingleExprNoBinaryAcc = (Size_v<ExprList> == 1) && !IsBinaryAcc;
-    static constexpr std::size_t ResultParamCount = Size_v<Params_t<Map_t<ExtractResultType, ExprList>>>;
+    static constexpr std::size_t ResultParamCount = Size_v<Map_t<ExtractResultType, ExprList>>;
     static constexpr std::size_t StartBufIdForLocalVar =
         IsSingleExprNoBinaryAcc ?
             1 :

@@ -64,7 +64,7 @@ struct RmsNormConfig {
         BlockOp,
         kernelPolicy>;
 
-    using DeviceOp = Atvoss::DeviceAdapter<KernelOp>;
+    using DeviceOp = Atvoss::Ele::DeviceAdapter<KernelOp>;
 };
 
 
