@@ -8,15 +8,15 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_DEVICE_ADAPTER_H
-#define ATVOSS_DEVICE_ADAPTER_H
+#ifndef ATVOSS_ELEWISE_DEVICE_ADAPTER_H
+#define ATVOSS_ELEWISE_DEVICE_ADAPTER_H
 #include <functional>
 #include "acl/acl.h"
-#include "device_tensor.h"
 #include "common/compile_info.h"
 #include "utils/utility.h"
 #include "utils/arguments/arguments.h"
-#include "tiling.h"
+#include "utils/tensor/device_tensor.h"
+#include "utils/tiling.h"
 
 #define CHECK_ACL(x)                                                                        \
     do {                                                                                    \
@@ -26,6 +26,7 @@
         }                                                                                   \
     } while (0)
 
+namespace Atvoss::Ele {
 template <class KernelOp, typename OpParam, typename ArgTuple, std::size_t... Is>
 __aicore__ inline void KernelWrapper(OpParam& cfg, ArgTuple args, AscendC::Std::index_sequence<Is...>)
 {
@@ -40,8 +41,6 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, ArgTuple args)
     KernelWrapper<KernelOp, OpParam, ArgTuple>(
         cfg, args, AscendC::Std::make_index_sequence<AscendC::Std::tuple_size_v<ArgTuple>>{});
 }
-
-namespace Atvoss {
 
 template <typename T>
 auto TransformArgs(T&& value)
@@ -82,7 +81,7 @@ public:
     // using BlockParamStruct = typename KernelOp::ScheduleClz::BlockTemplate::ScheduleClz::ParamStruct;
     using OpParam = typename KernelOp::ScheduleCfgClz;
     template <typename T>
-    using Tensor = DeviceTensor<T>;
+    using Tensor = Atvoss::DeviceTensor<T>;
 
     /*!
      * \brief The constructor interface of DeviceAdapter class.
@@ -108,7 +107,7 @@ public:
         // 2. calc dynamic param （tiling / worksapce）
         OpParam opParam;
         if (!CalculateTiling<KernelOp>(arguments, opParam)) {
-            printf("[ERROR]: [Atvoss][Device] CalcParam failed!\n");
+            printf("[ERROR]: [Atvoss][Ele][Device] CalculateTiling failed!\n");
             return -1;
         }
         // 3. kernel launch
@@ -124,61 +123,6 @@ public:
     }
 
 private:
-    // calc kernel/block tiling and workspace.
-    template <typename Args>
-    bool CalcParam(const Args& arguments, OpParam& opParam)
-    {
-        if (!KernelOp::ScheduleClz::MakeScheduleConfig(arguments, opParam.kernelParam)) {
-            printf("[ERROR]: [Atvoss][Device] MakeScheduleConfig for kernel failed!\n");
-            return false;
-        }
-        if (!BlockOp::ScheduleClz::MakeScheduleConfig(arguments, opParam.kernelParam, opParam.blockParam)) {
-            printf("[ERROR]: [Atvoss][Device] MakeScheduleConfig for block failed!\n");
-            return false;
-        }
-        return true;
-    }
-
-    template <typename Params, typename ParamTup>
-    auto GetInParams(ParamTup& params)
-    {
-        constexpr auto size = Atvoss::Util::Size_v<Params>;
-        static_assert(
-            size == std::tuple_size_v<ParamTup>,
-            "[ERROR]: [Atvoss][Device] Size must match the number of element num in ParamTup!\n");
-        return GetInParamsImpl<Params>(params, std::make_index_sequence<size>{});
-    }
-
-    template <typename Params, typename ParamTup>
-    auto GetOutParams(ParamTup& params)
-    {
-        constexpr auto size = Atvoss::Util::Size_v<Params>;
-        static_assert(
-            size == std::tuple_size_v<ParamTup>,
-            "[ERROR]: [Atvoss][Device] Size must match the number of element num in ParamTup!\n");
-        return GetOutParamsImpl<Params>(params, std::make_index_sequence<size>{});
-    }
-
-    template <typename InParams, typename InParamTup, typename ArgTup>
-    void CopyIn(InParamTup& inParams, ArgTup& args)
-    {
-        constexpr auto size = Atvoss::Util::Size_v<InParams>;
-        static_assert(
-            size == std::tuple_size_v<InParamTup>,
-            "[ERROR]: [Atvoss][Device] Size must match the number of element num in InParamTup!\n");
-        CopyInImpl<InParams>(inParams, args, std::make_index_sequence<size>{});
-    }
-
-    template <typename OutParams, typename OutParamTup, typename ArgTup>
-    void CopyOut(OutParamTup& outParams, ArgTup& args)
-    {
-        constexpr auto size = Atvoss::Util::Size_v<OutParams>;
-        static_assert(
-            size == std::tuple_size_v<OutParamTup>,
-            "[ERROR]: [Atvoss][Device] Size must match the number of element num in OutParamTup!\n");
-        CopyOutImpl<OutParams>(outParams, args, std::make_index_sequence<size>{});
-    }
-
     template <typename ParamType, typename ArgTup>
     constexpr auto ConstructParam(ArgTup& args)
     {
@@ -250,10 +194,29 @@ private:
             GetOneParam<Params, Ints, Atvoss::ParamUsage::OUT, Atvoss::ParamUsage::IN_OUT>(params)...);
     }
 
+    template <typename Params, typename ParamTup>
+    auto GetInParams(ParamTup& params)
+    {
+        constexpr auto size = Atvoss::Util::Size_v<Params>;
+        static_assert(
+            size == std::tuple_size_v<ParamTup>,
+            "[ERROR]: [Atvoss][Ele][Device] Size must match the number of element num in ParamTup!\n");
+        return GetInParamsImpl<Params>(params, std::make_index_sequence<size>{});
+    }
+
+    template <typename Params, typename ParamTup>
+    auto GetOutParams(ParamTup& params)
+    {
+        constexpr auto size = Atvoss::Util::Size_v<Params>;
+        static_assert(
+            size == std::tuple_size_v<ParamTup>,
+            "[ERROR]: [Atvoss][Ele][Device] Size must match the number of element num in ParamTup!\n");
+        return GetOutParamsImpl<Params>(params, std::make_index_sequence<size>{});
+    }
+
     template <typename InParams, std::size_t Index, typename T, typename ArgTup>
     void CopyInOneParam(T& param, ArgTup& args)
     {
-        using Param = Atvoss::Util::Get_t<InParams, Index>;
         param.CopyIn();
     }
 
@@ -263,10 +226,19 @@ private:
         (CopyInOneParam<InParams, Ints>(std::get<Ints>(inParams), args), ...);
     }
 
+    template <typename InParams, typename InParamTup, typename ArgTup>
+    void CopyIn(InParamTup& inParams, ArgTup& args)
+    {
+        constexpr auto size = Atvoss::Util::Size_v<InParams>;
+        static_assert(
+            size == std::tuple_size_v<InParamTup>,
+            "[ERROR]: [Atvoss][Ele][Device] Size must match the number of element num in InParamTup!\n");
+        CopyInImpl<InParams>(inParams, args, std::make_index_sequence<size>{});
+    }
+
     template <typename OutParams, std::size_t Index, typename T, typename ArgTup>
     void CopyOutOneParam(T& param, ArgTup& args)
     {
-        using Param = Atvoss::Util::Get_t<OutParams, Index>;
         param.CopyOut();
     }
 
@@ -275,7 +247,18 @@ private:
     {
         (CopyOutOneParam<OutParams, Ints>(std::get<Ints>(outParams), args), ...);
     }
+
+    template <typename OutParams, typename OutParamTup, typename ArgTup>
+    void CopyOut(OutParamTup& outParams, ArgTup& args)
+    {
+        constexpr auto size = Atvoss::Util::Size_v<OutParams>;
+        static_assert(
+            size == std::tuple_size_v<OutParamTup>,
+            "[ERROR]: [Atvoss][Ele][Device] Size must match the number of element num in OutParamTup!\n");
+        CopyOutImpl<OutParams>(outParams, args, std::make_index_sequence<size>{});
+    }
 };
 
-} // namespace Atvoss
-#endif
+} // namespace Atvoss::Ele
+
+#endif // ATVOSS_ELEWISE_DEVICE_ADAPTER_H
