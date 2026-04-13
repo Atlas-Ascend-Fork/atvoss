@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_GRAPH_BUFFER_H
-#define ATVOSS_GRAPH_BUFFER_H
+#ifndef ATVOSS_ELEWISE_GRAPH_BUFFER_H
+#define ATVOSS_ELEWISE_GRAPH_BUFFER_H
 
 #include "utils/utility.h"
 #include "bind.h"
@@ -645,4 +645,4 @@ static constexpr const int32_t* const* GenerateBufferIdOrder()
 }
 
 } // namespace Atvoss::Ele::Tile
-#endif // ATVOSS_GRAPH_BUFFER_H
+#endif // ATVOSS_ELEWISE_GRAPH_BUFFER_H

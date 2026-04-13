@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_GRAPH_NODE_H
-#define ATVOSS_GRAPH_NODE_H
+#ifndef ATVOSS_ELEWISE_GRAPH_NODE_H
+#define ATVOSS_ELEWISE_GRAPH_NODE_H
 
 #include "bind.h"
 
@@ -275,4 +275,4 @@ public:
 
 } // namespace Atvoss::Ele::Tile
 
-#endif // ATVOSS_GRAPH_NODE_H
+#endif // ATVOSS_ELEWISE_GRAPH_NODE_H

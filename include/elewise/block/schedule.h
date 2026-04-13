@@ -18,6 +18,7 @@
 #include "elewise/tile/tile_evaluate.h"
 #endif
 
+#include "elewise/graph/dag.h"
 #include "elewise/graph/buffer.h"
 #include "utils/layout/layout.h"
 #include "common/type_def.h"
@@ -30,6 +31,45 @@ namespace Atvoss::Ele {
 using Atvoss::Util::Find_v;
 using Atvoss::Util::Get_t;
 using Atvoss::Util::Size_v;
+using Atvoss::Util::Reverse_t;
+
+template <typename ExprList, MemMngPolicy memMngPolicy, typename = void>
+struct DagSelector {
+    using Type = Atvoss::Ele::Tile::ManualDag<ExprList>;
+};
+
+template <typename ExprList, MemMngPolicy memMngPolicy>
+struct DagSelector<ExprList, memMngPolicy, std::enable_if_t<memMngPolicy == MemMngPolicy::AUTO>> {
+    using Type = Atvoss::Ele::Tile::FullAutoDag<ExprList>;
+};
+
+template <typename Expression, typename D>
+struct ComputeInfo {
+    using Expr = typename Expression::Type;
+    using Dag = D;
+};
+
+template <MemMngPolicy memMngPolicy = MemMngPolicy::AUTO, typename T>
+__host_aicore__ constexpr auto PreProcessComputeExpr(const Expression<T>& expr)
+{
+    using ExprT = T;
+    using OriExprList = typename Atvoss::FlattenAtOpAndThen<ExprT>::Type;
+    static_assert(Size_v<OriExprList> > 0, "Compute expression is empty.");
+
+    // 1. Dag
+    using DagX = typename DagSelector<OriExprList, memMngPolicy>::Type;
+    // 2. Add OpAlloc before its first use & OpFree after its last use
+    using ExprListWithCopyX = typename DagX::ExprListWithCopyX;
+    using ParamUseList = typename DagX::ParamUseList;
+    using LocalVarUseList = typename DagX::LocalVarUseList;
+    auto result1 = ForEach(Reverse_t<ParamUseList>{}, Atvoss::Graph::AllocInserter{}, ExprListWithCopyX{});
+    auto result2 = ForEach(ParamUseList{}, Atvoss::Graph::FreeInserter{}, result1);
+    auto result3 = ForEach(Reverse_t<LocalVarUseList>{}, Atvoss::Graph::AllocInserter{}, result2);
+    auto result4 = ForEach(LocalVarUseList{}, Atvoss::Graph::FreeInserter{}, result3);
+    // 3. Rebuild Expression
+    using LastExpression = typename BuildExpression<decltype(result4)>::Type;
+    return ComputeInfo<LastExpression, DagX>{};
+};
 
 template <uint32_t UB_TILE_SIZE, uint32_t USER_TILE_SIZE>
 struct TileCheckAssert {
@@ -80,7 +120,7 @@ private:
     using BlockTensorTile = Atvoss::Ele::BlockTensor<
         T, Atvoss::Layout::Layout<Atvoss::Layout::FixedRankExtents<BASIC_BLOCK, GetLayoutAxis0(), GetLayoutAxis1()>>>;
     static constexpr auto computeRes = ToLinearizerExpr(Compute{}.template Compute<BlockTensorTile>());
-    static constexpr auto optimizedCompute = Atvoss::Tile::PreProcessComputeExpr<Policy.memPolicy>(computeRes);
+    static constexpr auto optimizedCompute = PreProcessComputeExpr<Policy.memPolicy>(computeRes);
     using ComputeInfoT = decltype(optimizedCompute);
     using ExprTile = typename ComputeInfoT::Expr;
     using EleWiseDag = typename ComputeInfoT::Dag;
