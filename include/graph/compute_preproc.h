@@ -14,9 +14,8 @@
 #include "utils/layout/layout.h"
 #include "utils/patterns.h"
 #include "utils/utility.h"
-#include "elewise/graph/dag.h"
 
-namespace Atvoss::Tile {
+namespace Atvoss::Graph {
 enum class AutoOpOnDemand : uint8_t
 {
     no,
@@ -24,7 +23,6 @@ enum class AutoOpOnDemand : uint8_t
 };
 
 using Atvoss::Util::Get_t;
-using Atvoss::Util::Reverse_t;
 using Atvoss::Util::Set_t;
 using Atvoss::Util::Size_v;
 
@@ -61,43 +59,5 @@ struct FreeInserter {
         }
     }
 };
-
-template <typename ExprList, MemMngPolicy memMngPolicy, typename = void>
-struct DagSelector {
-    using Type = Atvoss::Ele::Tile::ManualDag<ExprList>;
-};
-
-template <typename ExprList, MemMngPolicy memMngPolicy>
-struct DagSelector<ExprList, memMngPolicy, std::enable_if_t<memMngPolicy == MemMngPolicy::AUTO>> {
-    using Type = Atvoss::Ele::Tile::FullAutoDag<ExprList>;
-};
-
-template <typename Expression, typename D>
-struct ComputeInfo {
-    using Expr = typename Expression::Type;
-    using Dag = D;
-};
-
-template <MemMngPolicy memMngPolicy = MemMngPolicy::AUTO, typename T>
-__host_aicore__ constexpr auto PreProcessComputeExpr(const Expression<T>& expr)
-{
-    using ExprT = T;
-    using OriExprList = typename FlattenAtOpAndThen<ExprT>::Type;
-    static_assert(Size_v<OriExprList> > 0, "Compute expression is empty.");
-
-    // 1. Dag
-    using DagX = typename DagSelector<OriExprList, memMngPolicy>::Type;
-    // 2. Add OpAlloc before its first use & OpFree after its last use
-    using ExprListWithCopyX = typename DagX::ExprListWithCopyX;
-    using ParamUseList = typename DagX::ParamUseList;
-    using LocalVarUseList = typename DagX::LocalVarUseList;
-    auto result1 = ForEach(Reverse_t<ParamUseList>{}, AllocInserter{}, ExprListWithCopyX{});
-    auto result2 = ForEach(ParamUseList{}, FreeInserter{}, result1);
-    auto result3 = ForEach(Reverse_t<LocalVarUseList>{}, AllocInserter{}, result2);
-    auto result4 = ForEach(LocalVarUseList{}, FreeInserter{}, result3);
-    // 3. Rebuild Expression
-    using LastExpression = typename BuildExpression<decltype(result4)>::Type;
-    return ComputeInfo<LastExpression, DagX>{};
-};
-} // namespace Atvoss::Tile
+} // namespace Atvoss::Graph
 #endif // COMPUTE_PREPROCESS_H

@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_GRAPH_BIND_H
-#define ATVOSS_GRAPH_BIND_H
+#ifndef ATVOSS_ELEWISE_GRAPH_BIND_H
+#define ATVOSS_ELEWISE_GRAPH_BIND_H
 
 #include "utils/utility.h"
 #include "expression/expr_template.h"
@@ -281,4 +281,4 @@ public:
 
 } // namespace Atvoss::Tile
 
-#endif // ATVOSS_GRAPH_BIND_H
+#endif // ATVOSS_ELEWISE_GRAPH_BIND_H

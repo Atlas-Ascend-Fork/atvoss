@@ -1,7 +1,13 @@
 # Visual Studio Code
 .vscode
 .idea
+
+# build tmp directory
 build
 output
 build_out
+
+# CodeArts
+.arts
+
 third_party
