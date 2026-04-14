@@ -207,7 +207,7 @@ static void Run(const Options& options)
     Atvoss::Tensor<T1> t1(deviceInput1, shapeArray, shape.size());
     Atvoss::Tensor<T2> t2(deviceInput2, shapeArray, shape.size());
     Atvoss::Tensor<T3> t3(deviceOutput, shapeArray, shape.size());
-    auto arguments = Atvoss::ArgumentsBuilder{}.inputOutput(t1, t2, t3).build();
+    auto arguments = Atvoss::ArgumentsBuilder{}.inputOutput(t1, t2, t3).attr("reduceAxis",options.axis).build();
 
     using DeviceOp = typename RmsNormConfig<T1, T2, T3>::DeviceOp;
     DeviceOp deviceOp;
