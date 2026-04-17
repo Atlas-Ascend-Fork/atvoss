@@ -16,7 +16,7 @@
 #include "node.h"
 #include "buffer.h"
 
-namespace Atvoss::Reduce::Tile {
+namespace Atvoss::Reduce::Graph {
 
 using Atvoss::Util::Contains_v;
 using Atvoss::Util::Unique_t;
@@ -124,26 +124,34 @@ public:
     using OutParams = Filter_t<IsOutVar, AllParams>;
 };
 
-template <typename ExprList /*TypeList*/, int32_t IsBinaryAcc>
+template <typename ExprList /*TypeList*/, bool IsBinaryAcc>
 struct ReduceAutoDag {
 private:
     using ReduceOpList = Filter_t<ContainsReduceOp, ExprList>;
+    // 依赖reduce输出的expr
     using ReduceRefList = typename FindLocalVarReferences<ReduceOpList, ExprList>::Type;
-    using ReducedList = Concatenate_t<ReduceOpList, ReduceRefList>;
+    using ReduceRefCopyInList = typename InsertCopyIn<ReduceRefList>::Type;
+    using ReducedWithReduceList = Concatenate_t<ReduceOpList, ReduceRefList>;
+    using ReducedWithReduceCopyInList = Concatenate_t<ReduceOpList, ReduceRefCopyInList>;
 
     using PreReduceWithReduceList = Difference_t<ExprList, ReduceRefList>;
-    using PreReduceWoReduceList = Difference_t<ExprList, ReducedList>;
-
     using PreReduceWithReduceCopyInList = typename InsertCopyIn<PreReduceWithReduceList>::Type;
-    using PreReduceWoReduceCopyInList = typename InsertCopyIn<PreReduceWoReduceList>::Type;
+    using PreReduceWoReduceCopyInList = Difference_t<PreReduceWithReduceCopyInList, ReduceOpList>;
 
 public:
     using PreReduceList = typename InsertCopyOut<PreReduceWithReduceCopyInList>::Type;
-    static constexpr auto preReduceBufIds = GenerateBufferIdOrder<PreReduceWoReduceCopyInList, 10>();
+    using ReducedList = typename InsertCopyOut<ReducedWithReduceCopyInList>::Type;
+    using PreReduceBufGen = BufferIdGenerator<PreReduceWoReduceCopyInList, ReduceOpList, IsBinaryAcc>;
+    using ReducedBufGen = BufferIdGenerator<ReducedWithReduceCopyInList, ReduceOpList, IsBinaryAcc>;
+    static constexpr auto preReduceInstance = PreReduceBufGen::GetInstance();
+    static constexpr auto preReduceBufIds = PreReduceBufGen::GetBufferIds();
+    static constexpr size_t preReduceBufSize = PreReduceBufGen::size;
+    static constexpr int32_t preReduceMaxBufId = PreReduceBufGen::maxId;
+    static constexpr uint32_t preReducePongOffset = PreReduceBufGen::offset;
 
 private:
     using PreReduceBase = DagBase<PreReduceWithReduceList>;
-    using ReducedBase = DagBase<ReducedList>;
+    using ReducedBase = DagBase<ReducedWithReduceList>;
     using FullNodeInfo = DagNodeInfo<PreReduceWithReduceList>;
 
     using PreReduceAllParams = typename PreReduceBase::AllParams;
@@ -172,5 +180,5 @@ private:
     }
 };
 
-} // namespace Atvoss::Reduce::Tile
+} // namespace Atvoss::Reduce::Graph
 #endif

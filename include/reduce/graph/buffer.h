@@ -15,7 +15,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace Atvoss::Reduce::Tile {
+namespace Atvoss::Reduce::Graph {
 
 using Atvoss::Util::Append_t;
 using Atvoss::Util::Concatenate_t;
@@ -114,8 +114,9 @@ struct ReleaseCurrentInputs<FreeBufferPool, BufferMap, TypeList<>, ExprList, opP
 };
 
 template <
-    typename ExprList, typename BufferMap, typename FreeBufferPool, std::size_t opPos = 0, std::size_t nextBufId = 0,
-    typename AllocList = TypeList<>, std::size_t Size = Size_v<ExprList>>
+    typename ExprList, typename ReduceOpList, bool IsBinaryAcc, typename BufferMap, typename FreeBufferPool,
+    std::size_t opPos = 0, std::size_t nextBufId = 0, typename AllocList = TypeList<>,
+    std::size_t Size = Size_v<ExprList>>
 struct GenerateBufferIdOrderAux {
 private:
     using CurrentOpAssign = Get_t<ExprList, opPos>;
@@ -130,6 +131,16 @@ private:
         return GetBufferUsage<LHS>::value == BUF_LOCAL_VAR;
     }
 
+    constexpr static bool IsReduceVarBuffer()
+    {
+        return IsBinaryAcc && IsLocalVarBuffer() && IsDirectConnectToReduce<ReduceOpList, CurrentOpAssign>::value;
+    }
+
+    constexpr static bool CanReuseBuffer()
+    {
+        return IsLocalVarBuffer() && !IsReduceVarBuffer();
+    }
+
     constexpr static bool HasFreeBuffer()
     {
         return Size_v<FreeBufferPool> > 0;
@@ -137,7 +148,7 @@ private:
 
     constexpr static int32_t AllocBufferId()
     {
-        if constexpr (IsLocalVarBuffer() && HasFreeBuffer()) {
+        if constexpr (CanReuseBuffer() && HasFreeBuffer()) {
             return Get_t<FreeBufferPool, 0>::value;
         } else {
             return static_cast<int32_t>(nextBufId);
@@ -146,12 +157,16 @@ private:
 
     constexpr static uint32_t GetAllocBufferUsage()
     {
-        return GetBufferUsage<LHS>::value;
+        if constexpr (IsReduceVarBuffer()) {
+            return BUF_REDUCE_VAR;
+        } else {
+            return GetBufferUsage<LHS>::value;
+        }
     }
 
     constexpr static std::size_t GetNextBufId()
     {
-        if constexpr (IsLocalVarBuffer() && HasFreeBuffer()) {
+        if constexpr (CanReuseBuffer() && HasFreeBuffer()) {
             return nextBufId;
         } else {
             return nextBufId + 1;
@@ -160,7 +175,7 @@ private:
 
     constexpr static auto UpdateFreePoolAfterAlloc()
     {
-        if constexpr (IsLocalVarBuffer() && HasFreeBuffer()) {
+        if constexpr (CanReuseBuffer() && HasFreeBuffer()) {
             return typename RemoveFromPool<FreeBufferPool, AllocBufferId()>::Type{};
         } else {
             return FreeBufferPool{};
@@ -176,14 +191,52 @@ private:
 
 public:
     using Type = typename GenerateBufferIdOrderAux<
-        ExprList, NestBufferMap, UpdatedFreePool, opPos + 1, GetNextBufId(), NextAllocList, Size>::Type;
+        ExprList, ReduceOpList, IsBinaryAcc, NestBufferMap, UpdatedFreePool, opPos + 1, GetNextBufId(), NextAllocList,
+        Size>::Type;
 };
 
 template <
-    typename ExprList, typename BufferMap, typename FreeBufferPool, std::size_t nextBufId, typename AllocList,
-    std::size_t Size>
-struct GenerateBufferIdOrderAux<ExprList, BufferMap, FreeBufferPool, Size, nextBufId, AllocList, Size> {
+    typename ExprList, typename ReduceOpList, bool IsBinaryAcc, typename BufferMap, typename FreeBufferPool,
+    std::size_t nextBufId, typename AllocList, std::size_t Size>
+struct GenerateBufferIdOrderAux<
+    ExprList, ReduceOpList, IsBinaryAcc, BufferMap, FreeBufferPool, Size, nextBufId, AllocList, Size> {
     using Type = AllocList;
+};
+
+template <typename AllocList>
+struct MaxBufferId;
+
+template <>
+struct MaxBufferId<TypeList<>> {
+    static constexpr int32_t value = -1;
+};
+
+template <typename First, typename... Rest>
+struct MaxBufferId<TypeList<First, Rest...>> {
+    static constexpr int32_t current = First::bufferId;
+    static constexpr int32_t rest = MaxBufferId<TypeList<Rest...>>::value;
+    static constexpr int32_t value = (current > rest) ? current : rest;
+};
+
+template <typename AllocList, typename SeenIds = TypeList<>>
+struct TempCalcCount;
+
+template <typename SeenIds>
+struct TempCalcCount<TypeList<>, SeenIds> {
+    static constexpr std::size_t value = 0;
+};
+
+template <typename First, typename... Rest, typename SeenIds>
+struct TempCalcCount<TypeList<First, Rest...>, SeenIds> {
+    static constexpr bool isLocalVar = First::bufferUsage == BUF_LOCAL_VAR;
+    static constexpr int32_t bufId = First::bufferId;
+    static constexpr bool alreadySeen = Contains_v<SeenIds, std::integral_constant<int32_t, bufId>>;
+    static constexpr bool shouldCount = isLocalVar && !alreadySeen;
+    using NewSeenIds =
+        std::conditional_t<shouldCount, Append_t<SeenIds, std::integral_constant<int32_t, bufId>>, SeenIds>;
+    static constexpr std::size_t current = shouldCount ? 1 : 0;
+    static constexpr std::size_t rest = TempCalcCount<TypeList<Rest...>, NewSeenIds>::value;
+    static constexpr std::size_t value = current + rest;
 };
 
 template <int32_t bufferId, uint32_t bufferUsage, uint32_t pongOffset>
@@ -207,43 +260,35 @@ struct ExtractBufferId<TypeList<Ts...>, pongOffset> {
     constexpr static const int32_t* Value[2] = {arr[0], arr[1]};
 };
 
-template <typename ExprList, uint32_t pongOffset = 0>
-static constexpr const int32_t* const* GenerateBufferIdOrder()
-{
-    if constexpr (Size_v<ExprList> == 1) {
-        constexpr static int32_t arr[2][2] = {{0, 1}, {2, 1}};
-        constexpr static const int32_t* Value[2] = {arr[0], arr[1]};
-        return Value;
-    } else {
-        using BufferMap = TypeList<>;
-        using FreeBufferPool = TypeList<>;
-        using AllocList =
-            typename GenerateBufferIdOrderAux<ExprList, BufferMap, FreeBufferPool, 0, 0, TypeList<>>::Type;
+template <typename ExprList, typename ReduceOpList = TypeList<>, bool IsBinaryAcc = true>
+struct BufferIdGenerator {
+private:
+    using AllocList = std::conditional_t<
+        Size_v<ExprList> == 1,
+        TypeList<BufferWrapper<0, 1>, BufferWrapper<1, IsBinaryAcc ? BUF_REDUCE_VAR : BUF_LOCAL_VAR>>,
+        typename GenerateBufferIdOrderAux<
+            ExprList, ReduceOpList, IsBinaryAcc, TypeList<>, TypeList<>, 0, 0, TypeList<>>::Type>;
+
+    static constexpr int32_t maxBufferId = MaxBufferId<AllocList>::value;
+    static constexpr uint32_t pongOffset = static_cast<uint32_t>(maxBufferId + 1);
+    static constexpr std::size_t tempCalcCount = TempCalcCount<AllocList>::value;
+
+public:
+    static constexpr size_t size = Size_v<AllocList>;
+    static constexpr int32_t maxId = maxBufferId;
+    static constexpr uint32_t offset = pongOffset;
+    static constexpr std::size_t tempCalcNum = tempCalcCount;
+
+    static constexpr BufferIdGenerator GetInstance()
+    {
+        return BufferIdGenerator{};
+    }
+
+    static constexpr const int32_t* const* GetBufferIds()
+    {
         return ExtractBufferId<AllocList, pongOffset>::Value;
-    }
-}
-
-template <typename ExprList>
-struct GetBufferIds {
-    using AllParams = Params_t<ExprList>;
-    using InParams = Filter_t<IsInParam, AllParams>;
-    using OutParams = Filter_t<IsOutParam, AllParams>;
-    using AllLocalVars = LocalVars_t<ExprList>;
-
-    constexpr static std::size_t paramCount = Size_v<InParams> + Size_v<OutParams>;
-    constexpr static std::size_t outCount = Size_v<OutParams>;
-    constexpr static std::size_t localVarCount = Size_v<AllLocalVars>;
-
-    constexpr static std::size_t GetTempCalcNodeSize()
-    {
-        return localVarCount;
-    }
-
-    constexpr static std::size_t GetBufferNumLevel0()
-    {
-        return paramCount + outCount + localVarCount;
     }
 };
 
-} // namespace Atvoss::Reduce::Tile
+} // namespace Atvoss::Reduce::Graph
 #endif

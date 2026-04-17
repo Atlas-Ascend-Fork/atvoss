@@ -13,7 +13,7 @@
 
 #include <cstdint>
 
-namespace Atvoss::Reduce::Tile {
+namespace Atvoss::Reduce::Graph {
 
 using Atvoss::Util::Any_v;
 using Atvoss::Util::Concatenate_t;
@@ -120,26 +120,20 @@ public:
     static constexpr bool value = currentCheck || rest;
 };
 
+template <typename T, typename = void>
+struct IsReduceOp : std::false_type {};
+
 template <typename T>
-struct ContainsReduceOp : std::false_type {};
+struct IsReduceOp<T, std::enable_if_t<std::is_base_of_v<ReduceOp<typename T::DataType>, T>>> : std::true_type {};
+
+template <typename T>
+struct ContainsReduceOp : IsReduceOp<T> {};
 
 template <template <typename> class Op, typename Inner>
-struct ContainsReduceOp<Op<Inner>> {
-    static constexpr bool value = ContainsReduceOp<Inner>::value;
-};
-
-template <template <auto, typename> class Op, auto Pattern, typename Inner>
-struct ContainsReduceOp<Op<Pattern, Inner>> {
-    static constexpr bool value = ContainsReduceOp<Inner>::value;
-};
+struct ContainsReduceOp<Op<Inner>> : std::bool_constant<IsReduceOp<Op<Inner>>::value> {};
 
 template <typename T, typename U>
-struct ContainsReduceOp<OpAssign<T, U>> {
-    static constexpr bool value = ContainsReduceOp<U>::value;
-};
-
-template <typename T>
-struct ContainsReduceOp<T, std::enable_if_t<std::is_base_of_v<ReduceOp<typename T::DataType>, T>>> : std::true_type {};
+struct ContainsReduceOp<OpAssign<T, U>> : ContainsReduceOp<U> {};
 
 template <typename TargetNode>
 struct ContainsNodeInRefList {
@@ -194,6 +188,6 @@ public:
     // 去重
     using Type = Unique_t<Combined>;
 };
-} // namespace Atvoss::Reduce::Tile
+} // namespace Atvoss::Reduce::Graph
 
 #endif

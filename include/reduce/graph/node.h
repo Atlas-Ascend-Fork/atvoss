@@ -15,7 +15,7 @@
 #include "common.h"
 #include "utils/utility.h"
 
-namespace Atvoss::Reduce::Tile {
+namespace Atvoss::Reduce::Graph {
 
 using Atvoss::Util::Concatenate_t;
 using Atvoss::Util::Difference_t;
@@ -107,5 +107,5 @@ public:
     }
 };
 
-} // namespace Atvoss::Reduce::Tile
+} // namespace Atvoss::Reduce::Graph
 #endif
