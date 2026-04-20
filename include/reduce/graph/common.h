@@ -17,8 +17,10 @@ namespace Atvoss::Reduce::Graph {
 
 using Atvoss::Util::Any_v;
 using Atvoss::Util::Concatenate_t;
+using Atvoss::Util::Contains_v;
 using Atvoss::Util::Difference_t;
 using Atvoss::Util::Filter_t;
+using Atvoss::Util::Map_t;
 using Atvoss::Util::Size_v;
 using Atvoss::Util::Unique_t;
 
@@ -111,13 +113,18 @@ struct IsNodeUsedAfter<TypeList<>, TargetNode, start, current> {
 template <typename First, typename... Rest, typename TargetNode, std::size_t start, std::size_t current>
 struct IsNodeUsedAfter<TypeList<First, Rest...>, TargetNode, start, current> {
 private:
-    static constexpr bool shouldCheck = (current >= start);
+    static constexpr bool needCheck = (current >= start);
     static constexpr bool currentCheck =
-        shouldCheck ? ContainsNodeInExpr<typename First::RhsType, TargetNode>::value : false;
+        needCheck ? ContainsNodeInExpr<typename First::RhsType, TargetNode>::value : false;
     static constexpr bool rest = IsNodeUsedAfter<TypeList<Rest...>, TargetNode, start, current + 1>::value;
 
 public:
     static constexpr bool value = currentCheck || rest;
+};
+
+template <typename Expr>
+struct ExtractResultType {
+    using Type = typename Expr::LhsType;
 };
 
 template <typename T, typename = void>
@@ -150,43 +157,161 @@ struct CheckReduceInput {
 
 template <typename ReduceOpList, typename CurrentOpAssign>
 struct IsDirectConnectToReduce {
-    using CurrentLHS = typename CurrentOpAssign::LhsType;
-    static constexpr bool value = CheckReduceInput<ReduceOpList, CurrentLHS>::value;
+    using CurrentOutput = typename CurrentOpAssign::LhsType;
+    static constexpr bool value = CheckReduceInput<ReduceOpList, CurrentOutput>::value;
 };
 
 template <typename List, typename TargetNode>
-struct FilterLocalVar {
+struct FilterRefLocalVar {
     using Type = Filter_t<ContainsNodeInRefList<TargetNode>::template Type, List>;
 };
 
-template <typename List, typename FullList, typename Result = TypeList<>>
-struct FindLocalVarReferences;
+template <typename List, typename ExcludeList>
+struct FilterNotInExclude {
+    template <typename T>
+    struct NotInExclude : std::bool_constant<!Contains_v<ExcludeList, T>> {};
+    using Type = Filter_t<NotInExclude, List>;
+};
 
-template <typename FullList, typename... ResultTypes>
-struct FindLocalVarReferences<TypeList<>, FullList, TypeList<ResultTypes...>> {
+template <typename Inputs, typename FullList, typename CollectedExprs = TypeList<>, typename Result = TypeList<>>
+struct FindUnhandledInputsExpr;
+
+template <typename Inputs, typename CollectedExprs, typename... ResultTypes>
+struct FindUnhandledInputsExpr<Inputs, TypeList<>, CollectedExprs, TypeList<ResultTypes...>> {
     using Type = TypeList<ResultTypes...>;
 };
 
-template <typename First, typename... Rest, typename FullList, typename... ResultTypes>
-struct FindLocalVarReferences<TypeList<First, Rest...>, FullList, TypeList<ResultTypes...>> {
+template <typename Inputs, typename FirstExpr, typename... RestExpr, typename CollectedExprs, typename... ResultTypes>
+struct FindUnhandledInputsExpr<Inputs, TypeList<FirstExpr, RestExpr...>, CollectedExprs, TypeList<ResultTypes...>> {
+private:
+    using CurrentResults = TypeList<ResultTypes...>;
+    using LHS = typename FirstExpr::LhsType;
+    static constexpr bool IsLocalVarInput = Contains_v<Inputs, LHS>;
+    static constexpr bool NotCollected = !Contains_v<CollectedExprs, FirstExpr>;
+    using NeedAdd = std::conditional_t<IsLocalVarInput && NotCollected, std::true_type, std::false_type>;
+    using NewResult =
+        std::conditional_t<NeedAdd::value, Concatenate_t<CurrentResults, TypeList<FirstExpr>>, CurrentResults>;
+    using NewCollected =
+        std::conditional_t<NeedAdd::value, Concatenate_t<CollectedExprs, TypeList<FirstExpr>>, CollectedExprs>;
+
 public:
-    // 提取当前元素的 LHS 类型
-    using LHS = typename First::LhsType;
+    using Type = typename FindUnhandledInputsExpr<Inputs, TypeList<RestExpr...>, NewCollected, NewResult>::Type;
+};
 
-    // 在 FullList 中过滤出包含该 LHS 的所有语句
-    using DirectReferences = typename FilterLocalVar<FullList, LHS>::Type;
+template <typename ExprList, typename FullList, typename ExcludeList, typename Result = TypeList<>>
+struct FindAllUnhandledInputs;
 
-    // 递归处理 DirectReferences，找到所有后续依赖
-    using RecursiveReferences = typename FindLocalVarReferences<DirectReferences, FullList, TypeList<>>::Type;
+template <typename FullList, typename ExcludeList, typename... ResultTypes>
+struct FindAllUnhandledInputs<TypeList<>, FullList, ExcludeList, TypeList<ResultTypes...>> {
+    using Type = TypeList<ResultTypes...>;
+};
 
-    // 递归处理 Rest，继续处理其他 LocalVar
-    using NextReferences = typename FindLocalVarReferences<TypeList<Rest...>, FullList, TypeList<ResultTypes...>>::Type;
+template <typename First, typename... Rest, typename FullList, typename ExcludeList, typename... ResultTypes>
+struct FindAllUnhandledInputs<TypeList<First, Rest...>, FullList, ExcludeList, TypeList<ResultTypes...>> {
+private:
+    using CurrentResults = TypeList<ResultTypes...>;
+    using Inputs = typename ExtractInputs<typename First::RhsType>::Type;
+    using FilteredInputs = typename FilterNotInExclude<Inputs, ExcludeList>::Type;
+    using NewExprs = typename FindUnhandledInputsExpr<FilteredInputs, FullList, CurrentResults>::Type;
+    using CombinedResult = Concatenate_t<CurrentResults, NewExprs>;
 
-    // 合并：DirectReferences + RecursiveReferences + NextReferences
-    using Combined = Concatenate_t<DirectReferences, Concatenate_t<RecursiveReferences, NextReferences>>;
+public:
+    using Type = typename FindAllUnhandledInputs<TypeList<Rest...>, FullList, ExcludeList, CombinedResult>::Type;
+};
 
-    // 去重
+template <typename VarList, typename FullList, typename CollectedExprs = TypeList<>>
+struct FindOutputRefsExpr;
+
+template <typename FullList, typename CollectedExprs>
+struct FindOutputRefsExpr<TypeList<>, FullList, CollectedExprs> {
+    using Type = TypeList<>;
+};
+
+template <typename FirstVar, typename... RestVars, typename FullList, typename CollectedExprs>
+struct FindOutputRefsExpr<TypeList<FirstVar, RestVars...>, FullList, CollectedExprs> {
+private:
+    using CurrentRefs = typename FilterRefLocalVar<FullList, FirstVar>::Type;
+    using NewCollected = Concatenate_t<CollectedExprs, CurrentRefs>;
+    using RestRefs = typename FindOutputRefsExpr<TypeList<RestVars...>, FullList, NewCollected>::Type;
+    using Combined = Concatenate_t<CurrentRefs, RestRefs>;
+
+public:
     using Type = Unique_t<Combined>;
+};
+
+template <typename OtherInputsList, typename FullList, typename ExcludeList, typename Result = TypeList<>>
+struct CollectOtherInputRefs;
+
+template <typename FullList, typename ExcludeList, typename... ResultTypes>
+struct CollectOtherInputRefs<TypeList<>, FullList, ExcludeList, TypeList<ResultTypes...>> {
+    using Type = TypeList<ResultTypes...>;
+};
+
+template <typename First, typename... Rest, typename FullList, typename ExcludeList, typename... ResultTypes>
+struct CollectOtherInputRefs<TypeList<First, Rest...>, FullList, ExcludeList, TypeList<ResultTypes...>> {
+private:
+    using CurrentResults = TypeList<ResultTypes...>;
+    using Inputs = typename ExtractInputs<typename First::RhsType>::Type;
+    using FilteredInputs = typename FilterNotInExclude<Inputs, ExcludeList>::Type;
+    using InputsDefExprs = typename FindUnhandledInputsExpr<FilteredInputs, FullList, CurrentResults>::Type;
+
+    // 单输出多引用场景
+    using Output = typename First::LhsType;
+    using OutputRefExprs = typename FindOutputRefsExpr<TypeList<Output>, FullList, CurrentResults>::Type;
+    using NodeInOutExprs = Concatenate_t<InputsDefExprs, OutputRefExprs>;
+    using Combined = Concatenate_t<NodeInOutExprs, CurrentResults>;
+    using ResultList = Map_t<ExtractResultType, NodeInOutExprs>;
+    using NewExclude = Concatenate_t<ExcludeList, ResultList>;
+    using NewRest = Unique_t<Concatenate_t<NodeInOutExprs, TypeList<Rest...>>>;
+
+public:
+    using Type = typename CollectOtherInputRefs<NewRest, FullList, NewExclude, Combined>::Type;
+};
+
+template <typename ExprList, typename FullList, typename ExcludeList, typename ResultList = TypeList<>>
+struct FindLocalVarReferences;
+
+template <typename FullList, typename ExcludeList, typename... ResultTypes>
+struct FindLocalVarReferences<TypeList<>, FullList, ExcludeList, TypeList<ResultTypes...>> {
+    using Type = TypeList<ResultTypes...>;
+    using OtherInputs = TypeList<>;
+};
+
+template <typename First, typename... Rest, typename FullList, typename ExcludeList, typename... ResultTypes>
+struct FindLocalVarReferences<TypeList<First, Rest...>, FullList, ExcludeList, TypeList<ResultTypes...>> {
+public:
+    using CurrentResults = TypeList<ResultTypes...>;
+    using LHS = typename First::LhsType;
+    using DirectReferences = typename FilterRefLocalVar<FullList, LHS>::Type;
+    using NewExclude = Concatenate_t<ExcludeList, TypeList<LHS>>;
+
+    using DirectOtherInputs = typename FindAllUnhandledInputs<DirectReferences, FullList, NewExclude>::Type;
+    using NewExcludeForRecursive = Concatenate_t<NewExclude, Map_t<ExtractResultType, DirectOtherInputs>>;
+
+    using RecursiveRefResult = FindLocalVarReferences<DirectReferences, FullList, NewExcludeForRecursive>;
+    using RecursiveResult = typename RecursiveRefResult::Type;
+    using RecursiveOtherInputs = typename RecursiveRefResult::OtherInputs;
+
+    using DirectAndRecursiveOtherInputs = Concatenate_t<DirectOtherInputs, RecursiveOtherInputs>;
+    using NewExcludeWithOtherInputs =
+        Concatenate_t<NewExcludeForRecursive, Map_t<ExtractResultType, DirectAndRecursiveOtherInputs>>;
+
+    // 多个Reduce场景
+    using NextRefResult =
+        FindLocalVarReferences<TypeList<Rest...>, FullList, NewExcludeWithOtherInputs, CurrentResults>;
+    using NextResult = typename NextRefResult::Type;
+    using NextOtherInputs = typename NextRefResult::OtherInputs;
+
+    using CombinedOtherInputs = Concatenate_t<DirectAndRecursiveOtherInputs, NextOtherInputs>;
+
+    using RefsSoFar = Concatenate_t<DirectReferences, RecursiveResult, NextResult>;
+
+    // Reduce后计算存在多输入表达式的场景
+    using OtherInputRefs = typename CollectOtherInputRefs<
+        CombinedOtherInputs, FullList, NewExcludeWithOtherInputs, Concatenate_t<CurrentResults, RefsSoFar>>::Type;
+    using CombinedRefs = Concatenate_t<RefsSoFar, CombinedOtherInputs, OtherInputRefs>;
+    using Type = Unique_t<CombinedRefs>;
+    using OtherInputs = Unique_t<CombinedOtherInputs>;
 };
 } // namespace Atvoss::Reduce::Graph
 
