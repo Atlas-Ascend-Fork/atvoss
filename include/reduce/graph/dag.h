@@ -13,12 +13,12 @@
 
 #include "expression/expr_template.h"
 #include "operators/tensor_expression.h"
-#include "node.h"
 #include "buffer.h"
 
 namespace Atvoss::Reduce::Graph {
 
 using Atvoss::Util::Contains_v;
+using Atvoss::Util::Map;
 using Atvoss::Util::Unique_t;
 
 template <
@@ -128,8 +128,9 @@ template <typename ExprList /*TypeList*/, bool IsBinaryAcc>
 struct ReduceAutoDag {
 private:
     using ReduceOpList = Filter_t<ContainsReduceOp, ExprList>;
+    using ReduceOpResList = typename Map<ExtractResultType, ReduceOpList>::Type;
     // 依赖reduce输出的expr
-    using ReduceRefList = typename FindLocalVarReferences<ReduceOpList, ExprList>::Type;
+    using ReduceRefList = typename FindLocalVarReferences<ReduceOpList, ExprList, ReduceOpResList>::Type;
     using ReduceRefCopyInList = typename InsertCopyIn<ReduceRefList>::Type;
     using ReducedWithReduceList = Concatenate_t<ReduceOpList, ReduceRefList>;
     using ReducedWithReduceCopyInList = Concatenate_t<ReduceOpList, ReduceRefCopyInList>;
@@ -142,17 +143,13 @@ public:
     using PreReduceList = typename InsertCopyOut<PreReduceWithReduceCopyInList>::Type;
     using ReducedList = typename InsertCopyOut<ReducedWithReduceCopyInList>::Type;
     using PreReduceBufGen = BufferIdGenerator<PreReduceWoReduceCopyInList, ReduceOpList, IsBinaryAcc>;
-    using ReducedBufGen = BufferIdGenerator<ReducedWithReduceCopyInList, ReduceOpList, IsBinaryAcc>;
-    static constexpr auto preReduceInstance = PreReduceBufGen::GetInstance();
-    static constexpr auto preReduceBufIds = PreReduceBufGen::GetBufferIds();
-    static constexpr size_t preReduceBufSize = PreReduceBufGen::size;
-    static constexpr int32_t preReduceMaxBufId = PreReduceBufGen::maxId;
-    static constexpr uint32_t preReducePongOffset = PreReduceBufGen::offset;
+    using ReducedBufGen = BufferIdGenerator<ReducedWithReduceCopyInList, ReduceOpList, false>;
+    static constexpr auto PreReduceBufIds = PreReduceBufGen::GetBufferIds();
+    static constexpr auto ReducedBufIds = ReducedBufGen::GetBufferIds();
 
 private:
     using PreReduceBase = DagBase<PreReduceWithReduceList>;
     using ReducedBase = DagBase<ReducedWithReduceList>;
-    using FullNodeInfo = DagNodeInfo<PreReduceWithReduceList>;
 
     using PreReduceAllParams = typename PreReduceBase::AllParams;
     using PreReduceInParams = typename PreReduceBase::InParams;
@@ -161,22 +158,34 @@ private:
     using ReducedInParams = typename ReducedBase::InParams;
     using ReducedOutParams = typename ReducedBase::OutParams;
 
-    template <typename NodeInfo>
+    template <bool IsPre>
     __host_aicore__ constexpr static std::size_t GetMTE2Num()
     {
-        return NodeInfo::GetInputNum();
+        if constexpr (IsPre) {
+            return Size_v<PreReduceInParams>;
+        } else {
+            return Size_v<ReducedInParams>;
+        }
     }
 
-    template <typename NodeInfo>
+    template <bool IsPre>
     __host_aicore__ constexpr static std::size_t GetMTE3Num()
     {
-        return NodeInfo::GetOutputNum();
+        if constexpr (IsPre) {
+            return Size_v<PreReduceOutParams>;
+        } else {
+            return Size_v<ReducedOutParams>;
+        }
     }
 
-    template <typename NodeInfo>
-    __host_aicore__ constexpr static std::size_t GetTempBufNum()
+    template <bool IsPre>
+    __host_aicore__ constexpr static int32_t GetTempBufNum()
     {
-        return NodeInfo::GetTempCalcNodeSize();
+        if constexpr (IsPre) {
+            return PreReduceBufGen::GetTempCalcCount();
+        } else {
+            return ReducedBufGen::GetTempCalcCount();
+        }
     }
 };
 
