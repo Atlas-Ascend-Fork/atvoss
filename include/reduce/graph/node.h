@@ -30,14 +30,6 @@ static constexpr const T& Max(const T& a, const T& b)
     return a > b ? a : b;
 }
 
-template <typename ExprList, std::size_t pos>
-struct CanRelease {
-    template <typename Node>
-    struct Type {
-        static constexpr bool value = IsNodeUsedAfter<ExprList, Node, pos + 1, 0>::value == false;
-    };
-};
-
 struct DagMaxAliveInfo {
     std::size_t maxAliveNodes = 0;
     std::size_t maxTempCalcNodes = 0;
