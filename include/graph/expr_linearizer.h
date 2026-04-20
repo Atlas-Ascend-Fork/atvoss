@@ -14,7 +14,7 @@
 
 #include "expression/expr_template.h"
 #include "utils/utility.h"
-#include "expr_remove_redundant_cast.h"
+#include "expr_cast_eliminate.h"
 
 namespace Atvoss {
 namespace Detail {
