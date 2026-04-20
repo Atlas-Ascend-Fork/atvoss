@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef __ATVOSS_GRAPH_FLATTEN_EXPR_RECURSIVELY_H__
-#define __ATVOSS_GRAPH_FLATTEN_EXPR_RECURSIVELY_H__
+#ifndef ATVOSS_GRAPH_EXPR_FLATTEN_H
+#define ATVOSS_GRAPH_EXPR_FLATTEN_H
 
 #include "utils/utility.h"
 #include "expression/expr_template.h"
@@ -199,4 +199,4 @@ constexpr auto FlattenExprRecursively(Expr expr)
 /*--------------------------------------------------------------------------------------------------------------------*/
 } // namespace Atvoss::Graph
 
-#endif // __ATVOSS_GRAPH_FLATTEN_EXPR_RECURSIVELY_H__
+#endif // ATVOSS_GRAPH_EXPR_FLATTEN_H
