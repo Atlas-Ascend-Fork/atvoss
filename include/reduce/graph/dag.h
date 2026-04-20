@@ -13,21 +13,33 @@
 
 #include "expression/expr_template.h"
 #include "operators/tensor_expression.h"
-#include "node.h"
 #include "buffer.h"
 
 namespace Atvoss::Reduce::Graph {
 
 using Atvoss::Util::Contains_v;
+using Atvoss::Util::Map;
 using Atvoss::Util::Unique_t;
+
+template <typename T>
+static constexpr const T& Max(const T& a, const T& b)
+{
+    return a > b ? a : b;
+}
+
+template <typename T>
+static constexpr const T& Min(const T& a, const T& b)
+{
+    return a < b ? a : b;
+}
 
 template <
     typename ExprList, typename ProcessedParams = TypeList<>, std::size_t pos = 0, std::size_t Size = Size_v<ExprList>>
 struct InsertCopyIn {
 private:
     using CurrentOpAssign = Get_t<ExprList, pos>;
-    using RHS = typename CurrentOpAssign::RhsType;
-    using CurrentInputs = Unique_t<typename ExtractInputs<RHS>::Type>;
+    using InputsType = typename CurrentOpAssign::RhsType;
+    using CurrentInputs = Unique_t<typename ExtractInputs<InputsType>::Type>;
 
     template <typename InputNode>
     struct IsProcessed {
@@ -40,7 +52,7 @@ private:
     };
 
     template <typename InputNode>
-    struct ShouldInsertCopyIn {
+    struct NeedInsertCopyIn {
         static constexpr bool value = IsInParam<InputNode>::value && !IsProcessed<InputNode>::value;
     };
 
@@ -52,7 +64,7 @@ private:
     template <size_t N, typename T, ParamUsage U, size_t RN>
     struct InsertCopyInIfNeeded<Param<N, T, U, RN>> {
         using Type = std::conditional_t<
-            ShouldInsertCopyIn<Param<N, T, U, RN>>::value,
+            NeedInsertCopyIn<Param<N, T, U, RN>>::value,
             TypeList<OpAssign<Param<N, T, U, RN>, OpCopyIn<Param<N, T, U, RN>>>>, TypeList<>>;
     };
 
@@ -128,8 +140,9 @@ template <typename ExprList /*TypeList*/, bool IsBinaryAcc>
 struct ReduceAutoDag {
 private:
     using ReduceOpList = Filter_t<ContainsReduceOp, ExprList>;
+    using ReduceOpResList = typename Map<ExtractResultType, ReduceOpList>::Type;
     // 依赖reduce输出的expr
-    using ReduceRefList = typename FindLocalVarReferences<ReduceOpList, ExprList>::Type;
+    using ReduceRefList = typename FindLocalVarReferences<ReduceOpList, ExprList, ReduceOpResList>::Type;
     using ReduceRefCopyInList = typename InsertCopyIn<ReduceRefList>::Type;
     using ReducedWithReduceList = Concatenate_t<ReduceOpList, ReduceRefList>;
     using ReducedWithReduceCopyInList = Concatenate_t<ReduceOpList, ReduceRefCopyInList>;
@@ -142,17 +155,13 @@ public:
     using PreReduceList = typename InsertCopyOut<PreReduceWithReduceCopyInList>::Type;
     using ReducedList = typename InsertCopyOut<ReducedWithReduceCopyInList>::Type;
     using PreReduceBufGen = BufferIdGenerator<PreReduceWoReduceCopyInList, ReduceOpList, IsBinaryAcc>;
-    using ReducedBufGen = BufferIdGenerator<ReducedWithReduceCopyInList, ReduceOpList, IsBinaryAcc>;
-    static constexpr auto preReduceInstance = PreReduceBufGen::GetInstance();
-    static constexpr auto preReduceBufIds = PreReduceBufGen::GetBufferIds();
-    static constexpr size_t preReduceBufSize = PreReduceBufGen::size;
-    static constexpr int32_t preReduceMaxBufId = PreReduceBufGen::maxId;
-    static constexpr uint32_t preReducePongOffset = PreReduceBufGen::offset;
+    using ReducedBufGen = BufferIdGenerator<ReducedWithReduceCopyInList, ReduceOpList, false>;
+    static constexpr auto PreReduceBufIds = PreReduceBufGen::GetBufferIds();
+    static constexpr auto ReducedBufIds = ReducedBufGen::GetBufferIds();
 
 private:
     using PreReduceBase = DagBase<PreReduceWithReduceList>;
     using ReducedBase = DagBase<ReducedWithReduceList>;
-    using FullNodeInfo = DagNodeInfo<PreReduceWithReduceList>;
 
     using PreReduceAllParams = typename PreReduceBase::AllParams;
     using PreReduceInParams = typename PreReduceBase::InParams;
@@ -161,22 +170,83 @@ private:
     using ReducedInParams = typename ReducedBase::InParams;
     using ReducedOutParams = typename ReducedBase::OutParams;
 
-    template <typename NodeInfo>
+public:
+    template <bool IsPre>
     __host_aicore__ constexpr static std::size_t GetMTE2Num()
     {
-        return NodeInfo::GetInputNum();
+        if constexpr (IsPre) {
+            return Size_v<PreReduceInParams>;
+        } else {
+            return Size_v<ReducedInParams>;
+        }
     }
 
-    template <typename NodeInfo>
+    template <bool IsPre>
     __host_aicore__ constexpr static std::size_t GetMTE3Num()
     {
-        return NodeInfo::GetOutputNum();
+        if constexpr (IsPre) {
+            return Size_v<PreReduceOutParams>;
+        } else {
+            return Size_v<ReducedOutParams>;
+        }
     }
 
-    template <typename NodeInfo>
-    __host_aicore__ constexpr static std::size_t GetTempBufNum()
+    template <bool IsPre>
+    __host_aicore__ constexpr static int32_t GetTempBufNum()
     {
-        return NodeInfo::GetTempCalcNodeSize();
+        if constexpr (IsPre) {
+            return PreReduceBufGen::GetTempCalcCount();
+        } else {
+            return ReducedBufGen::GetTempCalcCount();
+        }
+    }
+
+    template <bool IsPre>
+    __host_aicore__ constexpr static int32_t GetInputMaxDTypeSize()
+    {
+        if constexpr (IsPre) {
+            return PreReduceBufGen::GetInputMaxDTypeSize();
+        } else {
+            return ReducedBufGen::GetInputMaxDTypeSize();
+        }
+    }
+
+    template <bool IsPre>
+    __host_aicore__ constexpr static int32_t GetInputMinDTypeSize()
+    {
+        if constexpr (IsPre) {
+            return PreReduceBufGen::GetInputMinDTypeSize();
+        } else {
+            return ReducedBufGen::GetInputMinDTypeSize();
+        }
+    }
+
+    template <bool IsPre>
+    __host_aicore__ constexpr static int32_t GetMaxDTypeSize()
+    {
+        if constexpr (IsPre) {
+            return Max(
+                Max(PreReduceBufGen::GetInputMaxDTypeSize(), PreReduceBufGen::GetOutputMaxDTypeSize()),
+                PreReduceBufGen::GetLocalVarMaxDTypeSize());
+        } else {
+            return Max(
+                Max(ReducedBufGen::GetInputMaxDTypeSize(), ReducedBufGen::GetOutputMaxDTypeSize()),
+                ReducedBufGen::GetLocalVarMaxDTypeSize());
+        }
+    }
+
+    template <bool IsPre>
+    __host_aicore__ constexpr static int32_t GetMinDTypeSize()
+    {
+        if constexpr (IsPre) {
+            return Min(
+                Min(PreReduceBufGen::GetInputMinDTypeSize(), PreReduceBufGen::GetOutputMinDTypeSize()),
+                PreReduceBufGen::GetLocalVarMinDTypeSize());
+        } else {
+            return Min(
+                Min(ReducedBufGen::GetInputMinDTypeSize(), ReducedBufGen::GetOutputMinDTypeSize()),
+                ReducedBufGen::GetLocalVarMinDTypeSize());
+        }
     }
 };
 
