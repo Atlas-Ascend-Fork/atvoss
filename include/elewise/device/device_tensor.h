@@ -14,7 +14,7 @@
 #include <numeric>
 #include "acl/acl.h"
 #include "utils/tensor.h"
-namespace Atvoss {
+namespace Atvoss::Ele {
 
 template <typename T>
 class DeviceTensor {
