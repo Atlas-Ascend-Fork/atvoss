@@ -13,12 +13,13 @@
 #include "tiling/platform/platform_ascendc.h"
 #include <map>
 namespace Atvoss {
-struct OpCompileInfo {
+struct OpPlatformInfo {
     uint64_t vectorCoreNum = 0;
     uint64_t ubSize = 0;
     uint64_t cacheLineSize = 0;
     uint64_t ubBlockSize = 0;
-    OpCompileInfo(uint64_t a, uint64_t b, uint64_t c, uint64_t d)
+    OpPlatformInfo() = default;
+    OpPlatformInfo(uint64_t a, uint64_t b, uint64_t c, uint64_t d)
     {
         this->vectorCoreNum = a;
         this->ubBlockSize = d;
@@ -27,7 +28,7 @@ struct OpCompileInfo {
     }
 };
 
-inline OpCompileInfo GetOpCompileInfo()
+inline OpPlatformInfo GetOpPlatformInfo()
 {
     const auto& platformInfoMgr = platform_ascendc::PlatformAscendCManager::GetInstance();
     if (platformInfoMgr == nullptr) {
@@ -35,7 +36,7 @@ inline OpCompileInfo GetOpCompileInfo()
         return {0, 0, 0, 0};
     }
     auto soc = platformInfoMgr->GetSocVersion();
-    static const std::map<platform_ascendc::SocVersion, OpCompileInfo> compileInfoMap = {
+    static const std::map<platform_ascendc::SocVersion, OpPlatformInfo> compileInfoMap = {
         {platform_ascendc::SocVersion::ASCEND910B, {48, 196352, 256, 32}},
         {platform_ascendc::SocVersion::ASCEND310B, {1, 262144, 256, 32}},
         {platform_ascendc::SocVersion::ASCEND310P, {8, 262144, 256, 32}},
@@ -43,7 +44,7 @@ inline OpCompileInfo GetOpCompileInfo()
 
     auto findRes = compileInfoMap.find(soc);
     if (findRes != compileInfoMap.cend()) {
-        OpCompileInfo compileInfo = findRes->second;
+        OpPlatformInfo compileInfo = findRes->second;
         if (soc == platform_ascendc::SocVersion::ASCEND910B) {
             compileInfo.vectorCoreNum = platformInfoMgr->GetCoreNumAiv();
             uint64_t ubSize = compileInfo.ubSize;
