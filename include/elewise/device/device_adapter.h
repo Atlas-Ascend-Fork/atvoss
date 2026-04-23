@@ -41,7 +41,7 @@ __global__ __aicore__ void KernelCustom(OpParam cfg, ArgTuple args)
         cfg, args, AscendC::Std::make_index_sequence<AscendC::Std::tuple_size_v<ArgTuple>>{});
 }
 
-namespace Atvoss {
+namespace Atvoss::Ele {
 
 template <typename T>
 auto TransformArgs(T&& value)
@@ -277,5 +277,5 @@ private:
     }
 };
 
-} // namespace Atvoss
+} // namespace Atvoss::Ele
 #endif
