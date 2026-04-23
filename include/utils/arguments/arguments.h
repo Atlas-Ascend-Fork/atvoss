@@ -30,6 +30,37 @@ constexpr auto MakeAttr(Key key, Value value)
     return AttrMap<Key, Value>{key, value};
 }
 
+/*!
+ * \brief 按字符串属性名查找属性值（运行期匹配）
+ * \param[in] attrs 属性tuple
+ * \param[in] keyName 属性名字符串
+ * \return 找到返回属性值指针，未找到返回 nullptr
+ */
+template <typename AttrTuple, size_t Index = 0>
+auto* FindAttrByName(AttrTuple& attrs, const char* keyName)
+{
+    constexpr size_t tupleSize = std::tuple_size_v<AttrTuple>;
+
+    if constexpr (Index >= tupleSize) {
+        return nullptr;
+    } else {
+        auto& attr = std::get<Index>(attrs);
+        using AttrType = std::decay_t<decltype(attr)>;
+        using KeyType = typename AttrType::Key;
+
+        // 如果 key 是 const char* 或可以比较的字符串类型
+        if constexpr (
+            std::is_same_v<KeyType, const char*> || std::is_same_v<std::decay_t<KeyType>, std::string> ||
+            std::is_convertible_v<KeyType, std::string>) {
+            if (std::string(attr.key) == std::string(keyName)) {
+                return &attr.value;
+            }
+        }
+
+        return FindAttrByName<AttrTuple, Index + 1>(attrs, keyName);
+    }
+}
+
 template <typename Tuple1, typename Tuple2>
 struct ConcatTuples;
 
