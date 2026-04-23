@@ -11,7 +11,7 @@
 #ifndef ATVOSS_TILING_H
 #define ATVOSS_TILING_H
 
-namespace Atvoss {
+namespace Atvoss::Ele {
 
 template <typename KernelOp, typename Args>
 bool CalculateTiling(const Args& args, typename KernelOp::ScheduleCfgClz& cfg)
@@ -29,6 +29,6 @@ bool CalculateTiling(const Args& args, typename KernelOp::ScheduleCfgClz& cfg)
     return true;
 }
 
-} // namespace Atvoss
+} // namespace Atvoss::Ele
 
 #endif // ATVOSS_TILING_H
