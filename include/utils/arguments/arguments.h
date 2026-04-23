@@ -14,7 +14,9 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <cstring>
 #include "utils/utility.h"
+#include "utils/tensor/tensor.h"
 
 namespace Atvoss {
 
@@ -28,6 +30,26 @@ template <typename Key, typename Value>
 constexpr auto MakeAttr(Key key, Value value)
 {
     return AttrMap<Key, Value>{key, value};
+}
+
+/*!
+ * \brief 按字符串属性名查找属性值（运行期匹配）
+ * \param[in] attrs 属性tuple
+ * \param[in] keyName 属性名字符串
+ * \return 找到返回属性值指针，未找到返回 nullptr
+ */
+template <typename AttrTuple, size_t Index = 0>
+auto FindAttrByName(AttrTuple& attrs, const char* keyName) -> decltype(&std::get<0>(attrs).value)
+{
+    if constexpr (Index >= std::tuple_size_v<std::decay_t<AttrTuple>>) {
+        return nullptr;
+    } else {
+        auto& attr = std::get<Index>(attrs);
+        if (strcmp(attr.key, keyName) == 0) {
+            return &attr.value;
+        }
+        return FindAttrByName<AttrTuple, Index + 1>(attrs, keyName);
+    }
 }
 
 template <typename Tuple1, typename Tuple2>
