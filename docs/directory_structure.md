@@ -26,7 +26,7 @@ include/
 │
 ├── common/                  # 公共工具和类型定义
 │   ├── arch.h               # 软件架构平台定义
-│   ├── compile_info.h       # 编译信息
+│   ├── platform_info.h      # 编译信息
 │   └── type_def.h           # 类型定义
 │
 ├── expression/              # 表达式系统
