@@ -13,7 +13,7 @@
 #include <functional>
 #include "acl/acl.h"
 #include "device_tensor.h"
-#include "common/compile_info.h"
+#include "common/platform_info.h"
 #include "utils/utility.h"
 #include "utils/arguments/arguments.h"
 #include "tiling.h"
