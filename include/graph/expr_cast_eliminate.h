@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ATVOSS_EXPR_REMOVE_CAST_H
-#define ATVOSS_EXPR_REMOVE_CAST_H
+#ifndef ATVOSS_GRAPH_EXPR_CAST_ELIMINATE_H
+#define ATVOSS_GRAPH_EXPR_CAST_ELIMINATE_H
 
 #include "utils/layout/layout.h"
 #include "utils/patterns.h"
@@ -262,4 +262,4 @@ __host_aicore__ constexpr decltype(auto) RemoveRedundantCast()
 
 } // namespace Atvoss::Graph
 
-#endif // ATVOSS_EXPR_REMOVE_CAST_H
+#endif // ATVOSS_GRAPH_EXPR_CAST_ELIMINATE_H
