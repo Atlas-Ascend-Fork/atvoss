@@ -967,6 +967,47 @@ public:
     static constexpr size_t size = sizeof...(Items);
 };
 /*--------------------------------------------------------------------------------------------------------------------*/
+template <template <typename, typename> class Less, typename List>
+struct Sort;
+
+template <template <typename, typename> class Less>
+struct Sort<Less, TypeList<>> {
+    using Type = TypeList<>;
+};
+
+template <template <typename, typename> class Less, typename Head>
+struct Sort<Less, TypeList<Head>> {
+    using Type = TypeList<Head>;
+};
+
+template <template <typename, typename> class Less, typename Head, typename... Tail>
+struct Sort<Less, TypeList<Head, Tail...>> {
+private:
+    using SortedTail = typename Sort<Less, TypeList<Tail...>>::Type;
+
+    template <typename Sorted, typename Item>
+    struct Insert;
+
+    template <typename Item>
+    struct Insert<TypeList<>, Item> {
+        using Type = TypeList<Item>;
+    };
+
+    template <typename SHead, typename... STail, typename Item>
+    struct Insert<TypeList<SHead, STail...>, Item> {
+        static constexpr bool insertHere = Less<Item, SHead>::value;
+        using Type = std::conditional_t<
+            insertHere, TypeList<Item, SHead, STail...>,
+            Concatenate_t<TypeList<SHead>, typename Insert<TypeList<STail...>, Item>::Type>>;
+    };
+
+public:
+    using Type = typename Insert<SortedTail, Head>::Type;
+};
+
+template <template <typename, typename> class Less, typename List>
+using Sort_t = typename Sort<Less, List>::Type;
+/*--------------------------------------------------------------------------------------------------------------------*/
 
 } // namespace Atvoss::Util
 #endif
