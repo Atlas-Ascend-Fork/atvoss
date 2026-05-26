@@ -12,7 +12,20 @@
 #define ATVOSS_PLATFORM_INFO_H
 #include "tiling/platform/platform_ascendc.h"
 #include <map>
+#include <cstdint>
+
 namespace Atvoss {
+#if !defined(__ATVOSS_HOST_ONLY__)
+__aicore__ inline constexpr uint32_t GetVRegSize()
+{
+#if __CCE_AICORE__ == 310
+    return AscendC::VECTOR_REG_WIDTH;
+#else
+    return 256U;
+#endif
+}
+#endif
+
 struct OpPlatformInfo {
     uint64_t vectorCoreNum = 0;
     uint64_t ubSize = 0;

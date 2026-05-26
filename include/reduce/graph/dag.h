@@ -99,22 +99,27 @@ struct InsertCopyIn<ExprList, ProcessedParams, Size, Size> {
     using Type = TypeList<>;
 };
 
-template <typename ExprList, std::size_t pos = 0, std::size_t Size = Size_v<ExprList>>
+template <typename ExprList, bool SkipReduceOut = false, std::size_t pos = 0, std::size_t Size = Size_v<ExprList>>
 struct InsertCopyOut {
 private:
     using CurrentOpAssign = Get_t<ExprList, pos>;
     using Output = typename CurrentOpAssign::LhsType;
+    using RhsType = typename CurrentOpAssign::RhsType;
 
-    using CopyOutOp =
-        std::conditional_t<IsOutParam<Output>::value, TypeList<OpAssign<Output, OpCopyOut<Output>>>, TypeList<>>;
+    // SkipReduceOut=true:  跳过 ReduceOp 的输出，不为其插入 CopyOutOp (PreReduceList)
+    // SkipReduceOut=false: 所有 OutParam 都插入 CopyOutOp (ReducedList)
+    using CopyOutOp = std::conditional_t<
+        IsOutParam<Output>::value && (!SkipReduceOut || !IsReduceOp<RhsType>::value),
+        TypeList<OpAssign<Output, OpCopyOut<Output>>>,
+        TypeList<>>;
 
 public:
-    using Type =
-        Concatenate_t<TypeList<CurrentOpAssign>, CopyOutOp, typename InsertCopyOut<ExprList, pos + 1, Size>::Type>;
+    using Type = Concatenate_t<
+        TypeList<CurrentOpAssign>, CopyOutOp, typename InsertCopyOut<ExprList, SkipReduceOut, pos + 1, Size>::Type>;
 };
 
-template <typename ExprList, std::size_t Size>
-struct InsertCopyOut<ExprList, Size, Size> {
+template <typename ExprList, bool SkipReduceOut, std::size_t Size>
+struct InsertCopyOut<ExprList, SkipReduceOut, Size, Size> {
     using Type = TypeList<>;
 };
 
@@ -198,7 +203,7 @@ private:
     using PreReduceWoReduceCopyInList = Difference_t<PreReduceWithReduceCopyInList, ReduceOpList>;
 
 public:
-    using PreReduceList = typename InsertCopyOut<PreReduceWithReduceCopyInList>::Type;
+    using PreReduceList = typename InsertCopyOut<PreReduceWithReduceCopyInList, true>::Type;
     using ReducedList = typename InsertCopyOut<ReducedWithReduceCopyInList>::Type;
     using PreReduceBufGen = BufferIdGenerator<PreReduceWoReduceCopyInList, ReduceOpList, IsBinaryAcc>;
     using ReducedBufGen = BufferIdGenerator<ReducedWithReduceCopyInList, ReduceOpList, false>;
