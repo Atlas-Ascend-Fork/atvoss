@@ -31,6 +31,7 @@ struct OpPlatformInfo {
     uint64_t ubSize = 0;
     uint64_t cacheLineSize = 0;
     uint64_t ubBlockSize = 0;
+    OpPlatformInfo() = default;
     OpPlatformInfo(uint64_t vectorCoreNum, uint64_t ubSize, uint64_t cacheLineSize, uint64_t ubBlockSize)
     {
         this->vectorCoreNum = vectorCoreNum;

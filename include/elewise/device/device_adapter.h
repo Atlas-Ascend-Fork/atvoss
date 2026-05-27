@@ -17,7 +17,7 @@
 #include "utils/arguments/arguments.h"
 #include "utils/expr_deriver.h"
 #include "utils/tensor/device_tensor.h"
-#include "utils/tiling.h"
+#include "tiling.h"
 
 #define CHECK_ACL(x)                                                                        \
     do {                                                                                    \
@@ -106,7 +106,7 @@ public:
 
         // Step 3: calc dynamic param （tiling / worksapce）
         OpParam opParam;
-        if (!Atvoss::CalculateTiling<KernelOp>(arguments, opParam)) {
+        if (!CalculateTiling<KernelOp>(arguments, opParam)) {
             printf("[ERROR]: [Atvoss][Ele][Device] CalculateTiling failed!\n");
             return -1;
         }
