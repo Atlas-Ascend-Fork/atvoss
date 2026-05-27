@@ -15,7 +15,7 @@
 
 namespace Atvoss {
 template <typename T>
-__aicore__ inline constexpr T CeilDiv(T a, T b)
+__host_aicore__ inline constexpr T CeilDiv(T a, T b)
 {
     using type = typename std::conditional<
         sizeof(T) == sizeof(uint8_t) || sizeof(T) == sizeof(uint16_t), uint32_t, uint64_t>::type;
@@ -24,7 +24,7 @@ __aicore__ inline constexpr T CeilDiv(T a, T b)
 }
 
 template <typename T>
-__aicore__ inline constexpr T CeilAlign(T a, T b)
+__host_aicore__ inline constexpr T CeilAlign(T a, T b)
 {
     using type = typename std::conditional<
         sizeof(T) == sizeof(uint8_t) || sizeof(T) == sizeof(uint16_t), uint32_t, uint64_t>::type;
@@ -33,13 +33,13 @@ __aicore__ inline constexpr T CeilAlign(T a, T b)
 }
 
 template <typename T>
-__aicore__ inline constexpr T FloorDiv(T a, T b)
+__host_aicore__ inline constexpr T FloorDiv(T a, T b)
 {
     return a / b;
 }
 
 template <typename T>
-__aicore__ inline constexpr T FloorAlign(T a, T b)
+__host_aicore__ inline constexpr T FloorAlign(T a, T b)
 {
     using type = typename std::conditional<
         sizeof(T) == sizeof(uint8_t) || sizeof(T) == sizeof(uint16_t), uint32_t, uint64_t>::type;
