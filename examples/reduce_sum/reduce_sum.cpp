@@ -41,16 +41,17 @@ struct ReduceSumConfig {
     static constexpr auto kernelPolicy = Atvoss::Reduce::MultiCoreTilingPolicy::MemoryFirst;
 
     using ArchTag = Atvoss::Arch::DAV_3510;
+    using ScheduleCfg = Atvoss::Reduce::ReduceTilingData;
     using BlockOp = Atvoss::Reduce::BlockBuilder<
         ReduceSumCompute,
         ArchTag,
         blockPolicy,
-        Atvoss::Reduce::DefaultBlockConfig>;
+        ScheduleCfg>;
 
     using KernelOp = Atvoss::Reduce::KernelBuilder<
         BlockOp,
         kernelPolicy,
-        Atvoss::Reduce::DefaultKernelConfig>;
+        ScheduleCfg>;
 
     using DeviceOp = Atvoss::Reduce::DeviceAdapter<KernelOp>;
 };

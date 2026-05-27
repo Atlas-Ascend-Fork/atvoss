@@ -18,6 +18,7 @@
 
 #include "policy.h"
 #include "schedule.h"
+#include "reduce/device/tilingdata.h"
 
 namespace Atvoss::Reduce {
 
@@ -29,7 +30,7 @@ namespace Atvoss::Reduce {
  * @tparam Schedule Kernel 调度类型
  */
 template <
-    typename BlockOp, const auto& Policy = defaultKernelPolicy, typename ScheduleCfg = DefaultKernelConfig,
+    typename BlockOp, const auto& Policy = defaultKernelPolicy, typename ScheduleCfg = Atvoss::Reduce::ReduceTilingData,
     template <typename, const auto&, typename> class Schedule = DefaultKernelSchedule>
 class KernelBuilder {
 public:
@@ -37,11 +38,11 @@ public:
      * @brief Kernel 操作参数结构体
      */
     struct OpParam {
-        ScheduleCfg kernelParam;                        // Kernel 层配置参数
-        typename BlockOp::ScheduleCfgClz blockParam;    // Block 层配置参数
+        ScheduleCfg tilingData;                        // Kernel 层配置参数
     };
     using ScheduleClz = Schedule<BlockOp, Policy, ScheduleCfg>;
     using ScheduleCfgClz = OpParam;
+    using TilingData = ScheduleCfg;
 
 #if !defined(__ATVOSS_HOST_ONLY__)
     /**

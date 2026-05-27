@@ -18,6 +18,7 @@
 
 #include "reduce/block/policy.h"
 #include "schedule.h"
+#include "reduce/device/tilingdata.h"
 
 namespace Atvoss::Reduce {
 
@@ -31,12 +32,16 @@ namespace Atvoss::Reduce {
  */
 template <
     typename Compute, typename ArchTagcfg = Atvoss::Arch::DAV_3510, const auto& Policy = defaultBlockPolicy,
-    typename ScheduleCfg = DefaultBlockConfig,
+    typename ScheduleCfg = Atvoss::Reduce::ReduceTilingData,
     template <typename, const auto&, typename, typename> class Schedule = DefaultBlockSchedule>
 class BlockBuilder {
 public:
-    using ScheduleClz = Schedule<Compute, Policy, ScheduleCfg, ArchTagcfg>;
     using ScheduleCfgClz = ScheduleCfg;
+    using ScheduleClz = Schedule<Compute, Policy, ScheduleCfg, ArchTagcfg>;
+    using BlockTileShape = typename ScheduleClz::TileShape;
+    using BlockPolicy = std::remove_reference_t<decltype(Policy)>;
+    static constexpr auto& policy = Policy;
+    static constexpr auto memPolicy = Policy.memPolicy;
 
 #if !defined(__ATVOSS_HOST_ONLY__)
     /**
@@ -47,10 +52,10 @@ public:
      * @param argTuple 参数 tuple
      */
     template <auto SchLoopInfo, typename ArgTup>
-    __aicore__ inline void Run(ScheduleCfg& cfg, ArgTup& argTuple)
+    __aicore__ inline void Run(ReduceTilingData& tilingData, ArgTup& argTuple)
     {
         ScheduleClz schedule;
-        schedule.template Run<SchLoopInfo>(cfg, argTuple);
+        schedule.template Run<SchLoopInfo>(tilingData, argTuple);
     }
 #endif
 };

@@ -21,16 +21,6 @@
 namespace Atvoss::Reduce {
 
 /**
- * @brief Kernel 层 Tiling 配置结构体
- */
-struct DefaultKernelConfig {              // Kernel layer tiling information  
-    uint64_t tilingKey = 0;               // TilingKey
-    uint32_t coreNum = 0;                 // Number of cores
-    uint64_t tileACntPerCore = 0;         // Number of TileA count processed per core
-    uint64_t tileRCntPerCore = 0;         // Number of TileR count processed per core
-};
-
-/**
  * @brief 多核 Tiling 策略枚举
  */
 enum class MultiCoreTilingPolicy

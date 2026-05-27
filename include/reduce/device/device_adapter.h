@@ -20,7 +20,7 @@
 #include "kernel_launcher.h"
 #include "param_handler.h"
 #include "utils/expr_deriver.h"
-#include "utils/tiling.h"
+#include "tiling.h"
 
 namespace Atvoss::Reduce {
 
@@ -77,24 +77,24 @@ public:
         // ========== Step 4: Tiling 计算 ==========
         OpParam opParam;
         // 计算 Kernel 和 Block 层的配置参数
-        if (!Atvoss::CalculateTiling<KernelOp>(arguments, opParam)) {
+        if (!CalculateTiling<KernelOp>(arguments, opParam)) {
             printf("[ERROR]: [Atvoss][Reduce][Device] CalculateTiling failed!\n");
             return -1;
         }
 
         // ========== Step 5: Kernel 启动 ==========
-        switch (opParam.kernelParam.tilingKey) {
+        switch (opParam.tilingData.tilingKey) {
             case 0:
                 LaunchKernel<ReduceTilingKey<0, 0, 0>, KernelOp>(
-                    opParam.kernelParam.coreNum, stream, opParam, convertArgs);
+                    opParam.tilingData.coreNum, stream, opParam, convertArgs);
                 break;
             case 1:
                 LaunchKernel<ReduceTilingKey<1, 1, 1>, KernelOp>(
-                    opParam.kernelParam.coreNum, stream, opParam, convertArgs);
+                    opParam.tilingData.coreNum, stream, opParam, convertArgs);
                 break;
             case 2:
                 LaunchKernel<ReduceTilingKey<11, 10, 1>, KernelOp>(
-                    opParam.kernelParam.coreNum, stream, opParam, convertArgs);
+                    opParam.tilingData.coreNum, stream, opParam, convertArgs);
                 break;
             default:
                 break;
