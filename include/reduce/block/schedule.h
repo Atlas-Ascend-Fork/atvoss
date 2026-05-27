@@ -36,6 +36,27 @@ using Atvoss::Util::Get_t;
 using Atvoss::Util::Size_v;
 
 /**
+ * @brief 表达式包装辅助: 为 TypeList 中每个 OpAssign 前插入 OpAlloc<LHS>
+ * @tparam OpList 待包装的表达式 TypeList
+ * @tparam AccList 累加结果 TypeList (内部递推使用)
+ */
+template <typename OpList, typename AccList = TypeList<>>
+struct WrapWithAllocFree;
+
+template <typename LHS, typename RHS, typename... Rest, typename... Acc>
+struct WrapWithAllocFree<TypeList<OpAssign<LHS, RHS>, Rest...>, TypeList<Acc...>> {
+    using Type = typename WrapWithAllocFree<
+        TypeList<Rest...>,
+        TypeList<Acc..., OpAlloc<LHS>, OpAssign<LHS, RHS>>
+    >::Type;
+};
+
+template <typename... Acc>
+struct WrapWithAllocFree<TypeList<>, TypeList<Acc...>> {
+    using Type = TypeList<Acc...>;
+};
+
+/**
  * @brief Block 调度基类: 负责单核内的 tile 级数据搬运和计算调度
  * @tparam Compute 计算表达式类型 (如 ReduceSumCompute)
  * @tparam Policy Block 策略配置 (DefaultBlockPolicy)
@@ -44,70 +65,83 @@ using Atvoss::Util::Size_v;
  */
 template <typename Compute, const auto& Policy, typename ScheduleCfg, typename ArchTagCfg = void>
 class BaseBlockSchedule {
+public:
+    using ExpressMaker = Compute;
+    using ParamStruct = ScheduleCfg;
+    using ArchTag = ArchTagCfg;
+    using TileShape = typename std::remove_reference<decltype(Policy)>::type::TileShape;
+
 private:
     using BlockPolicy = typename std::remove_reference<decltype(Policy)>::type;
-    using TileShape = typename BlockPolicy::TileShape;
+
     static constexpr uint32_t BASIC_BLOCK = Atvoss::Tile::GetTotalElement<0, BlockPolicy>(1, 1);
 
     template <typename T>
     using BlockTensorTile = Atvoss::Reduce::BlockTensor<
         T, Atvoss::Layout::Layout<Atvoss::Layout::FixedRankExtents<BASIC_BLOCK, 1, 1>>>;
 
+    // 编译期: 表达式 → 线性化 → DAG分析 → 资源管理插入
     static constexpr auto computeRes = ToLinearizerExpr(Compute{}.template Compute<BlockTensorTile>());
     static constexpr auto optimizedCompute = PreProcessComputeExpr<BlockPolicy::EnableBinaryAcc>(computeRes);
     using ComputeInfoT = decltype(optimizedCompute);
     using ReduceDag = typename ComputeInfoT::Dag;
+    using ExprTile = typename ComputeInfoT::Expr;
 
+    // 运行时: Buffer 分析/初始化
     using BufAnalyzer = BufferAnalyzer<ReduceDag>;
     using BufPoolType = typename BufAnalyzer::BufPoolType;
 
+    // 参数和 BufferMap 类型推导
     using CombinedList = Concatenate_t<typename ReduceDag::PreReduceList, typename ReduceDag::ReducedList>;
-    using ParamsList = Atvoss::Params_t<CombinedList>;
+    using Params = Atvoss::Params_t<CombinedList>;
     using LocalVarsList = Atvoss::LocalVars_t<CombinedList>;
     using BufferMapType = Concatenate_t<
         typename ReduceDag::PreReduceBufGen::BufferMapType,
         typename ReduceDag::ReducedBufGen::BufferMapType>;
 
-    using PreReduceExpr = typename BuildExpression<typename ReduceDag::PreReduceList>::Type::Type;
+    // 表达式拆分: PreReduce + ReduceOp + PostReduce
+    using PreReduceWrapped = typename WrapWithAllocFree<typename ReduceDag::PreReduceList>::Type;
+    using PreReduceExpr = typename BuildExpression<PreReduceWrapped>::Type::Type;
+
     using ReducedRaw = typename ReduceDag::ReducedList;
     using ReduceOpType = Get_t<ReducedRaw, 0>;
-    using PostReduceExpr = typename BuildExpression<Atvoss::Util::Drop_t<ReducedRaw, 1>>::Type::Type;
+    using CopyOutOp = Get_t<ReducedRaw, Size_v<ReducedRaw> - 1>;
+    using PostReduceWrapped = typename WrapWithAllocFree<TypeList<CopyOutOp>>::Type;
+    using PostReduceExpr = typename BuildExpression<PostReduceWrapped>::Type::Type;
 
     using ReduceEval = Atvoss::Reduce::Tile::Evaluator<ReduceOpType>;
     using ElemT = typename ReduceEval::ElemT;
 
 public:
-    using ExpressMaker = Compute;
-    using ParamStruct = ScheduleCfg;
-    using ArchTag = ArchTagCfg;
+    // DAG 阶段归属: 供 Kernel 层获取 PreReduce / PostReduce 参数列表
     using PreReduceParams = Atvoss::Params_t<typename ReduceDag::PreReduceList>;
     using PostReduceParams = Atvoss::Params_t<typename ReduceDag::ReducedList>;
 
-    /**
-     * @brief 生成 Block 层 Tiling 配置 (Host 端调用)
-     * @tparam Args 用户输入参数类型
-     * @tparam KernelScheduleCfg Kernel 配置类型
-     * @param arguments 用户输入参数
-     * @param kernelConfig Kernel 层已算好的配置
-     * @param blockConfig 输出的 Block 配置
-     * @return 是否生成成功
-     */
-    template <typename Args, typename KernelScheduleCfg>
-    static bool MakeScheduleConfig(
-        const Args& arguments, const KernelScheduleCfg& kernelConfig, ScheduleCfg& blockConfig)
-    {
-        blockConfig.patternID = PATTERN_AR;
-        blockConfig.basicBlock = 59136;
-        blockConfig.resultBlock = 512;
-        blockConfig.ubFactorA = 7;
-        blockConfig.ubFactorR = 2040;
-        blockConfig.tileACntPerCore = 3;
-        blockConfig.tileRCntPerCore = 3;
-        blockConfig.totalTileACnt = 147;
-        blockConfig.totalTileRCnt = 3;
-        blockConfig.useNddma = 0;
-        return true;
-    }
+    // /**
+    //  * @brief 生成 Block 层 Tiling 配置 (Host 端调用)
+    //  * @tparam Args 用户输入参数类型
+    //  * @tparam KernelScheduleCfg Kernel 配置类型
+    //  * @param arguments 用户输入参数
+    //  * @param kernelConfig Kernel 层已算好的配置
+    //  * @param blockConfig 输出的 Block 配置
+    //  * @return 是否生成成功
+    //  */
+    // template <typename Args, typename KernelScheduleCfg>
+    // static bool MakeScheduleConfig(
+    //     const Args& arguments, const KernelScheduleCfg& kernelConfig, ScheduleCfg& blockConfig)
+    // {
+    //     blockConfig.patternID = PATTERN_AR;
+    //     blockConfig.basicBlock = 59136;
+    //     blockConfig.resultBlock = 512;
+    //     blockConfig.ubFactorA = 7;
+    //     blockConfig.ubFactorR = 2040;
+    //     blockConfig.tileACntPerCore = 3;
+    //     blockConfig.tileRCntPerCore = 3;
+    //     blockConfig.totalTileACnt = 147;
+    //     blockConfig.totalTileRCnt = 3;
+    //     blockConfig.useNddma = 0;
+    //     return true;
+    // }
 
 #if !defined(__ATVOSS_HOST_ONLY__)
 public:
@@ -163,7 +197,8 @@ private:
     __aicore__ inline void Process(ScheduleCfg& cfg, ArgTup& argTuple)
     {
         if constexpr (Policy.EnableBinaryAcc) {
-            auto blockTensors = PrepareBlockParams<ParamsList>(argTuple, BlockTensorTag<BlockTensorTile>{});
+            // AscendC::printf("block schedule NormalReduce: %d\n", 0x4);
+            auto blockTensors = PrepareBlockParams<Params>(argTuple, BlockTensorTag<BlockTensorTile>{});
             auto localVars = PrepareLocalVars<LocalVarsList>(BlockTensorTag<BlockTensorTile>{});
 
             // DumpReduceTypeInfo<ReduceDag, PreReduceExpr, PostReduceExpr>::Print();
@@ -248,7 +283,7 @@ private:
         uint64_t segCount = cfg.ubFactorA;
         uint64_t segSize  = cfg.ubFactorR;
         int32_t aSplitAxis = SchLoopInfo->loopAAxis[SchLoopInfo->loopACount - 1];
-        uint64_t srcStride = (SchLoopInfo->loopACount > 0) ? cfg.srcStride[aSplitAxis] : 0;
+        uint64_t srcStride = (SchLoopInfo->loopACount > 0) ? cfg.inStride[aSplitAxis] : 0;
 
         uint64_t bisectionPos = FindNearestPower2(rCount);
         uint64_t tailCount = rCount - bisectionPos;

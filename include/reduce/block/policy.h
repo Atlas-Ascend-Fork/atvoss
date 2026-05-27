@@ -24,26 +24,6 @@
 namespace Atvoss::Reduce {
 
 /**
- * @brief Block 层 Tiling 配置结构体
- */
-struct DefaultBlockConfig {
-    uint32_t patternID = 0;              // Origin pattern
-    uint64_t ubFactorA = 0;              // Ub split factor of A-axis
-    uint64_t ubFactorR = 0;              // Ub split factor of R-axis
-    uint64_t tileACntPerCore = 0;        // Number of TileA count processed per core
-    uint64_t tileRCntPerCore = 0;        // Number of TileR count processed per core
-    uint64_t totalTileACnt = 0;          // Number of TileA count
-    uint64_t totalTileRCnt = 0;          // Number of TileR count
-    uint32_t basicBlock = 0;             // The block size of elements processed by the entire tile.
-    uint32_t resultBlock = 0;            // The result block size of reduced-elements processed by the entire tile.
-    uint32_t useNddma = 0;               // MTE2 whether to use NDDMA
-    uint64_t groupR = 1;                 // Number of R count to reduce corss-core
-    uint64_t shape[MAX_DIM] = {0, 0, 0, 0, 0, 0, 0, 0, 0};          // shape of tensor
-    uint64_t srcStride[MAX_DIM] = {0, 0, 0, 0, 0, 0, 0, 0, 0};      // input stride of tensor
-    uint64_t dstStride[MAX_DIM] = {0, 0, 0, 0, 0, 0, 0, 0, 0};      // output stride of tensor
-};
-
-/**
  * @brief Block 默认策略配置
  * @tparam Shape TileShape 类型, 包含 TileA 和 TileR 两个维度
  */
