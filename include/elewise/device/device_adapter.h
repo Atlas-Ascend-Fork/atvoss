@@ -17,7 +17,7 @@
 #include "utils/arguments/arguments.h"
 #include "utils/expr_deriver.h"
 #include "utils/tensor/device_tensor.h"
-#include "utils/tiling.h"
+#include "tiling.h"
 
 #define CHECK_ACL(x)                                                                        \
     do {                                                                                    \

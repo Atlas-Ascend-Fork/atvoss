@@ -83,31 +83,6 @@ public:
     using PreReduceParams = Atvoss::Params_t<typename ReduceDag::PreReduceList>;
     using PostReduceParams = Atvoss::Params_t<typename ReduceDag::ReducedList>;
 
-    /**
-     * @brief 生成 Block 层 Tiling 配置 (Host 端调用)
-     * @tparam Args 用户输入参数类型
-     * @tparam KernelScheduleCfg Kernel 配置类型
-     * @param arguments 用户输入参数
-     * @param kernelConfig Kernel 层已算好的配置
-     * @param blockConfig 输出的 Block 配置
-     * @return 是否生成成功
-     */
-    template <typename Args, typename KernelScheduleCfg>
-    static bool MakeScheduleConfig(
-        const Args& arguments, const KernelScheduleCfg& kernelConfig, ScheduleCfg& blockConfig)
-    {
-        blockConfig.patternID = PATTERN_AR;
-        blockConfig.basicBlock = 59136;
-        blockConfig.resultBlock = 512;
-        blockConfig.ubFactorA = 7;
-        blockConfig.ubFactorR = 2040;
-        blockConfig.tileACntPerCore = 3;
-        blockConfig.tileRCntPerCore = 3;
-        blockConfig.totalTileACnt = 147;
-        blockConfig.totalTileRCnt = 3;
-        blockConfig.useNddma = 0;
-        return true;
-    }
 
 #if !defined(__ATVOSS_HOST_ONLY__)
 public:
