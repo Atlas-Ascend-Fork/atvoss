@@ -24,7 +24,7 @@
 static constexpr int32_t MAX_DIM = 8;
 
 template <typename T1, typename T2, int32_t tileShapeLen>
-struct CastConfig {
+struct CastConfig { 
     using DtypeV1 = T1;
     using DtypeV2 = T2;
 
