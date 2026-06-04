@@ -17,11 +17,11 @@
 
 namespace Atvoss::Ele {
 struct DefaultBlockConfig {
-    uint32_t wholeLoop = 0;    // The number of entire tiles in the current block(excluding the tail tile).
-    uint32_t tileCnt = 0;      // The number of elements processed when the current tile is the last one. Zero when the
+    uint64_t wholeLoop = 0;    // The number of entire tiles in the current block(excluding the tail tile).
+    uint64_t tileCnt = 0;      // The number of elements processed when the current tile is the last one. Zero when the
                                // current tile is entire.
     uint32_t basicNum = 0;     // The number of elements processed by the entire tile.
-    uint32_t totalElemCnt = 0; // Total number of elements processed in the current block.
+    uint64_t totalElemCnt = 0; // Total number of elements processed in the current block.
 };
 
 template <typename Shape>

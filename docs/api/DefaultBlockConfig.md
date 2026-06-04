@@ -6,10 +6,10 @@
 ## 数据结构
 ```Cpp
 struct DefaultBlockConfig {
-    uint32_t wholeLoop = 0;
-    uint32_t tileCnt = 0;
+    uint64_t wholeLoop = 0;
+    uint64_t tileCnt = 0;
     uint32_t basicNum = 0;
-    uint32_t totalElemCnt = 0;
+    uint64_t totalElemCnt = 0;
 };
 ```
 ## 数据结构成员说明
@@ -29,13 +29,13 @@ struct DefaultBlockConfig {
 <tbody>
   <tr>
     <td>wholeLoop</td>
-    <td>uint32_t</td>
+    <td>uint64_t</td>
     <td>当前核上tile块的轮询次数</td>
     <td>0</td>
   </tr>
   <tr>
     <td>tileCnt</td>
-    <td>uint32_t</td>
+    <td>uint64_t</td>
     <td>当前轮询处理的tile块中包含的元素个数，整块tile块时，为0</td>
     <td>0</td>
   </tr>
@@ -47,7 +47,7 @@ struct DefaultBlockConfig {
   </tr>
   <tr>
     <td>totalElemCnt</td>
-    <td>uint32_t</td>
+    <td>uint64_t</td>
     <td>当前核上处理的总元素个数</td>
     <td>0</td>
   </tr>
