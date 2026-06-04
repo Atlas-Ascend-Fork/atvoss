@@ -302,7 +302,8 @@ std::string GetPrettyTypeName(const T& value)
         } else {                                                                 \
             char buffer[1024];                                                   \
             snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1, __VA_ARGS__); \
-            if (buffer[strlen(buffer) - 1] != '\n') {                            \
+            size_t len_ = strlen(buffer);                                        \
+            if (len_ == 0 || buffer[len_ - 1] != '\n') {                   \
                 printf("[INFO][Core0:%s:%d] %s\n", filename, __LINE__, buffer);  \
             } else {                                                             \
                 printf("[INFO][Core0:%s:%d] %s", filename, __LINE__, buffer);    \
