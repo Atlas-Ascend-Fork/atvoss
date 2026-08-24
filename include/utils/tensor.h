@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <cstdint>
 #include <cstddef>
+#include <vector>
 
 namespace Atvoss {
 constexpr size_t MAX_DIMS = 8;
