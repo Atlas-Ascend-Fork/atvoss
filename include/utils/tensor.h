@@ -45,8 +45,10 @@ public:
         if (dims <= 0 || dims > MAX_DIMS) {
             throw std::runtime_error("input shape dimension is invalid, less than 0 or more than 8");
         }
-        if (std::any_of(inputShape, inputShape + dims_, [](const int64_t dim) { return dim < 0; })) {
-            throw std::runtime_error("input shape contains a negative dimension");
+        for (size_t i = 0; i < dims_; ++i) {
+            if (inputShape[i] < 0) {
+                throw std::runtime_error("input shape contains a negative dimension");
+            }
         }
         std::copy(inputShape, inputShape + dims_, shape_);
     }
