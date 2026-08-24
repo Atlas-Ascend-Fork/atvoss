@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <cstdint>
 #include <cstddef>
+#include <vector>
 
 namespace Atvoss {
 constexpr size_t MAX_DIMS = 8;
@@ -43,6 +44,11 @@ public:
     {
         if (dims <= 0 || dims > MAX_DIMS) {
             throw std::runtime_error("input shape dimension is invalid, less than 0 or more than 8");
+        }
+        for (size_t i = 0; i < dims_; ++i) {
+            if (inputShape[i] < 0) {
+                throw std::runtime_error("input shape contains a negative dimension");
+            }
         }
         std::copy(inputShape, inputShape + dims_, shape_);
     }

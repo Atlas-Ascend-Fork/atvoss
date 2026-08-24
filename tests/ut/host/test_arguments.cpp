@@ -10,6 +10,7 @@
 
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <tuple>
@@ -97,4 +98,10 @@ TEST_F(AtvossArgumentsTest, AtvossArgumentsTestCase)
     auto arguments = Atvoss::ArgumentsBuilder{}.inputOutput(t1, t2, a, t3).build();
     auto arg = std::get<2>(std::get<0>(arguments));
     EXPECT_EQ(arg, 1.0f);
+}
+
+TEST_F(AtvossArgumentsTest, RejectsNegativeInt64Shape)
+{
+    int64_t shape[] = {-1, 2};
+    EXPECT_THROW(Atvoss::Tensor<float>(nullptr, shape, 2), std::runtime_error);
 }
