@@ -44,11 +44,11 @@ ATVOSS支持源码编译，进行源码编译前，请确保如下基础依赖�
 
 ### 手动安装CANN包
 
-#### 1. 下载软件包
+#### 下载软件包
 
 单击[下载链接](https://ascend.devcloud.huaweicloud.com/artifactory/cann-run-mirror/software/master/)，选择最新发布日期对应的目录，根据实际产品型号和环境架构，获取```Ascend-cann-toolkit_${cann_version}_linux-${arch}.run```。
 
-#### 2. 安装软件包
+#### 安装软件包
 
 1. **安装社区CANN toolkit包**
 
