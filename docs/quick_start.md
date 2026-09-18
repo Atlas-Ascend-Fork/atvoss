@@ -36,7 +36,7 @@ ATVOSS支持源码编译，进行源码编译前，请确保如下基础依赖�
    安装指导详见《[CANN 软件安装指南](https://www.hiascend.com/document/redirect/CannCommunityInstSoftware)》中“安装指南 > 安装NPU驱动和固件”。
 
 
-## 环境准备
+## 安装CANN包
 - **支持的产品**
     - Ascend 950PR/Ascend 950DT
 
