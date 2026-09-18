@@ -12,6 +12,7 @@ ATVOSS（Ascend C Templates for Vector Operator Subroutines）是一套基于[As
 ## 环境准备
 
 ### 系统要求
+
 ATVOSS支持源码编译，进行源码编译前，请确保如下基础依赖、NPU驱动和固件已安装。
 
 1. **安装依赖**
@@ -37,6 +38,7 @@ ATVOSS支持源码编译，进行源码编译前，请确保如下基础依赖�
 
 
 ## 安装CANN包
+
 - **支持的产品**
     - Ascend 950PR/Ascend 950DT
 
@@ -47,6 +49,7 @@ ATVOSS支持源码编译，进行源码编译前，请确保如下基础依赖�
 单击[下载链接](https://ascend.devcloud.huaweicloud.com/artifactory/cann-run-mirror/software/master/)，选择最新发布日期对应的目录，根据实际产品型号和环境架构，获取```Ascend-cann-toolkit_${cann_version}_linux-${arch}.run```。
 
 #### 2. 安装软件包
+
 1. **安装社区CANN toolkit包**
 
     ```bash
@@ -147,6 +150,7 @@ Accuracy verification passed.
    ```
 
 ## 相关文档
+
 - [项目整体介绍](./summary.md) - 项目介绍
 - [目录结构](./directory_structure.md) - 目录结构
 - [开发者指南](./tutorials/developer_guide.md) - 详细的开发流程
