@@ -221,12 +221,12 @@ if [[ "$TARGET_NAME" == "atvoss_examples" ]]; then
 $UT_EXECUTABLE --shape=32
 EOF
         chmod +x "$SCRIPT_FILE"
-        cannsim record  ./$SCRIPT_FILE -s Ascend950 --gen-report
+        npusim record  ./$SCRIPT_FILE -s Ascend950 --gen-report
 
         # TODO 
-        cat ./cannsim*${test_name}*/cannsim.log
+        cat ./npusim*${test_name}*/npusim.log
         # 检查日志中是否包含成功标志
-        if grep -r "Accuracy verification passed" ./cannsim*${test_name}*; then
+        if grep -r "Accuracy verification passed" ./npusim*${test_name}*; then
             echo "$test_name passed."
         else
             echo "$test_name failed: 'Accuracy verification passed' not found."
@@ -261,10 +261,10 @@ if [[ "$MODE" == "st" && ! -n "$TARGET_NAME" ]]; then
 $UT_EXECUTABLE
 EOF
         chmod +x "$SCRIPT_FILE"
-        cannsim record  ./$SCRIPT_FILE -s Ascend950 --gen-report
+        npusim record  ./$SCRIPT_FILE -s Ascend950 --gen-report
 
         # 检查日志中是否包含成功标志
-        if grep -r "Accuracy verification passed" ./cannsim*${test_name}*; then
+        if grep -r "Accuracy verification passed" ./npusim*${test_name}*; then
             echo "$test_name passed."
         else
             echo "$test_name failed: 'Accuracy verification passed' not found."
