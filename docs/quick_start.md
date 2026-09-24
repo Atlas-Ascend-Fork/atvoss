@@ -9,7 +9,7 @@ ATVOSS（Ascend C Templates for Vector Operator Subroutines）是一套基于[As
 - 编译态：针对仅编译不运行本项目的场景，只需安装前置依赖和CANN toolkit包。
 - 运行态：针对运行本项目的场景（编译运行或纯运行），除了安装前置依赖和CANN toolkit包，还需安装驱动与固件、CANN ops包。
 
-## 环境准备
+## 安装CANN包
 
 ### 系统要求
 ATVOSS支持源码编译，进行源码编译前，请确保如下基础依赖、NPU驱动和固件已安装。
