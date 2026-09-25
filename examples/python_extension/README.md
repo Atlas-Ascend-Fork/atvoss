@@ -131,7 +131,7 @@ result_npu = torch.ops.ascend_ops.abs(a_npu)
     torch::Tensor abs_npu(const torch::Tensor &x)
     {
         auto y = abs_meta(x);
-        uint32_t shape[2] = {};
+        uint64_t shape[2] = {};
         std::copy(x.sizes().begin(), x.sizes().end(), shape);
 
         Atvoss::Tensor<float> t1(x.data_ptr<float>(), shape);
