@@ -43,8 +43,14 @@ __aicore__ inline void BroadcastAssign(
  */
 template <typename OperationShape, Atvoss::Pattern pattern, typename T>
 __aicore__ inline void ReduceSumAssign(
-    AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src, OperationShape& operationShape)
+    AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src, OperationShape& operationShape,
+    uint64_t elementNum)
 {
+    if constexpr (pattern == Atvoss::Pattern::AR) {
+        if (operationShape.axis0 == 1 && elementNum < operationShape.axis1) {
+            operationShape.axis1 = elementNum;
+        }
+    }
     uint32_t shape[] = {operationShape.axis0, operationShape.axis1};
     if constexpr (pattern == Atvoss::Pattern::AR) {
         AscendC::ReduceSum<T, AscendC::Pattern::Reduce::AR, true>(dst, src, shape, true);
@@ -94,7 +100,7 @@ struct Evaluator<OpAssign<T, OpReduceSum<pattern, U>>> {
         OperationShape operationShape = GetShape<Operation::Binary>(context.argsTensors);
         return Atvoss::Tile::ReduceSumAssign<OperationShape, pattern, Dtype>(
             Evaluator<T>{}(op.GetLhs(), context).GetUbTensor(),
-            Evaluator<U>{}(op.GetRhs().GetData(), context).GetUbTensor(), operationShape);
+            Evaluator<U>{}(op.GetRhs().GetData(), context).GetUbTensor(), operationShape, context.elementNum);
     }
 };
 } // namespace Atvoss::Tile
