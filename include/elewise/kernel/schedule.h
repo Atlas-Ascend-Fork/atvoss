@@ -60,7 +60,11 @@ public:
         // Extract input shape infomation from arguments
         using InputTuple = std::decay_t<decltype(std::get<0>(arguments))>;
         static_assert(std::tuple_size_v<InputTuple> > 0, "[ERROR]: [Atvoss][Kernel] Get input shape error \n");
-        std::vector<uint64_t> shapeInfo = std::get<0>(std::get<0>(arguments)).shape_vector();
+        std::vector<uint64_t> shapeInfo;
+        if (!GetFirstTensorShape(std::get<0>(arguments), shapeInfo)) {
+            printf("[ERROR]: [Atvoss][Kernel] No Tensor input or output found to determine shape \n");
+            return false;
+        }
         uint64_t totalEleNum = CalculateTotalElements(shapeInfo);
 
         if (shapeInfo.size() == 0 || totalEleNum == 0) {
@@ -93,6 +97,23 @@ public:
     }
 
 private:
+    template <std::size_t Index = 0, typename InputTuple>
+    static bool GetFirstTensorShape(const InputTuple& inputTuple, std::vector<uint64_t>& shapeInfo)
+    {
+        using TupleType = std::decay_t<InputTuple>;
+        if constexpr (Index >= std::tuple_size_v<TupleType>) {
+            return false;
+        } else {
+            using InputType = std::decay_t<std::tuple_element_t<Index, TupleType>>;
+            if constexpr (Atvoss::Util::IsTensor_v<InputType>) {
+                shapeInfo = std::get<Index>(inputTuple).shape_vector();
+                return true;
+            } else {
+                return GetFirstTensorShape<Index + 1>(inputTuple, shapeInfo);
+            }
+        }
+    }
+
     static inline uint64_t CalculateTotalElements(const std::vector<uint64_t>& shapeInfo)
     {
         uint64_t totalEleNum = 1;

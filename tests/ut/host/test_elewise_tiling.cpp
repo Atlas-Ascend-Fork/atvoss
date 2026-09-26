@@ -37,6 +37,30 @@ struct AbsConfig {
     using KernelOp = Atvoss::Ele::KernelBuilder<BlockOp, kernelPolicy>;
 };
 
+template <typename T, int32_t TILE_SIZE>
+struct ScalarFirstConfig {
+    using Dtype = T;
+    using TileShape = Atvoss::Shape<TILE_SIZE>;
+
+    struct ScalarFirstCompute {
+        template <template <typename> class Tensor>
+        constexpr auto Compute() const
+        {
+            auto scalar = Atvoss::PlaceHolder<1, Dtype, Atvoss::ParamUsage::IN>();
+            auto input = Atvoss::PlaceHolder<2, Tensor<Dtype>, Atvoss::ParamUsage::IN>();
+            auto output = Atvoss::PlaceHolder<3, Tensor<Dtype>, Atvoss::ParamUsage::OUT>();
+            return (output = input * scalar);
+        };
+    };
+
+    static constexpr Atvoss::Ele::DefaultBlockPolicy<TileShape> blockPolicy{TileShape{}};
+    static constexpr Atvoss::Ele::DefaultKernelPolicy kernelPolicy{Atvoss::Ele::DefaultSegmentPolicy::UniformSegment};
+    using ArchTag = Atvoss::Arch::DAV_3510;
+    using BlockOp =
+        Atvoss::Ele::BlockBuilder<ScalarFirstCompute, ArchTag, blockPolicy, Atvoss::Ele::DefaultBlockConfig>;
+    using KernelOp = Atvoss::Ele::KernelBuilder<BlockOp, kernelPolicy>;
+};
+
 class ElewiseTilingTest : public testing::Test {};
 
 TEST_F(ElewiseTilingTest, UniqueTest)
@@ -52,4 +76,29 @@ TEST_F(ElewiseTilingTest, UniqueTest)
     auto result = CalculateTiling<KernelOp>(arguments, cfg);
     ASSERT_TRUE(result);
     EXPECT_EQ(sizeof(cfg), 56);
+}
+
+TEST_F(ElewiseTilingTest, ScalarFirstArgumentUsesFirstTensorShape)
+{
+    using KernelOp = ScalarFirstConfig<float, 32>::KernelOp;
+    typename KernelOp::ScheduleCfgClz cfg;
+    std::vector<int64_t> shape = {31};
+    float scalar = 2.0f;
+    Atvoss::Tensor<float> input(nullptr, shape.data(), shape.size());
+    Atvoss::Tensor<float> output(nullptr, shape.data(), shape.size());
+    auto arguments = Atvoss::ArgumentsBuilder{}.inputOutput(scalar, input, output).build();
+
+    ASSERT_TRUE(Atvoss::CalculateTiling<KernelOp>(arguments, cfg));
+    EXPECT_EQ(cfg.kernelParam.blockNum, 1U);
+    EXPECT_EQ(cfg.kernelParam.tailNum, 31U);
+}
+
+TEST_F(ElewiseTilingTest, TilingFailsClearlyWhenArgumentsHaveNoTensor)
+{
+    using KernelOp = ScalarFirstConfig<float, 32>::KernelOp;
+    typename KernelOp::ScheduleCfgClz cfg;
+    float scalar = 2.0f;
+    auto arguments = Atvoss::ArgumentsBuilder{}.inputOutput(scalar).build();
+
+    EXPECT_FALSE(Atvoss::CalculateTiling<KernelOp>(arguments, cfg));
 }
