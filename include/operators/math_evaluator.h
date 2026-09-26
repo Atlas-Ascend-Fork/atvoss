@@ -10,6 +10,7 @@
 
 #ifndef ATVOSS_TILE_ASCENDC_MATH_H
 #define ATVOSS_TILE_ASCENDC_MATH_H
+#include <type_traits>
 #include "lib/math/power.h"
 #include "common/arch.h"
 #include "tile_shape.h"
@@ -163,8 +164,14 @@ template <typename OperationShape, auto scalarValue, typename T>
 __aicore__ inline void DivsAssign(
     AscendC::LocalTensor<T>& dst, const AscendC::LocalTensor<T>& src, OperationShape& operationShape)
 {
-    T src1 = T{1} / scalarValue;
-    AscendC::Muls(dst, src, src1, operationShape.axis0);
+    if constexpr (std::is_integral_v<T>) {
+        T divisor = static_cast<T>(scalarValue);
+        AscendC::Duplicate(dst, divisor, operationShape.axis0);
+        AscendC::Div(dst, src, dst, operationShape.axis0);
+    } else {
+        T src1 = T{1} / scalarValue;
+        AscendC::Muls(dst, src, src1, operationShape.axis0);
+    }
 }
 
 /*!
