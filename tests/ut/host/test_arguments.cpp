@@ -98,3 +98,39 @@ TEST_F(AtvossArgumentsTest, AtvossArgumentsTestCase)
     auto arg = std::get<2>(std::get<0>(arguments));
     EXPECT_EQ(arg, 1.0f);
 }
+
+TEST_F(AtvossArgumentsTest, InputOutputOwnsRvalueScalarAndTensor)
+{
+    uint64_t shape[2] = {2, 3};
+    float data[6] = {};
+    Atvoss::Tensor<float> input(nullptr, shape, 2);
+    Atvoss::Tensor<float> output(nullptr, shape, 2);
+
+    auto arguments = Atvoss::ArgumentsBuilder{}.inputOutput(input, 123.25f, output).build();
+    using InputTuple = std::decay_t<decltype(std::get<0>(arguments))>;
+    static_assert(std::is_lvalue_reference_v<std::tuple_element_t<0, InputTuple>>);
+    static_assert(!std::is_reference_v<std::tuple_element_t<1, InputTuple>>);
+    static_assert(std::is_lvalue_reference_v<std::tuple_element_t<2, InputTuple>>);
+    EXPECT_FLOAT_EQ(std::get<1>(std::get<0>(arguments)), 123.25f);
+
+    auto tensorArguments =
+        Atvoss::ArgumentsBuilder{}.inputOutput(input, Atvoss::Tensor<float>(data, shape, 2), output).build();
+    using TensorInputTuple = std::decay_t<decltype(std::get<0>(tensorArguments))>;
+    static_assert(std::is_lvalue_reference_v<std::tuple_element_t<0, TensorInputTuple>>);
+    static_assert(!std::is_reference_v<std::tuple_element_t<1, TensorInputTuple>>);
+    static_assert(std::is_lvalue_reference_v<std::tuple_element_t<2, TensorInputTuple>>);
+    const auto& tensor = std::get<1>(std::get<0>(tensorArguments));
+    EXPECT_EQ(tensor.data(), data);
+    EXPECT_EQ(tensor.shape_vector(), (std::vector<uint64_t>{2, 3}));
+}
+
+TEST_F(AtvossArgumentsTest, InputOutputRetainsLvalueReferences)
+{
+    float scalar = 1.0f;
+    auto arguments = Atvoss::ArgumentsBuilder{}.inputOutput(scalar).build();
+    using InputTuple = std::decay_t<decltype(std::get<0>(arguments))>;
+    static_assert(std::is_lvalue_reference_v<std::tuple_element_t<0, InputTuple>>);
+
+    scalar = 2.0f;
+    EXPECT_FLOAT_EQ(std::get<0>(std::get<0>(arguments)), 2.0f);
+}
