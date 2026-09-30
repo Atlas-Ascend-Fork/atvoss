@@ -13,6 +13,7 @@
 #include <tuple>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 #include "utils/utility.h"
 
@@ -110,8 +111,10 @@ struct ArgumentsBuilder {
                      std::is_scalar_v<std::decay_t<InitialInputOutput>>)),
             "Only Atvoss::Tensor and scalar types are allowed in inputOutput parameters");
 
-        auto initialInputOutput = std::forward_as_tuple(inputOutput...);
-        auto inOutCollector = InputOutputCollector<std::tuple<InitialInputOutput&...>>{initialInputOutput};
+        using InputOutputTuple = std::tuple<std::conditional_t<
+            std::is_lvalue_reference_v<InitialInputOutput>, InitialInputOutput, std::decay_t<InitialInputOutput>>...>;
+        auto initialInputOutput = InputOutputTuple(std::forward<InitialInputOutput>(inputOutput)...);
+        auto inOutCollector = InputOutputCollector<InputOutputTuple>{std::move(initialInputOutput)};
         auto attrCollector = AttrCollector<std::tuple<>>{};
 
         return ArgumentsBuilderImpl{inOutCollector, attrCollector};
