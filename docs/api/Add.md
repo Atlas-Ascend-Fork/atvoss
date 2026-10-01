@@ -95,7 +95,7 @@ __host_aicore__ constexpr auto operator+(T &&lhs, Expression<U> rhs)
 ```Cpp
 template <typename InputDtype, typename OutputDtype>
 struct Config {
-    struct Compute {
+    struct OpCompute {
         template <template <typename> class Tensor>
         __host_aicore__ constexpr auto Compute() const
         {
@@ -112,7 +112,7 @@ struct Config {
 
 template <typename InputDtype, typename OutputDtype>
 struct Config {
-    struct Compute {
+    struct OpCompute {
         template <template <typename> class Tensor>
         __host_aicore__ constexpr auto Compute() const
         {
@@ -129,7 +129,7 @@ struct Config {
 
 template <typename InputDtype, typename OutputDtype>
 struct Config {
-    struct Compute {
+    struct OpCompute {
         template <template <typename> class Tensor>
         __host_aicore__ constexpr auto Compute() const
         {
