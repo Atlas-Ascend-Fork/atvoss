@@ -64,7 +64,7 @@ __host_aicore__ constexpr auto Sqrt(T &&lhs)
   </tr></thead>
 <tbody>
   <tr>
-    <td>Expression<OpSqrt<T>></td>
+    <td>Expression&lt;OpSqrt&lt;T&gt;&gt;</td>
     <td>返回一个OpSqrt的表达式</td>
   </tr>
 </tbody>

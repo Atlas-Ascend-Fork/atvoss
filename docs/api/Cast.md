@@ -80,7 +80,7 @@ __host_aicore__ constexpr auto Cast(T &&lhs)
   </tr></thead>
 <tbody>
   <tr>
-    <td>Expression<OpCast<castMode, R, T>></td>
+    <td>Expression&lt;OpCast&lt;castMode, R, T&gt;&gt;</td>
     <td>返回一个OpCast的表达式</td>
   </tr>
 </tbody>

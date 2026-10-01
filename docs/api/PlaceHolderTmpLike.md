@@ -66,7 +66,7 @@ __host_aicore__ constexpr auto PlaceHolderTmpLike(Expression)
   </tr></thead>
 <tbody>
   <tr>
-    <td>Expression<LocalVar<N, T, U>></td>
+    <td>Expression&lt;LocalVar&lt;N, T, U&gt;&gt;</td>
     <td>返回一个LocalVar表达式对象</td>
   </tr>
 </tbody>

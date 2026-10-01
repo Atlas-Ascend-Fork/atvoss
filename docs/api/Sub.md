@@ -83,7 +83,7 @@ __host_aicore__ constexpr auto operator-(T &&lhs, Expression<U> rhs)
   </tr></thead>
 <tbody>
   <tr>
-    <td>Expression<OpSub<T, U>></td>
+    <td>Expression&lt;OpSub&lt;T, U&gt;&gt;</td>
     <td>返回一个OpSub的表达式</td>
   </tr>
 </tbody>

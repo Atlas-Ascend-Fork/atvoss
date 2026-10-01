@@ -64,7 +64,7 @@ __host_aicore__ constexpr auto Abs(T &&lhs)
   </tr></thead>
 <tbody>
   <tr>
-    <td>Expression<OpAbs<T>></td>
+    <td>Expression&lt;OpAbs&lt;T&gt;&gt;</td>
     <td>返回一个OpAbs的表达式</td>
   </tr>
 </tbody>
