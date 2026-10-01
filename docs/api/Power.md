@@ -72,7 +72,7 @@ __host_aicore__ constexpr auto Power(T &&lhs)
   </tr></thead>
 <tbody>
   <tr>
-    <td>Expression<OpPower<scalarValue, T>></td>
+    <td>Expression&lt;OpPower&lt;scalarValue, T&gt;&gt;</td>
     <td>返回一个OpPower的表达式</td>
   </tr>
 </tbody>

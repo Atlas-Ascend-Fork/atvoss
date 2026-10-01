@@ -64,7 +64,7 @@ __host_aicore__ constexpr auto Exp(T &&lhs)
   </tr></thead>
 <tbody>
   <tr>
-    <td>Expression<OpExp<T>></td>
+    <td>Expression&lt;OpExp&lt;T&gt;&gt;</td>
     <td>返回一个OpExp的表达式</td>
   </tr>
 </tbody>
