@@ -5,7 +5,7 @@
 [/include/expression/expr_template.h](../../include/expression/expr_template.h)
 ## 函数原型
 ```Cpp
-template <std::size_t N, typename T, ParamUsage U = ParamUsage::in>
+template <std::size_t N, typename T, ParamUsage U = ParamUsage::IN>
 __host_aicore__ constexpr auto PlaceHolder()
 ```
 ## 参数说明

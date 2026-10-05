@@ -2,7 +2,7 @@
 ## 功能说明
 默认的block层schedule配置参数的数据结构。
 ## 所属头文件链接
-[/include/elewise/block/schedule.h](../../include/elewise/block/schedule.h)
+[/include/elewise/block/builder.h](../../include/elewise/block/builder.h)
 ## 数据结构
 ```Cpp
 struct DefaultBlockConfig {
