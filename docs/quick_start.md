@@ -29,7 +29,8 @@ ATVOSS支持源码编译，进行源码编译前，请确保如下基础依赖�
 
 2. **安装驱动与固件（运行态依赖）**
 
-   运行算子时必须安装驱动与固件，若仅编译算子，可跳过本操作。
+   运行算子示例、执行 UT/ST 用例均需要可用的昇腾 NPU 设备；没有真实设备时，需使用与目标产品型号等效的仿真器（cannsim）执行。
+   上述运行场景必须安装驱动与固件，若仅编译算子，可跳过本操作。
    
    单击[下载链接](https://www.hiascend.com/hardware/firmware-drivers/community)，根据实际产品型号和环境架构，获取对应的`Ascend-hdk-<chip_type>-npu-driver_<version>_linux-<arch>.run`、`Ascend-hdk-<chip_type>-npu-firmware_<version>.run`包。
 
