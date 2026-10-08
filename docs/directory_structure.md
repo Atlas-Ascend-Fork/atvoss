@@ -124,7 +124,7 @@ tests/
 scripts/
 └── build.sh                  # 主要构建脚本
                             # 支持参数：-DSOC=<arch>
-                            # 示例：./scripts/build.sh -DSOC=ascend950 sin
+                            # 示例：bash scripts/build.sh -DSOC=ascend950 sin
 ```
 
 ## 相关文档
