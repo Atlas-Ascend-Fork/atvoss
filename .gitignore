@@ -11,3 +11,5 @@ build_out
 .arts
 
 third_party
+oat_reports/
+log/
