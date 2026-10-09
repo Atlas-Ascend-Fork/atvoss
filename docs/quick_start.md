@@ -109,17 +109,17 @@ git clone -b master git@gitcode.com:cann/atvoss.git
    ./output/bin/rms_norm --shape=512,3
    ```
 3. 仿真执行（不依赖Device环境）
-    利用cannsim实现仿真运行, 将上述执行脚本写到自建的Shell脚本，如run.sh中
+    利用npusim实现仿真运行, 将上述执行脚本写到自建的Shell脚本，如run.sh中
     ```shell
     # run.sh
     ./output/bin/rms_norm --shape=512,3
     ```
-    给自建的run.sh增加可执行权限，然后使用仿真命令cannsim执行
+    给自建的run.sh增加可执行权限，然后使用仿真命令npusim执行
     ```bash
     chmod +x run.sh
-    cannsim record ./run.sh -s Ascend950 --gen-report
+    npusim record ./run.sh -s Ascend950 --gen-report
     ```
-    执行完成后会在当前目录生成一个cannsim_xxx的结果文件夹。
+    执行完成后会在当前目录生成一个npusim_xxx的结果文件夹。
     
 若提示如下信息，则说明算子运行成功，精度校验通过。更详细的用例执行流程请参阅[样例介绍](../examples/README.md)。
 ```bash
@@ -143,7 +143,7 @@ Accuracy verification passed.
 	 
 2. 执行st
    ```bash
-   cannsim record ./output/bin/${st_case_name} -s Ascend950 --gen-report
+   npusim record ./output/bin/${st_case_name} -s Ascend950 --gen-report
    ```
 
 ## 相关文档
