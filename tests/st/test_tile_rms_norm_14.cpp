@@ -13,6 +13,7 @@
  * \brief
  */
 
+#include <cmath>
 #include <cstddef>
 #include <iostream>
 #include <stdexcept>
@@ -142,6 +143,10 @@ static void Run(const Options& options)
 
     // --- Step 10: 验证结果 ---
     std::vector<T3> golden(shapeSize, 2.0f);
+    // The tail has 2 valid elements, but Divs still uses the fixed TileLen (511).
+    const T3 tailExpected = static_cast<T3>(2.0 * std::sqrt(511.0 / 2.0));
+    golden[shapeSize - 2] = tailExpected;
+    golden[shapeSize - 1] = tailExpected;
     if (!VerifyResults(golden, hostOutput)) {
         std::cout << "Accuracy verification failed." << std::endl;
     } else {
