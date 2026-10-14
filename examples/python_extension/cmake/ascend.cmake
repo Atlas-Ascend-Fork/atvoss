@@ -51,10 +51,9 @@ set(CMAKE_LINKER ${BISHENG})
 # set ASCEND_INCLUDE_DIRS
 set(ASCEND_INCLUDE_DIRS
     ${ASCEND_DIR}/include
-    ${ASCEND_DIR}/compiler/tikcpp/include
+    ${ASCEND_DIR}/compiler/tikcpp/tikcfw
     ${ASCEND_DIR}/compiler/ascendc/include/basic_api/impl
     ${ASCEND_DIR}/compiler/ascendc/include/basic_api/interface
     ${ASCEND_DIR}/compiler/ascendc/include/highlevel_api/impl
     ${ASCEND_DIR}/compiler/ascendc/include/highlevel_api/tiling
-    ${ASCEND_DIR}/compiler/ascendc/impl/aicore/basic_api
 )
