@@ -63,7 +63,7 @@ python setup.py clean
 
 完成上述步骤后，即可在 Python 中通过 `import ascend_ops` 调用 ATVOSS 提供的自定义 NPU 算子。
 
-当前已提供算子: [torch.abs](./csrc/abs/ascend950/abs.cpp) 。
+当前已提供算子: [torch.abs](./csrc/abs/ascend950/abs.cpp)。
 
 
 ## 算子调用

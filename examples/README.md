@@ -8,4 +8,4 @@
 | [muls](./muls)         | 展示涉及多Dag特性的算子开发方式 | Kernel直调 |
 | [rms_norm](./rms_norm) | 展示表达式级联的算子开发方式 | Kernel直调 |
 
-ATVOSS支持PyTorch框架对接的能力，可以参考[README](./python_extension/README.md) 。
+ATVOSS支持PyTorch框架对接的能力，可以参考[README](./python_extension/README.md)。
