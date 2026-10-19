@@ -10,7 +10,7 @@ build_out
 # CodeArts
 .arts
 
-third_party
+/third_party/
 oat_reports/
 
 log/
