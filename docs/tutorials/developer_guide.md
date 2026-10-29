@@ -169,7 +169,7 @@ static void ProcessMuls(std::vector<TensorDtype>& hostInput, ScalarDtype scalar,
     CHECK_ACL_RET(aclrtMemcpy(deviceInput, inputSize, hostInput.data(), inputSize, ACL_MEMCPY_HOST_TO_DEVICE));
 
     // Step 8: 构造 Tensor 并执行算子
-    uint32_t shapeArray[8] = {0};
+    uint64_t shapeArray[8] = {0};
     std::copy(shape.begin(), shape.end(), shapeArray);
     Atvoss::Tensor<TensorDtype> in(deviceInput, shapeArray, shape.size());
     Atvoss::Tensor<ScalarDtype> out(deviceOutput, shapeArray, shape.size());
